@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build / cache
+dist/
+build/
+.next/
+.vite/
+.parcel-cache/
+.turbo
+*.tsbuildinfo
+.cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+.jest/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Debug
+*.pid
+*.seed
+*.pid.lock
+
+# ESLint / Prettier (캐시만 제외, 설정 파일은 커밋)
+.eslintcache
+.prettiercache
+
+# 기타
+*.local
+.cursor/
+*.bak
+*.tmp
+*.temp

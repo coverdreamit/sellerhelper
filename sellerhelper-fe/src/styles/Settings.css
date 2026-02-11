@@ -1,0 +1,421 @@
+/* 환경설정 공통 스타일 */
+.settings-page {
+  max-width: 900px;
+}
+
+.settings-page h1 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.settings-page .page-desc {
+  margin: 0 0 24px 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.settings-section {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.settings-section h2 {
+  margin: 0 0 20px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-row label {
+  padding-top: 8px;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.form-row .required::after {
+  content: ' *';
+  color: #c00;
+}
+
+.form-row input[type='text'],
+.form-row input[type='email'],
+.form-row input[type='number'],
+.form-row input[type='password'],
+.form-row select,
+.form-row textarea {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+  outline: none;
+  border-color: #1967d2;
+}
+
+.form-row textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.form-hint {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+
+.btn-primary {
+  background: #1967d2;
+  color: #fff;
+  border-color: #1967d2;
+}
+
+.btn-primary:hover {
+  background: #1557b0;
+}
+
+.btn:hover {
+  background: #f5f5f5;
+}
+
+.btn-primary:hover {
+  background: #1557b0;
+}
+
+.btn-danger {
+  color: #c00;
+  border-color: #c00;
+  background: #fff;
+}
+
+.btn-danger:hover {
+  background: #ffebee;
+}
+
+.btn-block {
+  width: 100%;
+  text-align: left;
+  justify-content: flex-start;
+}
+
+/* 스토어 연동 추가 모달 목록 */
+.store-add-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.store-add-list li {
+  margin: 0;
+}
+
+/* 목록 페이지 */
+.settings-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.settings-table-wrap {
+  overflow-x: auto;
+}
+
+.settings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.settings-table th,
+.settings-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.settings-table th {
+  font-weight: 600;
+  color: #555;
+  background: #f8f9fa;
+}
+
+.settings-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.settings-table .cell-actions {
+  white-space: nowrap;
+}
+
+.settings-table .cell-actions a {
+  margin-right: 8px;
+  color: #1967d2;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.settings-table .cell-actions a:hover {
+  text-decoration: underline;
+}
+
+.settings-table a {
+  color: #1967d2;
+  text-decoration: none;
+}
+
+.settings-table a:hover {
+  text-decoration: underline;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.badge-active {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.badge-inactive {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.badge-warning {
+  background: #fff8e1;
+  color: #f57c00;
+}
+
+/* 체크박스/스위치 영역 */
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-check input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+}
+
+.form-check-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-check-item input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+}
+
+.form-check-item label {
+  margin: 0;
+  cursor: pointer;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+/* 목록/관리 페이지 공통 (상품·주문·배송·정산·고객) */
+.list-page {
+  max-width: 1200px;
+}
+
+.list-page h1 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.list-page .page-desc {
+  margin: 0 0 20px 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.list-page .settings-section {
+  margin-bottom: 0;
+}
+
+/* ===== 스토어 관리 그리드 + 카드 ===== */
+.store-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.store-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.store-card--disabled {
+  opacity: 0.75;
+}
+
+.store-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.store-card-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.store-meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.toggle-row input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+}
+
+.store-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.badge.status-connected {
+  background: #e6f7e6;
+  color: #2d8a2d;
+}
+
+.badge.status-disconnected {
+  background: #eee;
+  color: #666;
+}
+
+.badge.status-error {
+  background: #fdeaea;
+  color: #c00;
+}
+
+/* ===== 모달 ===== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.modal h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modal-desc {
+  margin: 0 0 16px 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.modal-lg {
+  width: 600px;
+}
+
+.modal-xl {
+  width: 720px;
+  max-width: calc(100vw - 32px);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}

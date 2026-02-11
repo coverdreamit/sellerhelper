@@ -1,0 +1,11 @@
+# 로컬 개발용 DB 설정 (git에 커밋하지 말고 .gitignore에 application-local.yml 추가 권장)
+# 사용: SPRING_PROFILES_ACTIVE=local 또는 application-local.yml 복사 후 수정
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:coverdreamit.iptime.org}:${DB_PORT:9432}/${DB_NAME:sellerhelper}
+    username: ${DB_USERNAME:hipms}
+    password: ${DB_PASSWORD:hipms}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2

@@ -1,0 +1,14 @@
+/* 레이아웃: 최소 너비 반응형 (모바일 제외) */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  overflow: hidden;
+  min-width: 800px;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  padding: 16px;
+  overflow: auto;
+}
