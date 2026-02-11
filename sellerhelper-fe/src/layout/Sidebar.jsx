@@ -185,6 +185,16 @@ export default function Sidebar() {
     });
   };
 
+  const expandAll = () => {
+    setClosedKeys(new Set());
+    setCookie(COOKIE_KEY_MENU_CLOSED, '');
+  };
+
+  const collapseAll = () => {
+    setClosedKeys(new Set(allGroupKeys));
+    setCookie(COOKIE_KEY_MENU_CLOSED, [...allGroupKeys].join(','));
+  };
+
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
@@ -205,6 +215,28 @@ export default function Sidebar() {
         </button>
       </div>
       <div className="sidebar-nav-wrap">
+        {!collapsed && allGroupKeys.length > 0 && (
+          <div className="sidebar-menu-toggle-bar">
+            <button
+              type="button"
+              className="sidebar-menu-toggle-btn"
+              onClick={expandAll}
+              aria-label="메뉴 모두 펼치기"
+              title="메뉴 모두 펼치기"
+            >
+              모두 펼치기
+            </button>
+            <button
+              type="button"
+              className="sidebar-menu-toggle-btn"
+              onClick={collapseAll}
+              aria-label="메뉴 모두 접기"
+              title="메뉴 모두 접기"
+            >
+              모두 접기
+            </button>
+          </div>
+        )}
         <nav>
           <ul className="sidebar-nav">
             {MENU.map((item) => (

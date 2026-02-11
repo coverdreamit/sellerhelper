@@ -12,7 +12,7 @@ export const storeConnectionsMock = {
       userStore: {
         isEnabled: true,
         authStatus: 'CONNECTED',
-        lastSyncAt: '2026-02-08T14:30:00',
+        lastSyncAt: '2025-02-11T09:00:00',
       },
     },
     {
@@ -21,9 +21,9 @@ export const storeConnectionsMock = {
       apiRequired: true,
       isActive: true,
       userStore: {
-        isEnabled: false,
-        authStatus: 'DISCONNECTED',
-        lastSyncAt: null,
+        isEnabled: true,
+        authStatus: 'CONNECTED',
+        lastSyncAt: '2025-02-11T21:00:00',
       },
     },
     {

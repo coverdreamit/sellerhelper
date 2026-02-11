@@ -34,12 +34,10 @@ export { default as UserList } from './system/user/UserList';
 export { default as UserRegister } from './system/user/UserRegister';
 export { default as UserRole } from './system/user/UserRole';
 
-export { default as CommonCode } from './system/code/CommonCode';
-export { default as OrderStatusCode } from './system/code/OrderStatusCode';
-export { default as ShippingStatusCode } from './system/code/ShippingStatusCode';
-export { default as EtcCode } from './system/code/EtcCode';
+export { default as CodeManage } from './system/code/CodeManage';
 
 export { default as StoreList } from './settings/store/StoreList';
+export { default as StoreBatch } from './settings/store/StoreBatch';
 export { default as StoreAuth } from './settings/store/StoreAuth';
 export { default as StoreActive } from './settings/store/StoreActive';
 export { default as StoreSetting } from './settings/store/StoreSetting';
@@ -51,6 +49,5 @@ export { default as SupplierFormManage } from './settings/supplier/SupplierFormM
 export { default as RoleManage } from './system/RoleManage';
 export { default as MenuManage } from './system/MenuManage';
 export { default as StoreManage } from './system/StoreManage';
-export { default as CommonCodeManage } from './system/CommonCodeManage';
 export { default as LogManage } from './system/LogManage';
 export { default as SystemSetting } from './system/SystemSetting';

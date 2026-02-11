@@ -80,7 +80,8 @@ export const MENU = [
         label: '스토어 설정',
         path: '/settings/store/list',
         children: [
-          { key: 'settings-store-list', label: '스토어 설정', path: '/settings/store/list' },
+          { key: 'settings-store-list', label: '스토어 관리', path: '/settings/store/list' },
+          { key: 'settings-store-batch', label: '배치 관리', path: '/settings/store/batch' },
         ],
       },
       {

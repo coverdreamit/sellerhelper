@@ -1,5 +1,5 @@
-import CommonCode from '@/views/system/code/CommonCode';
+import CodeManage from '@/views/system/code/CodeManage';
 
 export default function Page() {
-  return <CommonCode />;
+  return <CodeManage />;
 }

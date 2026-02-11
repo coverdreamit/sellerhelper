@@ -15,6 +15,20 @@
   font-size: 0.9rem;
 }
 
+.settings-page--compact h1 {
+  font-size: 1.25rem;
+}
+
+.settings-page--compact .page-desc {
+  margin: 0 0 12px 0;
+  font-size: 0.85rem;
+}
+
+.settings-page--compact .settings-section {
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+
 .settings-section {
   background: #fff;
   border: 1px solid #e0e0e0;
@@ -371,6 +385,11 @@
   color: #c00;
 }
 
+.badge.status-success {
+  background: #e6f7e6;
+  color: #2d8a2d;
+}
+
 /* ===== 모달 ===== */
 .modal-backdrop {
   position: fixed;
@@ -418,4 +437,208 @@
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+}
+
+/* ===== 배치 관리 카드 (콤팩트) ===== */
+.batch-card {
+  margin-bottom: 10px;
+  padding: 10px 14px;
+}
+
+.batch-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.batch-card-header h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.batch-card-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+
+.btn-outline {
+  border: 1px dashed #999;
+  color: #666;
+}
+
+.btn-outline:hover {
+  border-color: #1967d2;
+  color: #1967d2;
+}
+
+.btn-remove {
+  color: #999;
+  border-color: #ddd;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+}
+
+.btn-remove:hover {
+  color: #c00;
+  border-color: #c00;
+}
+
+.batch-card-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  padding: 6px 0;
+  font-size: 0.82rem;
+}
+
+.batch-card-status {
+  border-bottom: 1px solid #eee;
+  margin-bottom: 8px;
+}
+
+.batch-status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.batch-label {
+  color: #666;
+}
+
+.batch-value {
+  color: #333;
+}
+
+.badge.status-idle {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.badge.status-running {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badge.status-stopped {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.badge.status-error {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.batch-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.batch-form-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.82rem;
+}
+
+.batch-form-row label {
+  color: #555;
+}
+
+.form-check-group--inline {
+  flex-direction: row;
+  gap: 12px;
+}
+
+.batch-time-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.batch-time-row input[type='time'],
+.batch-inline-row input[type='time'],
+.batch-inline-row select {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.82rem;
+}
+
+.batch-time-desc {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.batch-inline-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.batch-excluded {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.batch-excluded-empty {
+  color: #999;
+  font-size: 0.8rem;
+}
+
+.batch-excluded-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.batch-excluded-item input[type='time'] {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.82rem;
+}
+
+.batch-form-actions {
+  margin-top: 4px;
+}
+
+.batch-form-actions .btn {
+  padding: 4px 12px;
+  font-size: 0.82rem;
+}
+
+.settings-table .empty-state {
+  padding: 16px;
+  text-align: center;
+  color: #888;
+  font-size: 0.85rem;
+}
+
+/* 배치 이력 모달 콤팩트 */
+.modal.modal--compact .modal-desc {
+  margin: 0 0 12px 0;
+  font-size: 0.85rem;
+}
+
+.modal.modal--compact .settings-table th,
+.modal.modal--compact .settings-table td {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+}
+
+.modal.modal--compact .modal-actions {
+  margin-top: 12px;
 }
