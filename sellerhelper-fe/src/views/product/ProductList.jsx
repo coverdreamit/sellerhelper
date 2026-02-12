@@ -3,13 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from '@/components/Link';
 import { fetchProducts } from '@/services/product.service';
+import { useStoreStore, useUserStoreStore } from '@/stores';
+import { buildStoreTabs } from '@/config/productStoreTabs';
 import '../../styles/Settings.css';
 import './ProductList.css';
-
-const STORE_TABS = [
-  { key: '', label: '전체' },
-  { key: '스마트스토어', label: '스마트스토어' },
-];
 
 function formatFetchedAt(date) {
   if (!date) return '-';
@@ -25,6 +22,10 @@ function formatFetchedAt(date) {
 }
 
 export default function ProductList() {
+  const { stores } = useStoreStore();
+  const { userStores } = useUserStoreStore();
+  const storeTabs = buildStoreTabs({ stores, userStores });
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -60,17 +61,22 @@ export default function ProductList() {
       <h1>상품 목록</h1>
       <p className="page-desc">등록된 상품을 조회·관리합니다.</p>
       <section className="settings-section">
-        <div className="product-list-tabs">
-          {STORE_TABS.map((tab) => (
-            <button
-              key={tab.key || 'all'}
-              type="button"
-              className={`product-list-tab ${storeTab === tab.key ? 'active' : ''}`}
-              onClick={() => setStoreTab(tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="product-list-tabs-wrap">
+          <div className="product-list-tabs">
+            {storeTabs.map((tab) => (
+              <button
+                key={tab.key || 'all'}
+                type="button"
+                className={`product-list-tab ${storeTab === tab.key ? 'active' : ''}`}
+                onClick={() => setStoreTab(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <Link to="/settings/store/list" className="product-list-tab-manage">
+            탭 관리
+          </Link>
         </div>
         <div className="settings-toolbar">
           <div>

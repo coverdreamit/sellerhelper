@@ -1,0 +1,37 @@
+/* 스토어 관리 - 드래그 정렬 */
+.store-list-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.store-drag-cell {
+  width: 36px;
+  padding: 10px 8px !important;
+  vertical-align: middle;
+}
+
+.store-drag-handle {
+  display: inline-block;
+  cursor: grab;
+  color: #888;
+  user-select: none;
+  font-size: 0.9rem;
+  padding: 2px 4px;
+}
+
+.store-drag-handle:hover {
+  color: #1967d2;
+}
+
+.store-drag-handle:active {
+  cursor: grabbing;
+}
+
+.store-row-dragging {
+  background: #f8f9fa;
+}
+
+.store-row-dragging td {
+  border-bottom: 1px solid #e0e0e0;
+}

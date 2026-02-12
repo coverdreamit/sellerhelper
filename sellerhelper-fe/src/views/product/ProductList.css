@@ -1,9 +1,27 @@
 /* 상품 목록 - 스토어 탭 */
+.product-list-tabs-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
 .product-list-tabs {
   display: flex;
   gap: 4px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid #e0e0e0;
+}
+
+.product-list-tab-manage {
+  font-size: 0.85rem;
+  color: #666;
+  text-decoration: none;
+  padding: 6px 0;
+}
+
+.product-list-tab-manage:hover {
+  color: #1967d2;
+  text-decoration: underline;
 }
 
 .product-list-tab {

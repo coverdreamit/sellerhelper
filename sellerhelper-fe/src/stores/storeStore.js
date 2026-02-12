@@ -32,6 +32,19 @@ export const useStoreStore = create((set) => ({
       stores: [...state.stores, { isActive: true, ...store }],
     })),
 
+  /** 드래그로 순서 변경 */
+  reorderStores: (activeId, overId) =>
+    set((state) => {
+      const ids = state.stores.map((s) => s.storeCode);
+      const oldIndex = ids.indexOf(activeId);
+      const newIndex = ids.indexOf(overId);
+      if (oldIndex === -1 || newIndex === -1) return state;
+      const reordered = [...state.stores];
+      const [removed] = reordered.splice(oldIndex, 1);
+      reordered.splice(newIndex, 0, removed);
+      return { stores: reordered };
+    }),
+
   loadStores: async () => {
     set({ loading: true, error: null });
     try {
