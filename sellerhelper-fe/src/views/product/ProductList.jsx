@@ -1,37 +1,77 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from '@/components/Link';
 import { fetchProducts } from '@/services/product.service';
 import '../../styles/Settings.css';
+import './ProductList.css';
+
+const STORE_TABS = [
+  { key: '', label: '전체' },
+  { key: '스마트스토어', label: '스마트스토어' },
+];
+
+function formatFetchedAt(date) {
+  if (!date) return '-';
+  const d = new Date(date);
+  return d.toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
 
 export default function ProductList() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [storeTab, setStoreTab] = useState('');
+  const [fetchedAt, setFetchedAt] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadProducts = useCallback(() => {
     setLoading(true);
     setError(null);
     fetchProducts()
       .then((data) => {
-        if (!cancelled) setProducts(Array.isArray(data) ? data : []);
+        setProducts(Array.isArray(data) ? data : []);
+        setFetchedAt(new Date());
       })
       .catch((err) => {
-        if (!cancelled) setError(err.message || '상품을 불러오는데 실패했습니다.');
+        setError(err.message || '상품을 불러오는데 실패했습니다.');
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       });
-    return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  const filteredProducts = storeTab
+    ? products.filter((p) => (p.store ?? '스마트스토어') === storeTab)
+    : products;
 
   return (
     <div className="list-page">
       <h1>상품 목록</h1>
-      <p className="page-desc">등록된 상품을 조회·관리합니다. (스마트스토어 API 연동)</p>
+      <p className="page-desc">등록된 상품을 조회·관리합니다.</p>
       <section className="settings-section">
+        <div className="product-list-tabs">
+          {STORE_TABS.map((tab) => (
+            <button
+              key={tab.key || 'all'}
+              type="button"
+              className={`product-list-tab ${storeTab === tab.key ? 'active' : ''}`}
+              onClick={() => setStoreTab(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
         <div className="settings-toolbar">
           <div>
             <input
@@ -39,11 +79,7 @@ export default function ProductList() {
               placeholder="상품명 검색"
               style={{ padding: '6px 12px', marginRight: 8 }}
             />
-            <select style={{ padding: '6px 12px', marginRight: 8 }}>
-              <option value="">전체 스토어</option>
-              <option value="smartstore">스마트스토어</option>
-            </select>
-            <select style={{ padding: '6px 12px', marginRight: 8 }}>
+            <select style={{ padding: '6px 12px', marginRight: 8 }} aria-label="전체 상태">
               <option value="">전체 상태</option>
               <option value="on">판매중</option>
               <option value="out">품절</option>
@@ -53,9 +89,29 @@ export default function ProductList() {
               검색
             </button>
           </div>
-          <Link to="/product/register" className="btn btn-primary">
-            상품 등록
-          </Link>
+          <div className="product-list-actions">
+            <span className="product-list-fetched">가져온 시간: {formatFetchedAt(fetchedAt)}</span>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => window.location.reload()}
+              title="페이지 새로고침"
+            >
+              새로고침
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={loadProducts}
+              disabled={loading}
+              title="API에서 상품 데이터 다시 가져오기"
+            >
+              가져오기
+            </button>
+            <Link to="/product/register" className="btn btn-primary">
+              상품 등록
+            </Link>
+          </div>
         </div>
         {error && (
           <div className="error-message" style={{ padding: 12, marginBottom: 16, background: '#fee', color: '#c00', borderRadius: 6 }}>
@@ -80,14 +136,14 @@ export default function ProductList() {
                 </tr>
               </thead>
               <tbody>
-                {products.length === 0 ? (
+                {filteredProducts.length === 0 ? (
                   <tr>
                     <td colSpan={8} style={{ padding: 24, textAlign: 'center' }}>
                       조회된 상품이 없습니다.
                     </td>
                   </tr>
                 ) : (
-                  products.map((p) => (
+                  filteredProducts.map((p) => (
                     <tr key={p.id || p.productNo}>
                       <td>
                         {p.imageUrl ? (

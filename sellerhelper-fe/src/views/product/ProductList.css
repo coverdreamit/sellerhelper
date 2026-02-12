@@ -1,0 +1,57 @@
+/* 상품 목록 - 스토어 탭 */
+.product-list-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.product-list-tab {
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  border: none;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.2s;
+}
+
+.product-list-tab:hover {
+  color: #1967d2;
+}
+
+.product-list-tab.active {
+  color: #1967d2;
+  font-weight: 600;
+  border-bottom-color: #1967d2;
+}
+
+/* 우측 액션 영역 */
+.product-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-list-fetched {
+  font-size: 0.82rem;
+  color: #666;
+  margin-right: 4px;
+}
+
+.product-list-actions .btn-outline {
+  border: 1px solid #ccc;
+  color: #555;
+}
+
+.product-list-actions .btn-outline:hover:not(:disabled) {
+  border-color: #1967d2;
+  color: #1967d2;
+}
+
+.product-list-actions .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
