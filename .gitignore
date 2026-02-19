@@ -56,9 +56,13 @@ Desktop.ini
 .eslintcache
 .prettiercache
 
+# Cursor 관련
+.cursor/
+.cursorrules
+.cursorignore
+
 # 기타
 *.local
-.cursor/
 *.bak
 *.tmp
 *.temp
