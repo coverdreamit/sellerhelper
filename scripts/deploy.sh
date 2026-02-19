@@ -22,5 +22,18 @@ if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
 fi
 
 git pull origin main
-docker compose build
-docker compose up -d --force-recreate
+
+# docker compose 미설치 시 docker/compose 이미지 사용
+if docker compose version &>/dev/null; then
+  docker compose build
+  docker compose up -d --force-recreate
+else
+  docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+    -v "$APP_DIR:$APP_DIR" -w="$APP_DIR" \
+    -e DB_USERNAME="$DB_USERNAME" -e DB_PASSWORD="$DB_PASSWORD" \
+    docker/compose:1.29.2 build
+  docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+    -v "$APP_DIR:$APP_DIR" -w="$APP_DIR" \
+    -e DB_USERNAME="$DB_USERNAME" -e DB_PASSWORD="$DB_PASSWORD" \
+    docker/compose:1.29.2 up -d --force-recreate
+fi
