@@ -105,6 +105,72 @@
   margin-top: 4px;
 }
 
+.form-input-readonly,
+.form-row input.form-input-readonly {
+  background: #f5f5f5;
+  color: #555;
+  cursor: not-allowed;
+  border-color: #ddd;
+}
+
+/* 회사/셀러 정보 - 수정 불가 */
+.company-info-approval-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.company-info-approval-text {
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.company-info-address-wrap {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.company-info-address-wrap .company-info-address {
+  flex: 1;
+}
+
+.company-info-copy-btn {
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+/* 사용자 로그 탭 */
+.user-log-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.user-log-tab {
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  border: none;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.2s;
+}
+
+.user-log-tab:hover {
+  color: #1967d2;
+}
+
+.user-log-tab.active {
+  color: #1967d2;
+  font-weight: 600;
+  border-bottom-color: #1967d2;
+}
+
 .settings-actions {
   display: flex;
   gap: 12px;

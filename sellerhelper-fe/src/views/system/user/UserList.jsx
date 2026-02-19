@@ -13,6 +13,15 @@ const mockUsers = [
   },
   {
     id: 2,
+    name: '박희운',
+    loginId: 'kihihi81',
+    email: 'kihihi81@gmail.com',
+    role: '관리자',
+    status: '활성',
+    lastLogin: '2024-02-06 09:00',
+  },
+  {
+    id: 3,
     name: '김판매',
     loginId: 'seller1',
     email: 'seller1@example.com',
@@ -21,7 +30,7 @@ const mockUsers = [
     lastLogin: '2024-02-05 18:30',
   },
   {
-    id: 3,
+    id: 4,
     name: '이주문',
     loginId: 'order1',
     email: 'order1@example.com',

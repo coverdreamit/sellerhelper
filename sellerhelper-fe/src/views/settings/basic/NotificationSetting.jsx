@@ -48,24 +48,12 @@ export default function NotificationSetting() {
         <form className="settings-form">
           <div className="form-check-group">
             <div className="form-check-item">
-              <input type="checkbox" id="evt-order" defaultChecked />
-              <label htmlFor="evt-order">신규 주문 접수 시</label>
+              <input type="checkbox" id="evt-expiry" defaultChecked />
+              <label htmlFor="evt-expiry">사용기간 만료 시</label>
             </div>
             <div className="form-check-item">
-              <input type="checkbox" id="evt-cancel" defaultChecked />
-              <label htmlFor="evt-cancel">취소/반품/교환 요청 시</label>
-            </div>
-            <div className="form-check-item">
-              <input type="checkbox" id="evt-inquiry" defaultChecked />
-              <label htmlFor="evt-inquiry">신규 문의 접수 시</label>
-            </div>
-            <div className="form-check-item">
-              <input type="checkbox" id="evt-review" />
-              <label htmlFor="evt-review">신규 리뷰 등록 시</label>
-            </div>
-            <div className="form-check-item">
-              <input type="checkbox" id="evt-settlement" defaultChecked />
-              <label htmlFor="evt-settlement">정산 완료 시</label>
+              <input type="checkbox" id="evt-batch" defaultChecked />
+              <label htmlFor="evt-batch">배치 오류 시</label>
             </div>
           </div>
           <div className="settings-actions">

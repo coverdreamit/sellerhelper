@@ -2,8 +2,6 @@ export { default as Dashboard } from './Dashboard';
 
 export { default as ProductList } from './product/ProductList';
 export { default as ProductRegister } from './product/ProductRegister';
-export { default as ProductEdit } from './product/ProductEdit';
-export { default as ProductStock } from './product/ProductStock';
 
 export { default as OrderList } from './order/OrderList';
 export { default as OrderNew } from './order/OrderNew';
@@ -27,7 +25,6 @@ export { default as InquiryManage } from './customer/InquiryManage';
 export { default as ClaimManage } from './customer/ClaimManage';
 
 export { default as CompanyInfo } from './settings/basic/CompanyInfo';
-export { default as PolicySetting } from './settings/basic/PolicySetting';
 export { default as NotificationSetting } from './settings/basic/NotificationSetting';
 
 export { default as UserList } from './system/user/UserList';
@@ -36,6 +33,7 @@ export { default as UserRole } from './system/user/UserRole';
 
 export { default as CodeManage } from './system/code/CodeManage';
 
+export { default as UserLog } from './settings/UserLog';
 export { default as StoreList } from './settings/store/StoreList';
 export { default as StoreBatch } from './settings/store/StoreBatch';
 export { default as StoreAuth } from './settings/store/StoreAuth';

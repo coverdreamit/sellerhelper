@@ -153,7 +153,7 @@ export default function StoreList() {
 
   return (
     <div className="settings-page">
-      <h1>스토어 관리</h1>
+      <h1>스토어 연동</h1>
       <p className="page-desc">연동된 쇼핑몰 스토어를 조회·관리합니다.</p>
 
       <section className="settings-section">

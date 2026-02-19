@@ -6,7 +6,6 @@ export const MENU = [
     key: 'dashboard',
     label: '대시보드',
     path: '/',
-    children: [{ key: 'dashboard', label: '대시보드', path: '/' }],
   },
   {
     key: 'product',
@@ -32,7 +31,7 @@ export const MENU = [
       { key: 'shipping-list', label: '배송 목록', path: '/shipping/list' },
       { key: 'shipping-pending', label: '출고 대기', path: '/shipping/pending' },
       { key: 'shipping-transit', label: '배송중', path: '/shipping/transit' },
-      { key: 'shipping-complete', label: '과거 배송 목록', path: '/shipping/complete' },
+      { key: 'shipping-complete', label: '배송 완료', path: '/shipping/complete' },
     ],
   },
   {
@@ -69,7 +68,6 @@ export const MENU = [
         path: '/settings/basic',
         children: [
           { key: 'settings-company', label: '회사 / 셀러 정보', path: '/settings/basic/company' },
-          { key: 'settings-policy', label: '기본 정책 설정', path: '/settings/basic/policy' },
           {
             key: 'settings-notification',
             label: '알림 설정',
@@ -82,10 +80,10 @@ export const MENU = [
         label: '스토어 설정',
         path: '/settings/store/list',
         children: [
-          { key: 'settings-store-list', label: '스토어 관리', path: '/settings/store/list' },
-          { key: 'settings-store-batch', label: '배치 관리', path: '/settings/store/batch' },
+          { key: 'settings-store-list', label: '스토어 연동', path: '/settings/store/list' },
         ],
       },
+      { key: 'settings-user-log', label: '사용자 로그', path: '/settings/user-log' },
       {
         key: 'settings-supplier',
         label: '발주업체 관리',
@@ -112,6 +110,7 @@ export const MENU = [
     children: [
       { key: 'system-user', label: '사용자 관리', path: '/system/user' },
       { key: 'system-store', label: '스토어 관리', path: '/system/store' },
+      { key: 'system-batch', label: '배치 관리', path: '/system/batch' },
       {
         key: 'system-code',
         label: '코드 관리',

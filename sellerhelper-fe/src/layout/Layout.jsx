@@ -10,6 +10,12 @@ export default function Layout({ children }) {
     initAppData();
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      document.title = window.location.host;
+    }
+  }, []);
+
   return (
     <div className="app-layout">
       <Sidebar />

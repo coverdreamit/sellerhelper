@@ -53,7 +53,7 @@ function NavItem({ item, depth, collapsed, openKeys, toggleOpen }) {
   /* 사이드바가 접혀 있으면: 1단만 첫 글자로 표시 */
   if (collapsed) {
     return (
-      <li key={item.key} className="sidebar-nav-item">
+      <li key={item.key} className={`sidebar-nav-item ${item.key === 'dashboard' ? 'nav-item-bold' : ''}`}>
         <Link href={firstPath} className={isActive ? 'active' : ''} title={item.label}>
           <span className="nav-item-char">{firstChar}</span>
           <span>{item.label}</span>
@@ -133,7 +133,7 @@ function NavItem({ item, depth, collapsed, openKeys, toggleOpen }) {
   /* 단일 링크 */
   if (item.path) {
     return (
-      <li key={item.key} className="sidebar-nav-item">
+      <li key={item.key} className={`sidebar-nav-item ${item.key === 'dashboard' ? 'nav-item-bold' : ''}`}>
         <Link href={item.path} className={pathname === item.path ? 'active' : ''}>
           <span className="nav-item-char">{firstChar}</span>
           <span>{item.label}</span>

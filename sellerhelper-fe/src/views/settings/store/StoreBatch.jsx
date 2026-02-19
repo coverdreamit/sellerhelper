@@ -106,7 +106,7 @@ export default function StoreBatch() {
 
       {connectedStores.length === 0 ? (
         <section className="settings-section">
-          <p className="text-muted">연동된 스토어가 없습니다. 스토어 관리에서 스토어를 연동해 주세요.</p>
+          <p className="text-muted">연동된 스토어가 없습니다. 스토어 연동에서 스토어를 연결해 주세요.</p>
         </section>
       ) : (
         connectedStores.map((store) => {

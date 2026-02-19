@@ -73,3 +73,92 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* 한 화면에 보기 */
+.product-list-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.product-list-page-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: #444;
+}
+
+.product-list-page-size select {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  min-width: 70px;
+}
+
+/* 페이징 */
+.product-list-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.product-list-pagination-info {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.product-list-pagination-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.product-list-page-btn {
+  min-width: 36px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+
+.product-list-page-nums {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.product-list-page-num {
+  min-width: 32px;
+  padding: 6px 8px;
+  font-size: 0.875rem;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #333;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.product-list-page-num:hover {
+  background: #f0f0f0;
+  border-color: #bbb;
+}
+
+.product-list-page-num.active {
+  background: #1967d2;
+  border-color: #1967d2;
+  color: #fff;
+  font-weight: 600;
+}
+
+.product-list-page-ell {
+  padding: 0 4px;
+  color: #999;
+  font-size: 0.875rem;
+}
