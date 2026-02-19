@@ -1,0 +1,25 @@
+services:
+  sellerhelper-be:
+    image: ghcr.io/coverdreamit/sellerhelper-be:${IMAGE_TAG:-latest}
+    container_name: sellerhelper-be
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: "8080"
+      DB_HOST: ${DB_HOST:-coverdreamit.iptime.org}
+      DB_PORT: ${DB_PORT:-9432}
+      DB_NAME: ${DB_NAME:-sellerhelper}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+  sellerhelper-fe:
+    image: ghcr.io/coverdreamit/sellerhelper-fe:${IMAGE_TAG:-latest}
+    container_name: sellerhelper-fe
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    depends_on:
+      - sellerhelper-be
+    environment:
+      NEXT_PUBLIC_API_URL: http://sellerhelper-be:8080
