@@ -50,30 +50,4 @@ jobs:
             ${{ env.IMAGE_PREFIX }}/sellerhelper-be:${{ github.sha }}
             ${{ env.IMAGE_PREFIX }}/sellerhelper-be:latest
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: coverdreamit.iptime.org
-          port: 2256
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
-            export IMAGE_TAG=${{ github.sha }}
-            export DB_USERNAME=${{ secrets.DB_USERNAME }}
-            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-
-            APP_DIR="$HOME/sellerhelper"
-            mkdir -p "$APP_DIR"
-            cd "$APP_DIR"
-
-            # docker-compose 및 설정 파일 동기화
-            if [ -d ".git" ]; then
-              git pull origin main
-            else
-              git clone https://github.com/coverdreamit/sellerhelper.git .
-            fi
-
-            # GHCR 퍼블릭 이미지 풀 (인증 불필요)
-            docker compose pull
-            docker compose up -d --force-recreate
+      # 배포는 서버에서 5분마다 scripts/deploy.sh 크론으로 실행

@@ -1,6 +1,9 @@
 services:
   sellerhelper-be:
-    image: ghcr.io/coverdreamit/sellerhelper-be:${IMAGE_TAG:-latest}
+    build:
+      context: ./sellerhelper-be
+      dockerfile: Dockerfile
+    image: sellerhelper-be:latest
     container_name: sellerhelper-be
     restart: unless-stopped
     ports:
@@ -14,7 +17,10 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
   sellerhelper-fe:
-    image: ghcr.io/coverdreamit/sellerhelper-fe:${IMAGE_TAG:-latest}
+    build:
+      context: ./sellerhelper-fe
+      dockerfile: Dockerfile
+    image: sellerhelper-fe:latest
     container_name: sellerhelper-fe
     restart: unless-stopped
     ports:
