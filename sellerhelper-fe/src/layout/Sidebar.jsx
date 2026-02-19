@@ -239,7 +239,7 @@ export default function Sidebar() {
         )}
         <nav>
           <ul className="sidebar-nav">
-            {MENU.map((item) => (
+            {MENU.filter((item) => !item.hidden).map((item) => (
               <NavItem
                 key={item.key}
                 item={item}

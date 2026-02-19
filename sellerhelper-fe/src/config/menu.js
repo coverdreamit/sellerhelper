@@ -38,6 +38,7 @@ export const MENU = [
   {
     key: 'sales',
     label: '정산·매출(예정)',
+    hidden: true,
     path: '/sales',
     children: [
       { key: 'sales-status', label: '매출 현황', path: '/sales/status' },
@@ -49,6 +50,7 @@ export const MENU = [
   {
     key: 'customer',
     label: '고객관리(예정)',
+    hidden: true,
     path: '/customer',
     children: [
       { key: 'customer-list', label: '고객 목록', path: '/customer/list' },
