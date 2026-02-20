@@ -5,7 +5,7 @@ const roleOptions = [
   { id: 'menu-product', name: '상품관리', desc: '상품 목록/등록/수정/품절관리' },
   { id: 'menu-order', name: '주문관리', desc: '주문 목록/처리/취소·반품·교환' },
   { id: 'menu-shipping', name: '배송관리', desc: '배송 목록/출고/송장' },
-  { id: 'menu-sales', name: '정산·매출', desc: '매출/정산/통계' },
+  { id: 'menu-sales', name: '정산관리', desc: '매출/정산/통계' },
   { id: 'menu-customer', name: '고객관리', desc: '고객/문의/클레임' },
   { id: 'menu-settings', name: '환경설정', desc: '기본설정/사용자/코드/스토어/발주업체' },
   { id: 'menu-system', name: '시스템관리', desc: '권한/메뉴/코드/로그 (운영자)' },

@@ -43,14 +43,12 @@ export const MENU: MenuItem[] = [
   },
   {
     key: 'sales',
-    label: '정산·매출(예정)',
-    hidden: true,
+    label: '정산관리',
     path: '/sales',
     children: [
       { key: 'sales-status', label: '매출 현황', path: '/sales/status' },
+      { key: 'sales-confirmation', label: '구매확정 관리', path: '/sales/confirmation' },
       { key: 'sales-settlement', label: '정산 내역', path: '/sales/settlement' },
-      { key: 'sales-store', label: '스토어별 매출', path: '/sales/store' },
-      { key: 'sales-period', label: '기간별 매출 통계', path: '/sales/period' },
     ],
   },
   {

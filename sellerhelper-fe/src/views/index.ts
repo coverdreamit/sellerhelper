@@ -16,9 +16,8 @@ export { default as ShippingComplete } from './shipping/ShippingComplete';
 export { default as InvoiceManage } from './shipping/InvoiceManage';
 
 export { default as SalesStatus } from './sales/SalesStatus';
+export { default as PurchaseConfirmation } from './sales/PurchaseConfirmation';
 export { default as SettlementList } from './sales/SettlementList';
-export { default as StoreSales } from './sales/StoreSales';
-export { default as PeriodSales } from './sales/PeriodSales';
 
 export { default as CustomerList } from './customer/CustomerList';
 export { default as InquiryManage } from './customer/InquiryManage';
