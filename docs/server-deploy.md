@@ -69,10 +69,10 @@ crontab -e
 에디터가 뜨면 **맨 아래에** 다음 줄 추가:
 
 ```
-*/5 * * * * $HOME/sellerhelper/scripts/deploy.sh >> $HOME/sellerhelper/deploy.log 2>&1
+*/5 * * * * bash $HOME/sellerhelper/scripts/deploy.sh >> $HOME/sellerhelper/deploy.log 2>&1
 ```
 
-> `$HOME`은 크론이 사용자 홈 디렉터리(~/)로 자동 설정합니다.
+> `bash`로 실행하면 실행 권한(Permission denied) 문제를 피할 수 있습니다. `$HOME`은 크론이 사용자 홈 디렉터리(~/)로 자동 설정합니다.
 
 저장 후 종료 (nano: `Ctrl+O` → Enter → `Ctrl+X`)
 
