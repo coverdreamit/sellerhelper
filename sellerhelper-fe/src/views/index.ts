@@ -1,4 +1,6 @@
 export { default as Dashboard } from './Dashboard';
+export { default as Login } from './auth/Login';
+export { default as Register } from './auth/Register';
 
 export { default as ProductList } from './product/ProductList';
 export { default as ProductRegister } from './product/ProductRegister';
