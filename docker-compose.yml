@@ -20,6 +20,8 @@ services:
     build:
       context: ./sellerhelper-fe
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://sellerhelper-be:5080
     image: sellerhelper-fe:latest
     container_name: sellerhelper-fe
     restart: unless-stopped
