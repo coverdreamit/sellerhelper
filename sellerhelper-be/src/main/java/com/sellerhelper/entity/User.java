@@ -4,6 +4,8 @@ import javax.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 시스템 사용자 (시스템관리 > 사용자 관리)
@@ -36,4 +38,7 @@ public class User extends BaseEntity {
     private Boolean enabled = true;
 
     private Instant lastLoginAt;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserRole> userRoles = new ArrayList<>();
 }

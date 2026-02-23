@@ -15,11 +15,25 @@
 ```
 src/main/java/com/sellerhelper/
 ├── SellerhelperBeApplication.java
-├── config/          # JPA Auditing 등
-├── entity/          # JPA 엔티티 (BaseEntity, User, Mall, Store, Order, Product, Shipping 등)
-├── repository/      # Spring Data JPA Repository
-└── controller/      # REST API
+├── config/          # JPA Auditing, PasswordEncoder, CORS 등
+├── controller/     # REST API
+├── dto/            # 요청/응답 DTO
+├── entity/         # JPA 엔티티
+├── exception/      # 예외 및 전역 핸들러
+├── repository/     # Spring Data JPA Repository
+└── service/        # 비즈니스 로직
 ```
+
+### 유저 관리 API
+
+| Method | Path | 설명 |
+|--------|------|------|
+| GET | /api/users | 사용자 목록 (keyword, roleCode 검색, 페이지네이션) |
+| GET | /api/users/{uid} | 사용자 단건 조회 |
+| POST | /api/users | 사용자 생성 |
+| PUT | /api/users/{uid} | 사용자 수정 |
+| DELETE | /api/users/{uid} | 사용자 삭제 |
+| GET | /api/roles | 권한 목록 (드롭다운용) |
 
 ## DB 테이블 (엔티티 기준 자동 생성)
 
@@ -52,9 +66,12 @@ src/main/java/com/sellerhelper/
 - 계정: hipms / hipms (또는 postgres / Skcc!@3456 — 환경에 맞게 사용)
 - **보안**: 운영 환경에서는 반드시 환경 변수(`DB_PASSWORD` 등)로 설정하고, `application-local.yml`은 git에 커밋하지 않는 것을 권장합니다.
 
+## 초기 권한 데이터
+
+애플리케이션 최초 실행 후 `src/main/resources/db/init-roles.sql`을 수동 실행하여 기본 권한(관리자, 셀러, 주문담당)을 등록합니다.
+
 ## 추후 작업
 
-- REST API 상세 설계 및 Controller/Service 계층 구현
+- 인증/인가 적용 후 유저 API 보안 강화
 - 쇼핑몰별 API 연동 모듈 (쿠팡, 네이버 등)
-- 인증/인가 (Spring Security, JWT 등)
 - 정산·고객·발주업체 등 추가 엔티티/API
