@@ -8,6 +8,7 @@
 - Spring Boot 2.7
 - Maven + Maven Wrapper (mvnw)
 - Spring Data JPA, PostgreSQL
+- Spring Security (세션 기반 인증)
 - Hibernate DDL: `update` (엔티티 기준 자동 스키마 반영)
 
 ## 프로젝트 구조
@@ -15,32 +16,111 @@
 ```
 src/main/java/com/sellerhelper/
 ├── SellerhelperBeApplication.java
-├── config/          # JPA Auditing, PasswordEncoder, CORS 등
-├── controller/     # REST API
-├── dto/            # 요청/응답 DTO
-├── entity/         # JPA 엔티티
-├── exception/      # 예외 및 전역 핸들러
-├── repository/     # Spring Data JPA Repository
-└── service/        # 비즈니스 로직
+├── config/          # JPA Auditing, Security, CORS, Initializers
+├── controller/      # REST API
+├── dto/             # 요청/응답 DTO
+├── entity/          # JPA 엔티티
+├── exception/       # 예외 및 전역 핸들러
+├── repository/      # Spring Data JPA Repository
+└── service/         # 비즈니스 로직
 ```
 
-### 유저 관리 API
+## REST API
+
+### 인증
 
 | Method | Path | 설명 |
 |--------|------|------|
-| GET | /api/users | 사용자 목록 (keyword, roleCode 검색, 페이지네이션) |
+| POST | /api/auth/login | 로그인 |
+| POST | /api/auth/register | 회원가입 |
+| POST | /api/auth/logout | 로그아웃 |
+
+### 사용자 & 권한
+
+| Method | Path | 설명 |
+|--------|------|------|
+| GET | /api/users | 사용자 목록 (keyword, roleCode, enabled 검색, 페이지네이션) |
 | GET | /api/users/{uid} | 사용자 단건 조회 |
 | POST | /api/users | 사용자 생성 |
 | PUT | /api/users/{uid} | 사용자 수정 |
 | DELETE | /api/users/{uid} | 사용자 삭제 |
-| GET | /api/roles | 권한 목록 (드롭다운용) |
+| GET | /api/roles | 권한 목록 |
+| GET | /api/roles/{uid} | 권한 단건 조회 |
+| POST | /api/roles | 권한 생성 |
+| PUT | /api/roles/{uid} | 권한 수정 |
+| DELETE | /api/roles/{uid} | 권한 삭제 |
+
+### 플랫폼 (Mall)
+
+| Method | Path | 설명 |
+|--------|------|------|
+| GET | /api/malls | 플랫폼 목록 (?enabledOnly=true) |
+| GET | /api/malls/{uid} | 플랫폼 단건 조회 |
+| POST | /api/malls | 플랫폼 생성 |
+| PUT | /api/malls/{uid} | 플랫폼 수정 |
+| DELETE | /api/malls/{uid} | 플랫폼 삭제 |
+
+### 스토어 (Store)
+
+| Method | Path | 설명 |
+|--------|------|------|
+| GET | /api/stores | 스토어 목록 (?mallUid, ?companyUid) |
+| GET | /api/stores/{uid} | 스토어 단건 조회 |
+| POST | /api/stores | 스토어 생성 |
+| PUT | /api/stores/{uid} | 스토어 수정 |
+| DELETE | /api/stores/{uid} | 스토어 삭제 |
+
+### 회사 (Company)
+
+| Method | Path | 설명 |
+|--------|------|------|
+| GET | /api/companies | 회사 목록 |
+
+### 기타
+
+| Method | Path | 설명 |
+|--------|------|------|
+| GET | /api/health | 헬스 체크 |
+| GET | /api/app/config | 앱 설정 (dev-mode 등) |
 
 ## DB 테이블 (엔티티 기준 자동 생성)
 
+| 테이블 | 설명 |
+|--------|------|
+| users | 사용자 |
+| roles | 권한 (menu_keys 포함) |
+| user_roles | 사용자-권한 매핑 |
+| menus | 메뉴 (참조) |
+| malls | 플랫폼 (쿠팡, 네이버 등) |
+| companies | 회사 (셀러) |
+| stores | 스토어 (mall + company FK) |
+| store_auths | 스토어 API 인증 정보 |
+| code_groups, codes | 공통 코드 |
+| products, product_malls, orders, order_items, shippings | 상품·주문·배송 |
+
 - **공통 필드**: uid, sort_order, sort, created_at, created_by, updated_at, updated_by
-- **시스템**: users, roles, user_roles, menus, code_groups, codes
-- **스토어 연동**: malls, stores, store_auths
-- **기타**: companies, products, product_malls, orders, order_items, shippings
+
+## 초기화 (ApplicationRunner)
+
+| 클래스 | 역할 |
+|--------|------|
+| AdminInitializer | admin/admin 관리자 계정 생성 |
+| MallInitializer | 플랫폼 초기 데이터 (쿠팡, 네이버, 11번가, 지마켓, 옥션) |
+| CompanyInitializer | 회사 초기 데이터 (테스트회사) |
+| RoleMenuKeysInitializer | 기존 Role에 menu_keys 기본값 설정 |
+
+## DB 초기 스크립트 (선택)
+
+`src/main/resources/db/` 폴더에 수동 적용용 SQL 스크립트가 있습니다.
+
+| 파일 | 설명 |
+|------|------|
+| init-malls.sql | 플랫폼 초기 데이터 |
+| init-companies.sql | 회사 초기 데이터 |
+| init-roles.sql | 권한 초기 데이터 |
+| migrate-role-menu-keys.sql | Role menu_keys 컬럼 값 설정 |
+
+상세: [db/README.md](src/main/resources/db/README.md)
 
 ## 실행 방법
 
@@ -48,61 +128,27 @@ src/main/java/com/sellerhelper/
 
 프로젝트 루트의 `scripts/` 폴더에서 실행:
 
-| 스크립트 | 설명 |
-|---------|------|
-| `start-be.bat` / `start-be.sh` | 백엔드 시작 |
-| `stop-be.bat` / `stop-be.sh` | 백엔드 종료 |
-| `restart-be.bat` / `restart-be.sh` | 재시작 |
-| `dev-be.bat` / `dev-be.sh` | 개발모드 (local 프로파일) |
-| `run-be.bat` / `run-be.sh` | 런타임 (jar 빌드 후 실행) |
-
 ```bash
-# Windows
 cd scripts
-dev-be.bat        # 개발모드
-start-be.bat      # 시작 (같은 터미널에서 실행)
-stop-be.bat       # 종료
-
-# Linux/macOS
-./scripts/dev-be.sh
-./scripts/start-be.sh
-./scripts/stop-be.sh
+dev-be.bat        # Windows 개발모드 (포트 5080)
+# ./dev-be.sh     # Linux/macOS
 ```
 
 ### Maven Wrapper 직접 실행
 
 ```bash
 cd sellerhelper-be
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local    # Windows: mvnw.cmd
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+# Windows: mvnw.cmd
 ```
 
-### 수동 설정
+### 설정
 
-1. **로컬 DB 설정**  
-   `src/main/resources/application-local.yml`에 DB 접속 정보가 기본값으로 들어 있습니다.  
-   비밀번호 등은 환경 변수로 덮어쓸 수 있습니다.
+- **프로파일**: `SPRING_PROFILES_ACTIVE=local` (기본)
+- **포트**: 5080 (`SERVER_PORT` 환경 변수)
+- **DB**: `application-local.yml` 참고 (환경 변수로 덮어쓰기)
+- **헬스 체크**: http://localhost:5080/api/health
 
-2. **프로파일**  
-   환경 변수: `SPRING_PROFILES_ACTIVE=local`
+## 관련 문서
 
-3. **서버 포트**  
-   기본 5080. 변경 시 `SERVER_PORT` 환경 변수 또는 `application.yml`에서 설정.
-
-4. **헬스 체크**  
-   http://localhost:5080/api/health
-
-## DB 접속 정보 (참고)
-
-- Host: coverdreamit.iptime.org, Port: 9432, DB: sellerhelper
-- 계정: hipms / hipms (또는 postgres / Skcc!@3456 — 환경에 맞게 사용)
-- **보안**: 운영 환경에서는 반드시 환경 변수(`DB_PASSWORD` 등)로 설정하고, `application-local.yml`은 git에 커밋하지 않는 것을 권장합니다.
-
-## 초기 권한 데이터
-
-애플리케이션 최초 실행 후 `src/main/resources/db/init-roles.sql`을 수동 실행하여 기본 권한(관리자, 셀러, 주문담당)을 등록합니다.
-
-## 추후 작업
-
-- 인증/인가 적용 후 유저 API 보안 강화
-- 쇼핑몰별 API 연동 모듈 (쿠팡, 네이버 등)
-- 정산·고객·발주업체 등 추가 엔티티/API
+- [스토어 관리·사용 가이드](../docs/STORE_MANAGEMENT.md) - 플랫폼/스토어 개념, API 연동 흐름

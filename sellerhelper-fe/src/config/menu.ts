@@ -108,9 +108,7 @@ export const MENU: MenuItem[] = [
         key: 'settings-store',
         label: '스토어 설정',
         path: '/settings/store/list',
-        children: [{ key: 'settings-store-list', label: '스토어 연동', path: '/settings/store/list' }],
       },
-      { key: 'settings-user-log', label: '사용자 로그', path: '/settings/user-log' },
       {
         key: 'settings-supplier',
         label: '발주업체 관리',
@@ -120,6 +118,7 @@ export const MENU: MenuItem[] = [
           { key: 'settings-supplier-form', label: '발주양식 관리', path: '/settings/supplier/forms' },
         ],
       },
+      { key: 'settings-user-log', label: '사용자 로그', path: '/settings/user-log' },
     ],
   },
   {
@@ -129,8 +128,7 @@ export const MENU: MenuItem[] = [
     children: [
       { key: 'system-user', label: '사용자 관리', path: '/system/user' },
       { key: 'system-role', label: '권한 관리', path: '/system/role' },
-      { key: 'system-store', label: '스토어 관리', path: '/system/store' },
-      { key: 'system-batch', label: '배치 관리', path: '/system/batch' },
+      { key: 'system-platform', label: '플랫폼 관리', path: '/system/platform' },
       { key: 'system-code', label: '코드 관리', path: '/system/code', children: [] },
       { key: 'system-log', label: '로그 / 이력 관리', path: '/system/log' },
       { key: 'system-setting', label: '시스템 설정', path: '/system/setting' },

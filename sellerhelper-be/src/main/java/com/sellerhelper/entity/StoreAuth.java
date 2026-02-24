@@ -40,6 +40,10 @@ public class StoreAuth {
     @Column(name = "token_expires_at")
     private Instant tokenExpiresAt;
 
+    /** API 연동 검증 성공 시각 (이 시각이 있어야 연동됨으로 표시) */
+    @Column(name = "verified_at")
+    private Instant verifiedAt;
+
     @Column(length = 50)
     private String createdBy;
 

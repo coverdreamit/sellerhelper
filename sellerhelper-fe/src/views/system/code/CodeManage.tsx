@@ -68,7 +68,7 @@ const TABS = [
 export default function CodeManage() {
   const [activeTab, setActiveTab] = useState('common');
 
-  const group = DEMO_GROUPS[activeTab];
+  const group = DEMO_GROUPS[activeTab as keyof typeof DEMO_GROUPS];
 
   return (
     <div className="settings-page">
@@ -95,7 +95,9 @@ export default function CodeManage() {
           ))}
         </div>
 
-        <h2 style={{ fontSize: 16, marginBottom: 8 }}>{group.label}</h2>
+        {group ? (
+          <>
+            <h2 style={{ fontSize: 16, marginBottom: 8 }}>{group.label}</h2>
         <p className="page-desc" style={{ marginBottom: 16 }}>{group.desc}</p>
 
         <div className="settings-toolbar">
@@ -103,11 +105,11 @@ export default function CodeManage() {
             {group.hasGroup && (
               <select style={{ padding: '6px 12px', marginRight: 8 }}>
                 <option value="">전체 그룹</option>
-                {[...new Set(group.items.map((i) => i.groupCode))].map((gc: string) => {
-                  const first = group.items.find((i) => i.groupCode === gc);
+                {[...new Set(group.items.map((i) => (i as { groupCode?: string }).groupCode).filter(Boolean))].map((gc: string) => {
+                  const first = group.items.find((i) => (i as { groupCode?: string }).groupCode === gc);
                   return (
                     <option key={gc} value={gc}>
-                      {first?.groupName || gc}
+                      {(first as { groupName?: string } | undefined)?.groupName || gc}
                     </option>
                   );
                 })}
@@ -147,16 +149,16 @@ export default function CodeManage() {
             </thead>
             <tbody>
               {group.items.map((item, i) => (
-                <tr key={group.hasGroup ? `${item.groupCode}-${item.code}-${i}` : item.code}>
+                <tr key={group.hasGroup ? `${(item as { groupCode?: string }).groupCode}-${item.code}-${i}` : item.code}>
                   {group.hasGroup && (
                     <>
-                      <td>{item.groupCode}</td>
-                      <td>{item.groupName}</td>
+                      <td>{(item as { groupCode?: string; groupName?: string }).groupCode}</td>
+                      <td>{(item as { groupCode?: string; groupName?: string }).groupName}</td>
                     </>
                   )}
                   <td>{item.code}</td>
                   <td>{item.name}</td>
-                  {!group.hasGroup && <td>{item.desc}</td>}
+                  {!group.hasGroup && <td>{(item as { desc?: string }).desc}</td>}
                   <td>{item.sortOrder}</td>
                   <td>
                     <span className={`badge badge-${item.useYn === 'Y' ? 'active' : 'inactive'}`}>
@@ -171,6 +173,8 @@ export default function CodeManage() {
             </tbody>
           </table>
         </div>
+          </>
+        ) : null}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 export { useStoreStore } from './storeStore';
 export { useAuthStore } from './authStore';
 export { useUserStoreStore } from './userStoreStore';
-export { useBatchStore } from './batchStore';
+export { useMyStoreStore } from './myStoreStore';
 export { useVendorStore } from './vendorStore';
 export { useOrderTemplateStore } from './orderTemplateStore';
 export { initStoresWithMock } from './initMock';

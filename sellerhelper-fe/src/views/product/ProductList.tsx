@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from '@/components/Link';
 import { fetchProducts } from '@/services/product.service';
-import { useStoreStore, useUserStoreStore } from '@/stores';
+import { useMyStoreStore } from '@/stores';
 import { buildStoreTabs, getStoreColumns, getProductValue } from '@/config/productStoreTabs';
 import '../../styles/Settings.css';
 import './ProductList.css';
@@ -22,9 +22,8 @@ function formatFetchedAt(date) {
 }
 
 export default function ProductList() {
-  const { stores } = useStoreStore();
-  const { userStores } = useUserStoreStore();
-  const storeTabs = buildStoreTabs({ stores, userStores });
+  const { myStores } = useMyStoreStore();
+  const storeTabs = buildStoreTabs(myStores);
 
   const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50, 100];
 
@@ -68,9 +67,11 @@ export default function ProductList() {
     loadProducts();
   }, [loadProducts]);
 
+  const selectedTab = storeTabs.find((t) => t.key === storeTab);
+  const filterValue = selectedTab?.filterValue ?? storeTab;
   const filteredProducts =
     storeTab && storeTabs.length > 0
-      ? products.filter((p) => (p.store ?? '스마트스토어') === storeTab)
+      ? products.filter((p) => (p.store ?? '') === filterValue)
       : products;
 
   const totalCount = filteredProducts.length;
@@ -78,10 +79,10 @@ export default function ProductList() {
   const startIdx = (currentPage - 1) * pageSize;
   const pagedProducts = filteredProducts.slice(startIdx, startIdx + pageSize);
 
-  const columns = getStoreColumns(storeTab);
+  const columns = getStoreColumns(filterValue);
 
   function renderCell(p, col) {
-    const v = getProductValue(p, col.key, storeTab);
+    const v = getProductValue(p, col.key, filterValue);
     switch (col.type) {
       case 'image':
         return v ? (

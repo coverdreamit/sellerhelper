@@ -78,6 +78,7 @@ export const STORE_KEY_MAP = {
   },
 };
 
+/** mallCode -> 탭/필터 설정 (DB Mall.code와 매칭) */
 export const STORE_TAB_MAP = {
   NAVER: {
     tabLabel: '스마트스토어',
@@ -103,6 +104,11 @@ export const STORE_TAB_MAP = {
     columns: defaultColumns,
   },
   ELEVENTH: {
+    tabLabel: '11번가',
+    filterValue: '11번가',
+    columns: defaultColumns,
+  },
+  '11ST': {
     tabLabel: '11번가',
     filterValue: '11번가',
     columns: defaultColumns,
@@ -144,29 +150,50 @@ export function getProductValue(product, sellerHelperKey, storeTabKey, keyMap = 
   return product[sellerHelperKey];
 }
 
+/** 스토어 탭 아이템 (주문/배송/상품 목록 탭용) */
+export interface StoreTabItem {
+  /** 고유 키 (React key, 탭 식별) */
+  key: string;
+  /** 상품 필터용 값 (p.store와 매칭) */
+  filterValue: string;
+  label: string;
+  storeUid: number;
+  mallCode: string;
+  mallName: string;
+}
+
+/** MyStoreItem 형태 - uid, mallCode, mallName, name, enabled, hasAuth */
+interface MyStoreLike {
+  uid: number;
+  mallCode: string;
+  mallName: string;
+  name: string;
+  enabled: boolean;
+  hasAuth: boolean;
+}
+
 /**
- * @param {Object} params
- * @param {Array<{storeCode: string}>} params.stores - 스토어 연동 순서(드래그로 변경 가능)
- * @param {Array<{storeCode: string, isEnabled: boolean, authStatus: string}>} params.userStores - 연동 상태
+ * 내 스토어 목록으로 탭 생성 (환경설정 > 스토어 연동에서 연동한 스토어)
+ * 사용(enabled) 스토어만 순서대로 탭 표시 (연동 여부와 무관)
+ * @param myStores - fetchMyStores()로 조회한 내 스토어 목록 (sortOrder 순)
  */
-export function buildStoreTabs({ stores = [], userStores = [] }, storeTabMap = STORE_TAB_MAP) {
-  const tabs = [];
-  const connectedSet = new Set(
-    userStores
-      .filter((us) => us.isEnabled && us.authStatus === 'CONNECTED')
-      .map((us) => us.storeCode)
-  );
-  for (const store of stores) {
-    if (connectedSet.has(store.storeCode)) {
-      const config = storeTabMap[store.storeCode];
-      if (config) {
-        tabs.push({
-          key: config.filterValue,
-          label: config.tabLabel,
-          storeCode: store.storeCode,
-        });
-      }
-    }
+export function buildStoreTabs(
+  myStores: MyStoreLike[] = [],
+  storeTabMap = STORE_TAB_MAP
+): StoreTabItem[] {
+  const tabs: StoreTabItem[] = [];
+  for (const store of myStores) {
+    if (!store.enabled) continue;
+    const config = storeTabMap[store.mallCode as keyof typeof storeTabMap];
+    const filterValue = config?.filterValue ?? store.mallName;
+    tabs.push({
+      key: String(store.uid),
+      filterValue,
+      label: store.name,
+      storeUid: store.uid,
+      mallCode: store.mallCode,
+      mallName: store.mallName,
+    });
   }
   return tabs;
 }

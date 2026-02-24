@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from '@/components/Link';
-import { useStoreStore, useUserStoreStore } from '@/stores';
+import { useMyStoreStore } from '@/stores';
 import { buildStoreTabs } from '@/config/productStoreTabs';
 import '../../styles/Settings.css';
 import '../product/ProductList.css';
@@ -91,9 +91,8 @@ function renderPagination(totalPages, currentPage, setCurrentPage) {
 }
 
 export default function ShippingPending() {
-  const { stores } = useStoreStore();
-  const { userStores } = useUserStoreStore();
-  const storeTabs = buildStoreTabs({ stores, userStores });
+  const { myStores } = useMyStoreStore();
+  const storeTabs = buildStoreTabs(myStores);
 
   const [storeTab, setStoreTab] = useState(storeTabs[0]?.key ?? '');
   const [pageSize, setPageSize] = useState(20);
@@ -109,9 +108,11 @@ export default function ShippingPending() {
     setCurrentPage(1);
   }, [storeTab, pageSize]);
 
+  const selectedTab = storeTabs.find((t) => t.key === storeTab);
+  const filterValue = selectedTab?.filterValue ?? storeTab;
   const filtered =
     storeTab && storeTabs.length > 0
-      ? mockPending.filter((s) => (s.store ?? '스마트스토어') === storeTab)
+      ? mockPending.filter((s) => (s.store ?? '') === filterValue)
       : mockPending;
 
   const totalCount = filtered.length;

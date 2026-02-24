@@ -35,7 +35,6 @@ export { default as CodeManage } from './system/code/CodeManage';
 
 export { default as UserLog } from './settings/UserLog';
 export { default as StoreList } from './settings/store/StoreList';
-export { default as StoreBatch } from './settings/store/StoreBatch';
 export { default as StoreAuth } from './settings/store/StoreAuth';
 export { default as StoreActive } from './settings/store/StoreActive';
 export { default as StoreSetting } from './settings/store/StoreSetting';

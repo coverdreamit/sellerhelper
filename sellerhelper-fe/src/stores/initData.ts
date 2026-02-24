@@ -4,6 +4,7 @@
  */
 import { useStoreStore } from './storeStore';
 import { useUserStoreStore } from './userStoreStore';
+import { useMyStoreStore } from './myStoreStore';
 import { useVendorStore } from './vendorStore';
 import { useOrderTemplateStore } from './orderTemplateStore';
 
@@ -11,6 +12,7 @@ export async function initAppData() {
   await Promise.all([
     useStoreStore.getState().loadStores(),
     useUserStoreStore.getState().loadUserStores(),
+    useMyStoreStore.getState().loadMyStores(),
     useVendorStore.getState().loadVendors(),
     useOrderTemplateStore.getState().loadTemplates(),
   ]);

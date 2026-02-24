@@ -10,15 +10,11 @@ import { useStoreStore } from './storeStore';
 import { useUserStoreStore } from './userStoreStore';
 import { useVendorStore } from './vendorStore';
 import { useOrderTemplateStore } from './orderTemplateStore';
-import { useBatchStore } from './batchStore';
 import type { Vendor } from '@/types';
-import type { BatchConfig } from './batchStore';
 import { storesMock } from '@/mocks/stores';
 import { userStoresMock } from '@/mocks/userStores';
 import { vendorsMock } from '@/mocks/vendors';
 import { buildOrderTemplatesWithFields } from '@/mocks/orderTemplates';
-import { batchConfigMock } from '@/mocks/batchConfig';
-import { batchLogsMock } from '@/mocks/batchLogs';
 
 function toUserStoreItem(us) {
   return {
@@ -34,5 +30,4 @@ export function initStoresWithMock() {
   useUserStoreStore.getState().setUserStores(userStoresMock.userStores.map(toUserStoreItem));
   useVendorStore.getState().setVendors(vendorsMock.vendors as Vendor[]);
   useOrderTemplateStore.getState().setTemplates(buildOrderTemplatesWithFields());
-  useBatchStore.getState().initFromMock(batchConfigMock.batchConfigs as BatchConfig[], batchLogsMock as Record<string, { id: number; executedAt: string; status: 'SUCCESS' | 'ERROR'; message: string; count: number }[]>);
 }

@@ -15,6 +15,18 @@
   font-size: 0.9rem;
 }
 
+.page-desc .link-inline,
+.link-inline {
+  color: #1967d2;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.page-desc .link-inline:hover,
+.link-inline:hover {
+  color: #0d47a1;
+}
+
 .settings-page--compact h1 {
   font-size: 1.25rem;
 }
@@ -503,6 +515,25 @@
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+}
+
+/* 에러 메시지 (모달/설정 페이지 공통) */
+.form-error {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 0.9rem;
+}
+
+/* 링크형 버튼 - 삭제 등 */
+.btn-link.text-danger {
+  color: #dc2626;
+}
+.btn-link.text-danger:hover {
+  color: #b91c1c;
 }
 
 /* ===== 배치 관리 카드 (콤팩트) ===== */

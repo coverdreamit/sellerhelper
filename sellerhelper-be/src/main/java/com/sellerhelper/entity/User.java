@@ -39,6 +39,11 @@ public class User extends BaseEntity {
 
     private Instant lastLoginAt;
 
+    /** 소속 회사 (멀티테넌트, 스토어 연동 시 사용) */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_uid")
+    private Company company;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserRole> userRoles = new ArrayList<>();
 }

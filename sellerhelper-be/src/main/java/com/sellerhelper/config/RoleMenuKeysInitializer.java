@@ -27,7 +27,7 @@ public class RoleMenuKeysInitializer implements ApplicationRunner {
             "customer,customer-list,customer-inquiry,customer-claim," +
             "settings,settings-basic,settings-company,settings-notification,settings-store,settings-store-list," +
             "settings-user-log,settings-supplier,settings-supplier-list,settings-supplier-form," +
-            "system,system-user,system-role,system-store,system-batch,system-code,system-log,system-setting";
+            "system,system-user,system-role,system-platform,system-code,system-log,system-setting";
 
     private static final String USER_MENU_KEYS = "dashboard,product,product-list,order,order-list,order-processing,order-claim," +
             "shipping,shipping-list,shipping-pending,shipping-transit,shipping-complete," +
@@ -43,7 +43,12 @@ public class RoleMenuKeysInitializer implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         List<Role> roles = roleRepository.findAll();
         for (Role role : roles) {
-            if (role.getMenuKeys() == null || role.getMenuKeys().isBlank()) {
+            String current = role.getMenuKeys();
+            boolean needsUpdate = current == null || current.isBlank();
+            if ("ADMIN".equals(role.getCode()) && !needsUpdate && !current.contains("system-platform")) {
+                needsUpdate = true;
+            }
+            if (needsUpdate) {
                 String keys = "ADMIN".equals(role.getCode()) ? ALL_MENU_KEYS : USER_MENU_KEYS;
                 role.setMenuKeys(keys);
                 roleRepository.save(role);

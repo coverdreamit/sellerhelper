@@ -7,5 +7,5 @@ import java.util.Optional;
 
 public interface StoreAuthRepository extends JpaRepository<StoreAuth, Long> {
 
-    Optional<StoreAuth> findByStoreUid(Long storeUid);
+    Optional<StoreAuth> findByStore_Uid(Long storeUid);
 }

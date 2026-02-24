@@ -11,4 +11,6 @@ public interface MallRepository extends JpaRepository<Mall, Long> {
     Optional<Mall> findByCode(String code);
 
     List<Mall> findByEnabledTrueOrderBySortOrderAsc();
+
+    List<Mall> findAllByOrderBySortOrderAscUidAsc();
 }

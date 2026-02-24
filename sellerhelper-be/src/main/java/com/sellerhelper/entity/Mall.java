@@ -4,7 +4,8 @@ import javax.persistence.*;
 import lombok.*;
 
 /**
- * 쇼핑몰 마스터 (쿠팡, 네이버, 11번가 등)
+ * 플랫폼 마스터 (쿠팡, 네이버, 11번가 등)
+ * 코드 관리에서 등록하는 플랫폼 종류
  */
 @Entity
 @Table(name = "malls")
@@ -20,6 +21,10 @@ public class Mall extends BaseEntity {
 
     @Column(nullable = false, length = 100)
     private String name;
+
+    /** 채널명 (예: 이베이코리아, 네이버) */
+    @Column(length = 100)
+    private String channel;
 
     @Column(length = 500)
     private String description;

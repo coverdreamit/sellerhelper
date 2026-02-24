@@ -1,23 +1,24 @@
 /**
- * 상품 서비스 - 네이버 스마트스토어 API 연동 + 기타 스토어 데모 데이터
- * TODO: 백엔드 연동 시 /api/naver/products 호출 제거, 데모 데이터 제거
+ * 상품 서비스 - 백엔드 API 연동
+ * TODO: 백엔드 /api/products 구현 시 연동
  */
 
-import { productDemoMock } from '@/mocks/productDemo';
+import { apiFetch } from '@/lib/api';
 
-export async function fetchProducts(productNos = null) {
-  let naverProducts = [];
+export async function fetchProducts(productNos?: string[] | null): Promise<unknown[]> {
   try {
     const params = productNos?.length
       ? new URLSearchParams({ productNos: productNos.join(',') })
       : '';
-    const url = `/api/naver/products${params ? `?${params}` : ''}`;
-    const res = await fetch(url);
-    if (res.ok) {
-      naverProducts = await res.json();
+    const url = `/api/products${params ? `?${params}` : ''}`;
+    const res = await apiFetch(url);
+    if (!res.ok) {
+      if (res.status === 404) return [];
+      throw new Error('상품 목록 조회 실패');
     }
-  } catch (e) {
-    // API 실패 시 네이버 상품 없이 데모만 표시
+    const data = await res.json();
+    return Array.isArray(data) ? data : data.products ?? [];
+  } catch {
+    return [];
   }
-  return [...(Array.isArray(naverProducts) ? naverProducts : []), ...productDemoMock];
 }
