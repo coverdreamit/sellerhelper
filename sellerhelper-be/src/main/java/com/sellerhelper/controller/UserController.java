@@ -24,17 +24,18 @@ public class UserController {
 
     private final UserService userService;
 
-    /** 사용자 목록 (페이지네이션, 검색, 권한 필터) */
+    /** 사용자 목록 (페이지네이션, 검색, 권한/승인상태 필터) */
     @GetMapping
     public ResponseEntity<PageResponse<UserListResponse>> list(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String roleCode,
+            @RequestParam(required = false) Boolean enabled,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "uid") String sortBy,
             @RequestParam(defaultValue = "DESC") Sort.Direction sortDir) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDir, sortBy));
-        return ResponseEntity.ok(userService.search(keyword, roleCode, pageable));
+        return ResponseEntity.ok(userService.search(keyword, roleCode, enabled, pageable));
     }
 
     /** 사용자 단건 조회 */

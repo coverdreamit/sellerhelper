@@ -8,14 +8,18 @@
 ```
 sellerhelper/
 ├── sellerhelper-fe/   # Next.js 프론트엔드
-├── sellerhelper-be/   # Spring Boot 백엔드 (구축 예정)
+├── sellerhelper-be/   # Spring Boot 백엔드
+├── scripts/           # 백엔드 시작/종료/재시작 스크립트
 └── README.md          # 본 파일
 ```
 
-- **sellerhelper-fe/** – Next.js 14 (App Router) + React 18. 실행 방법은 [sellerhelper-fe/README.md](sellerhelper-fe/README.md) 참고.
-- **sellerhelper-be/** – Spring Boot 백엔드 (Java, JPA, PostgreSQL). 자세한 내용은 [sellerhelper-be/README.md](sellerhelper-be/README.md) 참고.
+- **sellerhelper-fe/** – Next.js 14 (App Router) + React 18. [sellerhelper-fe/README.md](sellerhelper-fe/README.md)
+- **sellerhelper-be/** – Spring Boot 백엔드 (Java 16, JPA, PostgreSQL). [sellerhelper-be/README.md](sellerhelper-be/README.md)
+- **scripts/** – 백엔드 start/stop/restart/dev/run 스크립트 (.bat, .sh)
 
-## 빠른 실행 (프론트엔드)
+## 빠른 실행
+
+### 프론트엔드
 
 ```bash
 cd sellerhelper-fe
@@ -23,6 +27,14 @@ yarn
 yarn dev
 ```
 
-브라우저에서 `http://localhost:5000` 접속
+브라우저: `http://localhost:5000`
 
-백엔드 연동은 추후 구축 예정입니다.
+### 백엔드
+
+```bash
+cd scripts
+dev-be.bat        # Windows 개발모드
+# ./dev-be.sh     # Linux/macOS
+```
+
+백엔드: `http://localhost:5080` (헬스체크: `/api/health`)

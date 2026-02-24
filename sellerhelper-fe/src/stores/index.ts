@@ -1,4 +1,5 @@
 export { useStoreStore } from './storeStore';
+export { useAuthStore } from './authStore';
 export { useUserStoreStore } from './userStoreStore';
 export { useBatchStore } from './batchStore';
 export { useVendorStore } from './vendorStore';

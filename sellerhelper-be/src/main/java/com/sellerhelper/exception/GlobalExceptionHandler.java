@@ -1,6 +1,7 @@
 package com.sellerhelper.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -18,6 +19,9 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @Value("${spring.profiles.active:}")
+    private String activeProfile;
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiError> handleResourceNotFound(ResourceNotFoundException ex, WebRequest request) {
         log.warn("Resource not found: {}", ex.getMessage());
@@ -29,6 +33,32 @@ public class GlobalExceptionHandler {
                 .path(getPath(request))
                 .build();
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiError> handleInvalidCredentials(InvalidCredentialsException ex, WebRequest request) {
+        log.warn("Invalid credentials: {}", ex.getMessage());
+        ApiError error = ApiError.builder()
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .error("Unauthorized")
+                .message(ex.getMessage())
+                .timestamp(Instant.now())
+                .path(getPath(request))
+                .build();
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleIllegalState(IllegalStateException ex, WebRequest request) {
+        log.warn("IllegalState: {}", ex.getMessage());
+        ApiError error = ApiError.builder()
+                .status(HttpStatus.SERVICE_UNAVAILABLE.value())
+                .error("Service Unavailable")
+                .message(ex.getMessage())
+                .timestamp(Instant.now())
+                .path(getPath(request))
+                .build();
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
     }
 
     @ExceptionHandler(DuplicateLoginIdException.class)
@@ -52,7 +82,7 @@ public class GlobalExceptionHandler {
         ApiError error = ApiError.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Validation Failed")
-                .message("입력값 검증에 실패했습니다")
+                .message("Validation failed")
                 .timestamp(Instant.now())
                 .path(getPath(request))
                 .fieldErrors(fieldErrors)
@@ -68,7 +98,7 @@ public class GlobalExceptionHandler {
         ApiError error = ApiError.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Validation Failed")
-                .message("입력값 검증에 실패했습니다")
+                .message("Validation failed")
                 .timestamp(Instant.now())
                 .path(getPath(request))
                 .fieldErrors(fieldErrors)
@@ -78,11 +108,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(Exception ex, WebRequest request) {
-        log.error("Unexpected error", ex);
+        log.error("Unexpected error: {}", ex.getMessage(), ex);
+        String message = "Internal server error";
+        if ("local".equals(activeProfile)) {
+            message = ex.getMessage() != null ? ex.getMessage() : message;
+        }
         ApiError error = ApiError.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error("Internal Server Error")
-                .message("서버 오류가 발생했습니다")
+                .message(message)
                 .timestamp(Instant.now())
                 .path(getPath(request))
                 .build();

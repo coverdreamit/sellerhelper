@@ -6,7 +6,7 @@ public class DuplicateLoginIdException extends RuntimeException {
     private final String loginId;
 
     public DuplicateLoginIdException(String loginId) {
-        super("이미 사용 중인 로그인 ID입니다: " + loginId);
+        super("Login ID already in use: " + loginId);
         this.loginId = loginId;
     }
 

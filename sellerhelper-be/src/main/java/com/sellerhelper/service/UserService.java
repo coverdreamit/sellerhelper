@@ -35,10 +35,10 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
-    public PageResponse<UserListResponse> search(String keyword, String roleCode, Pageable pageable) {
+    public PageResponse<UserListResponse> search(String keyword, String roleCode, Boolean enabled, Pageable pageable) {
         String kw = StringUtils.hasText(keyword) ? keyword : null;
         String rc = StringUtils.hasText(roleCode) ? roleCode : null;
-        Page<User> page = userRepository.search(kw, rc, pageable);
+        Page<User> page = userRepository.search(kw, rc, enabled, pageable);
 
         List<UserListResponse> content = page.getContent().stream()
                 .map(this::toListResponse)
@@ -169,6 +169,7 @@ public class UserService {
                 .roleNames(roleNames.isEmpty() ? null : roleNames)
                 .enabled(user.getEnabled())
                 .lastLoginAt(user.getLastLoginAt())
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 }

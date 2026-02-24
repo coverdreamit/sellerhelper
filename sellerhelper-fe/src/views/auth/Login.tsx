@@ -1,18 +1,58 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {
+  login,
+  getSavedLoginId,
+  getSavedPassword,
+  saveRememberCookies,
+  clearLoginIdCookie,
+} from '@/services/auth.service';
+import { useAuthStore } from '@/stores';
 import './Login.css';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const router = useRouter();
+  const setUser = useAuthStore((s) => s.setUser);
+  const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const savedId = getSavedLoginId();
+    const savedPw = getSavedPassword();
+    if (savedId) {
+      setLoginId(savedId);
+      setRemember(true);
+    }
+    if (savedPw) {
+      setPassword(savedPw);
+    }
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 연동 시 API 호출
-    console.log({ email, password, remember });
+    if (loading) return;
+    setError('');
+    setLoading(true);
+    try {
+      const res = await login({ loginId, password, rememberMe: remember });
+      if (remember) {
+        saveRememberCookies(loginId, password);
+      } else {
+        clearLoginIdCookie();
+      }
+      setUser(res);
+      router.replace('/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -36,18 +76,23 @@ export default function Login() {
           </div>
 
           <form className="login-form" onSubmit={handleSubmit}>
+            {error && (
+              <div className="login-error" role="alert">
+                {error}
+              </div>
+            )}
             <div className="login-field">
-              <label htmlFor="login-email" className="login-label">
-                이메일
+              <label htmlFor="login-id" className="login-label">
+                아이디
               </label>
               <input
-                id="login-email"
-                type="email"
+                id="login-id"
+                type="text"
                 className="login-input"
-                placeholder="example@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
+                placeholder="아이디를 입력하세요"
+                value={loginId}
+                onChange={(e) => setLoginId(e.target.value)}
+                autoComplete="username"
                 required
               />
             </div>
@@ -75,15 +120,15 @@ export default function Login() {
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
                 />
-                <span>아이디 저장</span>
+                <span>아이디·비밀번호 저장</span>
               </label>
               <Link href="/login/forgot" className="login-link">
                 비밀번호 찾기
               </Link>
             </div>
 
-            <button type="submit" className="login-btn">
-              로그인
+            <button type="submit" className="login-btn" disabled={loading}>
+              {loading ? '로그인 중...' : '로그인'}
             </button>
 
             <p className="login-footer">

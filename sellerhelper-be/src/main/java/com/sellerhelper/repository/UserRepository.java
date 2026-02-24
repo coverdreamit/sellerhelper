@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -19,11 +20,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
             "LEFT JOIN u.userRoles ur " +
             "LEFT JOIN ur.role r " +
             "WHERE (:keyword IS NULL OR :keyword = '' OR LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.loginId) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-            "AND (:roleCode IS NULL OR :roleCode = '' OR r.code = :roleCode)",
+            "AND (:roleCode IS NULL OR :roleCode = '' OR r.code = :roleCode) " +
+            "AND (:enabled IS NULL OR u.enabled = :enabled)",
             countQuery = "SELECT COUNT(DISTINCT u.uid) FROM User u " +
                     "LEFT JOIN u.userRoles ur " +
                     "LEFT JOIN ur.role r " +
                     "WHERE (:keyword IS NULL OR :keyword = '' OR LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.loginId) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-                    "AND (:roleCode IS NULL OR :roleCode = '' OR r.code = :roleCode)")
-    Page<User> search(@Param("keyword") String keyword, @Param("roleCode") String roleCode, Pageable pageable);
+                    "AND (:roleCode IS NULL OR :roleCode = '' OR r.code = :roleCode) " +
+                    "AND (:enabled IS NULL OR u.enabled = :enabled)")
+    Page<User> search(@Param("keyword") String keyword, @Param("roleCode") String roleCode,
+                      @Param("enabled") Boolean enabled, Pageable pageable);
+
+    List<User> findByLoginIdNot(String loginId);
 }

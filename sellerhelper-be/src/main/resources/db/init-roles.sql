@@ -4,6 +4,7 @@
 INSERT INTO roles (code, name, description, sort_order, created_at, created_by, updated_at, updated_by)
 VALUES
     ('ADMIN', '관리자', '시스템 전체 관리 권한', 1, NOW(), 'system', NOW(), 'system'),
-    ('SELLER', '셀러', '판매 관련 기능', 2, NOW(), 'system', NOW(), 'system'),
-    ('ORDER', '주문담당', '주문 처리 담당', 3, NOW(), 'system', NOW(), 'system')
+    ('USER', '일반 사용자', '승인된 일반 사용자 권한', 2, NOW(), 'system', NOW(), 'system'),
+    ('SELLER', '셀러', '판매 관련 기능', 3, NOW(), 'system', NOW(), 'system'),
+    ('ORDER', '주문담당', '주문 처리 담당', 4, NOW(), 'system', NOW(), 'system')
 ON CONFLICT (code) DO NOTHING;

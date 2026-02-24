@@ -2,9 +2,25 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { register as registerApi } from '@/services/auth.service';
 import './Login.css';
 
+const KOREAN_NAMES = ['김철수', '이영희', '박민수', '최지현', '정수진', '한동훈', '윤서연', '임준혁', '강미영', '조성민'];
+const COMPANY_NAMES = ['(주)테스트회사', '개인사업자', '스마트스토어', '셀러헬퍼샵', '테스트몰'];
+
+function randomStr(len: number, chars = 'abcdefghijklmnopqrstuvwxyz0123456789') {
+  let s = '';
+  for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+
+function randomPhone() {
+  return `010-${String(Math.floor(1000 + Math.random() * 9000))}-${String(Math.floor(1000 + Math.random() * 9000))}`;
+}
+
 export default function Register() {
+  const router = useRouter();
   const [form, setForm] = useState({
     name: '',
     loginId: '',
@@ -16,28 +32,62 @@ export default function Register() {
   });
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const fillRandomData = () => {
+    const loginId = `user${randomStr(6)}`;
+    const basePw = 'Test1234!';
+    setForm({
+      name: KOREAN_NAMES[Math.floor(Math.random() * KOREAN_NAMES.length)]!,
+      loginId,
+      email: `${loginId}@example.com`,
+      password: basePw,
+      passwordConfirm: basePw,
+      phone: randomPhone(),
+      companyName: COMPANY_NAMES[Math.floor(Math.random() * COMPANY_NAMES.length)]!,
+    });
+    setAgreeTerms(true);
+    setAgreePrivacy(true);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password !== form.passwordConfirm) {
-      alert('비밀번호가 일치하지 않습니다.');
+      setError('비밀번호가 일치하지 않습니다.');
       return;
     }
     if (!agreeTerms || !agreePrivacy) {
-      alert('약관에 동의해 주세요.');
+      setError('약관에 동의해 주세요.');
       return;
     }
-    // TODO: 연동 시 API 호출
-    console.log({ ...form, agreeTerms, agreePrivacy });
+    setError('');
+    setLoading(true);
+    try {
+      await registerApi({
+        name: form.name,
+        loginId: form.loginId,
+        email: form.email,
+        password: form.password,
+        phone: form.phone || undefined,
+        companyName: form.companyName || undefined,
+      });
+      alert('회원가입이 완료되었습니다. 관리자 승인 후 이용 가능합니다. 승인 여부 검토 중입니다.');
+      router.replace('/login');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="login-page">
+    <div className="login-page login-page--register">
       <div className="login-backdrop">
         <div className="login-shape login-shape--1" />
         <div className="login-shape login-shape--2" />
@@ -45,7 +95,7 @@ export default function Register() {
         <div className="login-grid" aria-hidden />
       </div>
 
-      <div className="login-container" style={{ maxWidth: 460 }}>
+      <div className="login-container">
         <div className="login-card">
           <div className="login-brand">
             <div className="login-logo">S</div>
@@ -57,6 +107,11 @@ export default function Register() {
           </div>
 
           <form className="login-form" onSubmit={handleSubmit}>
+            {error && (
+              <div className="login-error" role="alert">
+                {error}
+              </div>
+            )}
             <div className="login-field">
               <label htmlFor="reg-name" className="login-label">
                 이름 <span className="required">*</span>
@@ -202,8 +257,8 @@ export default function Register() {
               </div>
             </div>
 
-            <button type="submit" className="login-btn">
-              회원가입
+            <button type="submit" className="login-btn" disabled={loading}>
+              {loading ? '가입 중...' : '회원가입'}
             </button>
 
             <p className="login-footer">
@@ -211,6 +266,15 @@ export default function Register() {
               <Link href="/login" className="login-link">
                 로그인
               </Link>
+              {' | '}
+              <button
+                type="button"
+                className="login-link login-link--btn"
+                onClick={fillRandomData}
+                aria-label="개발용 랜덤 데이터 채우기"
+              >
+                랜덤 데이터 생성
+              </button>
             </p>
           </form>
         </div>

@@ -86,6 +86,17 @@
   max-width: 420px;
 }
 
+/* 회원가입: 폼 필드가 많아 기본 더 넓게, PC에서는 더 넓게 */
+.login-page--register .login-container {
+  max-width: 460px;
+}
+
+@media (min-width: 768px) {
+  .login-page--register .login-container {
+    max-width: 520px;
+  }
+}
+
 .login-card {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
@@ -137,6 +148,15 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.login-error {
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
 }
 
 .login-field {
@@ -226,6 +246,12 @@
   transform: translateY(0);
 }
 
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .login-footer {
   margin: 0;
   font-size: 0.875rem;
@@ -235,6 +261,20 @@
 
 .login-footer .login-link {
   font-weight: 600;
+}
+
+.login-footer .login-link--btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.login-footer .login-link--btn:hover {
+  opacity: 0.9;
 }
 
 /* 회원가입 약관 동의 */
@@ -250,6 +290,24 @@
 
 .login-label .required {
   color: #ef4444;
+}
+
+/* 회원가입 개발용 랜덤 데이터 버튼 */
+.register-dev-tool {
+  margin-bottom: 16px;
+}
+
+.login-btn--secondary {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.8125rem;
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.login-btn--secondary:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .login-copyright {

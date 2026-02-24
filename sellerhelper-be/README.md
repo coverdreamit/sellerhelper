@@ -4,9 +4,9 @@
 
 ## 기술 스택
 
-- Java 11
+- Java 16
 - Spring Boot 2.7
-- Maven
+- Maven + Maven Wrapper (mvnw)
 - Spring Data JPA, PostgreSQL
 - Hibernate DDL: `update` (엔티티 기준 자동 스키마 반영)
 
@@ -44,21 +44,52 @@ src/main/java/com/sellerhelper/
 
 ## 실행 방법
 
+### 스크립트 사용 (권장)
+
+프로젝트 루트의 `scripts/` 폴더에서 실행:
+
+| 스크립트 | 설명 |
+|---------|------|
+| `start-be.bat` / `start-be.sh` | 백엔드 시작 |
+| `stop-be.bat` / `stop-be.sh` | 백엔드 종료 |
+| `restart-be.bat` / `restart-be.sh` | 재시작 |
+| `dev-be.bat` / `dev-be.sh` | 개발모드 (local 프로파일) |
+| `run-be.bat` / `run-be.sh` | 런타임 (jar 빌드 후 실행) |
+
+```bash
+# Windows
+cd scripts
+dev-be.bat        # 개발모드
+start-be.bat      # 시작 (같은 터미널에서 실행)
+stop-be.bat       # 종료
+
+# Linux/macOS
+./scripts/dev-be.sh
+./scripts/start-be.sh
+./scripts/stop-be.sh
+```
+
+### Maven Wrapper 직접 실행
+
+```bash
+cd sellerhelper-be
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local    # Windows: mvnw.cmd
+```
+
+### 수동 설정
+
 1. **로컬 DB 설정**  
    `src/main/resources/application-local.yml`에 DB 접속 정보가 기본값으로 들어 있습니다.  
    비밀번호 등은 환경 변수로 덮어쓸 수 있습니다.
 
-2. **프로파일 지정 후 실행**
-   ```bash
-   mvn spring-boot:run -Dspring-boot.run.profiles=local
-   ```
-   또는 환경 변수: `SPRING_PROFILES_ACTIVE=local`
+2. **프로파일**  
+   환경 변수: `SPRING_PROFILES_ACTIVE=local`
 
 3. **서버 포트**  
-   기본 8080. 변경 시 `SERVER_PORT` 환경 변수 또는 `application.yml`에서 설정.
+   기본 5080. 변경 시 `SERVER_PORT` 환경 변수 또는 `application.yml`에서 설정.
 
 4. **헬스 체크**  
-   http://localhost:8080/api/health
+   http://localhost:5080/api/health
 
 ## DB 접속 정보 (참고)
 

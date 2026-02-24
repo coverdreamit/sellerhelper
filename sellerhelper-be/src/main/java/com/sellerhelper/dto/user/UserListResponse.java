@@ -25,4 +25,6 @@ public class UserListResponse {
     /** 활성 여부 */
     private Boolean enabled;
     private Instant lastLoginAt;
+    /** 가입일시 (승인 대기 목록용) */
+    private Instant createdAt;
 }

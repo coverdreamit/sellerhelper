@@ -2,15 +2,17 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { MENU, type MenuItem } from '@/config/menu';
-import { getCookie, setCookie } from '@/utils/cookie';
+import { usePathname, useRouter } from 'next/navigation';
+import { MENU, filterMenuByRoles, type MenuItem } from '@/config/menu';
+import { getStorage, setStorage } from '@/utils/storage';
+import { useAuthStore } from '@/stores';
+import { logout as logoutApi } from '@/services/auth.service';
 import './Sidebar.css';
 
 const SITE_NAME = '셀러헬퍼';
-const COOKIE_KEY_SIDEBAR = 'sidebar_collapsed';
-/** 쿠키에는 '닫힌' 메뉴 키만 저장 → 없으면 전부 펼침 */
-const COOKIE_KEY_MENU_CLOSED = 'menu_closed_keys';
+const STORAGE_KEY_SIDEBAR = 'sidebar_collapsed';
+/** localStorage에 '닫힌' 메뉴 키만 저장 → 없으면 전부 펼침 (쿠키 대신 사용해 Cookie 헤더 크기 절감) */
+const STORAGE_KEY_MENU_CLOSED = 'menu_closed_keys';
 
 /** 자식이 있는 메뉴 키만 재귀 수집 (1·2·3단 그룹) */
 function collectGroupKeys(items: MenuItem[]): string[] {
@@ -154,9 +156,22 @@ function NavItem({ item, depth, collapsed, openKeys, toggleOpen }: NavItemProps)
 }
 
 export default function Sidebar() {
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
   const [collapsed, setCollapsedState] = useState(false);
 
-  const allGroupKeys = useMemo(() => collectGroupKeys(MENU), []);
+  const visibleMenu = useMemo(
+    () => filterMenuByRoles(MENU, user?.roleCodes ?? []),
+    [user?.roleCodes]
+  );
+
+  const handleLogout = async () => {
+    await logoutApi();
+    logout();
+    router.replace('/login');
+  };
+
+  const allGroupKeys = useMemo(() => collectGroupKeys(visibleMenu), [visibleMenu]);
 
   const [closedKeys, setClosedKeys] = useState(() => new Set());
   const openKeys = useMemo(
@@ -165,10 +180,10 @@ export default function Sidebar() {
   );
 
   useEffect(() => {
-    const savedSidebar = getCookie(COOKIE_KEY_SIDEBAR);
+    const savedSidebar = getStorage(STORAGE_KEY_SIDEBAR);
     if (savedSidebar === '1') setCollapsedState(true);
 
-    const savedClosed = getCookie(COOKIE_KEY_MENU_CLOSED);
+    const savedClosed = getStorage(STORAGE_KEY_MENU_CLOSED);
     if (savedClosed) {
       const keys = savedClosed.split(',').map((k) => k.trim()).filter(Boolean);
       setClosedKeys(new Set(keys));
@@ -178,7 +193,7 @@ export default function Sidebar() {
   const toggleSidebar = () => {
     setCollapsedState((prev) => {
       const next = !prev;
-      setCookie(COOKIE_KEY_SIDEBAR, next ? '1' : '0');
+      setStorage(STORAGE_KEY_SIDEBAR, next ? '1' : '0');
       return next;
     });
   };
@@ -188,19 +203,19 @@ export default function Sidebar() {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
-      setCookie(COOKIE_KEY_MENU_CLOSED, [...next].join(','));
+      setStorage(STORAGE_KEY_MENU_CLOSED, [...next].join(','));
       return next;
     });
   };
 
   const expandAll = () => {
     setClosedKeys(new Set());
-    setCookie(COOKIE_KEY_MENU_CLOSED, '');
+    setStorage(STORAGE_KEY_MENU_CLOSED, '');
   };
 
   const collapseAll = () => {
     setClosedKeys(new Set(allGroupKeys));
-    setCookie(COOKIE_KEY_MENU_CLOSED, [...allGroupKeys].join(','));
+    setStorage(STORAGE_KEY_MENU_CLOSED, [...allGroupKeys].join(','));
   };
 
   return (
@@ -222,6 +237,14 @@ export default function Sidebar() {
           )}
         </button>
       </div>
+      {user && !collapsed && (
+        <div className="sidebar-user">
+          <span className="sidebar-user-name">{user.name}({user.loginId})</span>
+          <button type="button" className="sidebar-logout" onClick={handleLogout} aria-label="로그아웃">
+            로그아웃
+          </button>
+        </div>
+      )}
       <div className="sidebar-nav-wrap">
         {!collapsed && allGroupKeys.length > 0 && (
           <div className="sidebar-menu-toggle-bar">
@@ -247,7 +270,7 @@ export default function Sidebar() {
         )}
         <nav>
           <ul className="sidebar-nav">
-            {MENU.filter((item) => !item.hidden).map((item) => (
+            {visibleMenu.filter((item) => !item.hidden).map((item) => (
               <NavItem
                 key={item.key}
                 item={item}
