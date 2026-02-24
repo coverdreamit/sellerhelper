@@ -51,10 +51,9 @@ export async function login(req: LoginRequest): Promise<LoginResponse> {
       rememberMe: req.rememberMe ?? false,
     }),
   });
-  const data = await res.json().catch(() => ({}));
+  const data = await res.json();
   if (!res.ok) {
-    const msg = data?.message ?? (res.status === 401 ? '아이디 또는 비밀번호를 확인해 주세요.' : '로그인에 실패했습니다.');
-    throw new Error(msg);
+    throw new Error(data?.message ?? '로그인에 실패했습니다.');
   }
   return data;
 }
