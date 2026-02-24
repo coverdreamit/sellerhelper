@@ -1,5 +1,5 @@
 # ========== Build Stage ==========
-FROM maven:3.9-eclipse-temurin-11-alpine AS builder
+FROM maven:3.9-eclipse-temurin-16-alpine AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY src ./src
 RUN mvn package -DskipTests -B
 
 # ========== Production Stage ==========
-FROM eclipse-temurin:11-jre-alpine
+FROM eclipse-temurin:16-jre-alpine
 
 WORKDIR /app
 
