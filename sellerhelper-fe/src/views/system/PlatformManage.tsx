@@ -8,6 +8,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type DragEndEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -141,11 +142,11 @@ export default function PlatformManage() {
   );
 
   const handleDragEnd = useCallback(
-    async (event: { active: { id: string }; over: { id: string } | null }) => {
+    async (event: DragEndEvent) => {
       const { active, over } = event;
       if (!over || active.id === over.id) return;
-      const oldIdx = malls.findIndex((m) => String(m.uid) === active.id);
-      const newIdx = malls.findIndex((m) => String(m.uid) === over.id);
+      const oldIdx = malls.findIndex((m) => String(m.uid) === String(active.id));
+      const newIdx = malls.findIndex((m) => String(m.uid) === String(over.id));
       if (oldIdx === -1 || newIdx === -1) return;
       const reordered = arrayMove(malls, oldIdx, newIdx);
       setMalls(reordered);

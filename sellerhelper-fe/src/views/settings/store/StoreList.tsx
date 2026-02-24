@@ -9,6 +9,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type DragEndEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -143,11 +144,11 @@ export default function StoreList() {
   );
 
   const handleDragEnd = useCallback(
-    async (event: { active: { id: string }; over: { id: string } | null }) => {
+    async (event: DragEndEvent) => {
       const { active, over } = event;
       if (!over || active.id === over.id) return;
-      const oldIndex = stores.findIndex((s) => String(s.uid) === active.id);
-      const newIndex = stores.findIndex((s) => String(s.uid) === over.id);
+      const oldIndex = stores.findIndex((s) => String(s.uid) === String(active.id));
+      const newIndex = stores.findIndex((s) => String(s.uid) === String(over.id));
       if (oldIndex === -1 || newIndex === -1) return;
       const reordered = arrayMove(stores, oldIndex, newIndex);
       setStores(reordered);
