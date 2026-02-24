@@ -30,7 +30,6 @@ export { default as NotificationSetting } from './settings/basic/NotificationSet
 
 export { default as UserList } from './system/user/UserList';
 export { default as UserRegister } from './system/user/UserRegister';
-export { default as UserRole } from './system/user/UserRole';
 
 export { default as CodeManage } from './system/code/CodeManage';
 

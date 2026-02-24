@@ -6,8 +6,7 @@ import Link from 'next/link';
 import {
   login,
   getSavedLoginId,
-  getSavedPassword,
-  saveRememberCookies,
+  saveLoginIdCookie,
   clearLoginIdCookie,
 } from '@/services/auth.service';
 import { useAuthStore } from '@/stores';
@@ -24,13 +23,9 @@ export default function Login() {
 
   useEffect(() => {
     const savedId = getSavedLoginId();
-    const savedPw = getSavedPassword();
     if (savedId) {
       setLoginId(savedId);
       setRemember(true);
-    }
-    if (savedPw) {
-      setPassword(savedPw);
     }
   }, []);
 
@@ -41,7 +36,7 @@ export default function Login() {
     try {
       const res = await login({ loginId, password, rememberMe: remember });
       if (remember) {
-        saveRememberCookies(loginId, password);
+        saveLoginIdCookie(loginId);
       } else {
         clearLoginIdCookie();
       }
@@ -119,7 +114,7 @@ export default function Login() {
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
                 />
-                <span>아이디·비밀번호 저장</span>
+                <span>아이디 저장</span>
               </label>
               <Link href="/login/forgot" className="login-link">
                 비밀번호 찾기

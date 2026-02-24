@@ -42,6 +42,7 @@ export interface RoleItem {
   code: string;
   name: string;
   description: string | null;
+  menuKeys?: string[];
 }
 
 export interface UserUpdateRequest {
@@ -124,6 +125,59 @@ export async function fetchRoles(): Promise<RoleItem[]> {
     throw new Error(err?.message ?? '권한 목록 조회에 실패했습니다.');
   }
   return res.json();
+}
+
+/** 권한 단건 조회 */
+export async function fetchRole(uid: number): Promise<RoleItem> {
+  const res = await apiFetch(`/api/roles/${uid}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '권한 조회에 실패했습니다.');
+  }
+  return res.json();
+}
+
+/** 권한 생성 */
+export async function createRole(data: {
+  code: string;
+  name: string;
+  description?: string;
+  menuKeys?: string[];
+}): Promise<RoleItem> {
+  const res = await apiFetch('/api/roles', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '권한 생성에 실패했습니다.');
+  }
+  return res.json();
+}
+
+/** 권한 수정 */
+export async function updateRole(
+  uid: number,
+  data: { name?: string; description?: string; menuKeys?: string[] }
+): Promise<RoleItem> {
+  const res = await apiFetch(`/api/roles/${uid}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '권한 수정에 실패했습니다.');
+  }
+  return res.json();
+}
+
+/** 권한 삭제 */
+export async function deleteRole(uid: number): Promise<void> {
+  const res = await apiFetch(`/api/roles/${uid}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '권한 삭제에 실패했습니다.');
+  }
 }
 
 /** 사용자 수정 (승인 시 enabled: true) */

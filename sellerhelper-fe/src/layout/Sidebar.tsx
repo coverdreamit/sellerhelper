@@ -4,15 +4,13 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { MENU, filterMenuByRoles, type MenuItem } from '@/config/menu';
-import { getStorage, setStorage } from '@/utils/storage';
+import { storage } from '@/shared/storage/storage';
+import { STORAGE_KEYS } from '@/shared/storage/keys';
 import { useAuthStore } from '@/stores';
 import { logout as logoutApi } from '@/services/auth.service';
 import './Sidebar.css';
 
 const SITE_NAME = '셀러헬퍼';
-const STORAGE_KEY_SIDEBAR = 'sidebar_collapsed';
-/** localStorage에 '닫힌' 메뉴 키만 저장 → 없으면 전부 펼침 (쿠키 대신 사용해 Cookie 헤더 크기 절감) */
-const STORAGE_KEY_MENU_CLOSED = 'menu_closed_keys';
 
 /** 자식이 있는 메뉴 키만 재귀 수집 (1·2·3단 그룹) */
 function collectGroupKeys(items: MenuItem[]): string[] {
@@ -161,8 +159,8 @@ export default function Sidebar() {
   const [collapsed, setCollapsedState] = useState(false);
 
   const visibleMenu = useMemo(
-    () => filterMenuByRoles(MENU, user?.roleCodes ?? []),
-    [user?.roleCodes]
+    () => filterMenuByRoles(MENU, user?.menuKeys ?? []),
+    [user?.menuKeys]
   );
 
   const handleLogout = async () => {
@@ -180,12 +178,12 @@ export default function Sidebar() {
   );
 
   useEffect(() => {
-    const savedSidebar = getStorage(STORAGE_KEY_SIDEBAR);
-    if (savedSidebar === '1') setCollapsedState(true);
+    const savedSidebar = storage.get<string | boolean | number>(STORAGE_KEYS.SIDEBAR_COLLAPSED, false);
+    if (savedSidebar === true || savedSidebar === '1' || savedSidebar === 1) setCollapsedState(true);
 
-    const savedClosed = getStorage(STORAGE_KEY_MENU_CLOSED);
-    if (savedClosed) {
-      const keys = savedClosed.split(',').map((k) => k.trim()).filter(Boolean);
+    const savedClosed = storage.get<string>(STORAGE_KEYS.MENU_CLOSED_KEYS, '');
+    if (savedClosed && typeof savedClosed === 'string') {
+      const keys = savedClosed.split(',').map((k: string) => k.trim()).filter(Boolean);
       setClosedKeys(new Set(keys));
     }
   }, []);
@@ -193,7 +191,7 @@ export default function Sidebar() {
   const toggleSidebar = () => {
     setCollapsedState((prev) => {
       const next = !prev;
-      setStorage(STORAGE_KEY_SIDEBAR, next ? '1' : '0');
+      storage.set(STORAGE_KEYS.SIDEBAR_COLLAPSED, next);
       return next;
     });
   };
@@ -203,19 +201,19 @@ export default function Sidebar() {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
-      setStorage(STORAGE_KEY_MENU_CLOSED, [...next].join(','));
+      storage.set(STORAGE_KEYS.MENU_CLOSED_KEYS, [...next].join(','));
       return next;
     });
   };
 
   const expandAll = () => {
     setClosedKeys(new Set());
-    setStorage(STORAGE_KEY_MENU_CLOSED, '');
+    storage.set(STORAGE_KEYS.MENU_CLOSED_KEYS, '');
   };
 
   const collapseAll = () => {
     setClosedKeys(new Set(allGroupKeys));
-    setStorage(STORAGE_KEY_MENU_CLOSED, [...allGroupKeys].join(','));
+    storage.set(STORAGE_KEYS.MENU_CLOSED_KEYS, [...allGroupKeys].join(','));
   };
 
   return (

@@ -14,13 +14,16 @@ public class LoginResponse {
     private String loginId;
     private String name;
     private List<String> roleCodes;
+    /** 사용자 권한들의 메뉴 접근 키 합집합 */
+    private List<String> menuKeys;
 
-    public static LoginResponse of(Long uid, String loginId, String name, List<String> roleCodes) {
+    public static LoginResponse of(Long uid, String loginId, String name, List<String> roleCodes, List<String> menuKeys) {
         return LoginResponse.builder()
                 .uid(uid)
                 .loginId(loginId)
                 .name(name)
                 .roleCodes(roleCodes)
+                .menuKeys(menuKeys != null ? menuKeys : List.of())
                 .build();
     }
 }

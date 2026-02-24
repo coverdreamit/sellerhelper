@@ -1,5 +1,5 @@
-import UserRole from '@/views/system/user/UserRole';
+import RoleManage from '@/views/system/RoleManage';
 
 export default function Page() {
-  return <UserRole />;
+  return <RoleManage />;
 }

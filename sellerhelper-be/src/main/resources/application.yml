@@ -17,8 +17,6 @@ spring:
 
 server:
   port: ${SERVER_PORT:5080}
-  # Cookie 헤더가 여러 앱 쿠키 누적 시 "is not allowed" 오류. 128KB로 확대
-  max-http-header-size: 131072
 
 # CORS: 비어있으면 localhost/127.0.0.1 모든 포트 허용. 지정 시 해당 Origin만 사용
 cors:

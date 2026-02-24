@@ -23,4 +23,8 @@ public class Role extends BaseEntity {
 
     @Column(length = 500)
     private String description;
+
+    /** 접근 가능 메뉴 키 (쉼표 구분, 비어있으면 해당 권한 없음) */
+    @Column(name = "menu_keys", length = 2000)
+    private String menuKeys;
 }

@@ -13,6 +13,7 @@ import com.sellerhelper.exception.InvalidCredentialsException;
 import com.sellerhelper.repository.RoleRepository;
 import com.sellerhelper.repository.UserRepository;
 import com.sellerhelper.repository.UserRoleRepository;
+import com.sellerhelper.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,6 +35,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
+    private final RoleService roleService;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
@@ -53,8 +55,9 @@ public class AuthService {
         List<String> roleCodes = userRoles.stream()
                 .map(ur -> ur.getRole().getCode())
                 .collect(Collectors.toList());
+        List<String> menuKeys = roleService.findMenuKeysByRoleCodes(roleCodes);
 
-        return LoginResponse.of(user.getUid(), user.getLoginId(), user.getName(), roleCodes);
+        return LoginResponse.of(user.getUid(), user.getLoginId(), user.getName(), roleCodes, menuKeys);
     }
 
     @Transactional
@@ -96,6 +99,7 @@ public class AuthService {
             return null;
         }
         AuthUser authUser = (AuthUser) principal;
-        return LoginResponse.of(authUser.getUid(), authUser.getLoginId(), authUser.getName(), authUser.getRoleCodes());
+        List<String> menuKeys = roleService.findMenuKeysByRoleCodes(authUser.getRoleCodes());
+        return LoginResponse.of(authUser.getUid(), authUser.getLoginId(), authUser.getName(), authUser.getRoleCodes(), menuKeys);
     }
 }
