@@ -32,7 +32,7 @@ public class NaverCommerceTokenService {
     private static final int EXPIRE_BUFFER_MINUTES = 5;
 
     private final StoreAuthRepository storeAuthRepository;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     /**
      * 유효한 액세스 토큰 반환. 만료 임박 시 재발급 후 StoreAuth에 저장.
@@ -61,8 +61,11 @@ public class NaverCommerceTokenService {
 
     private String issueAndSaveToken(StoreAuth auth) {
         long timestamp = System.currentTimeMillis();
-        String clientId = auth.getApiKey();
-        String clientSecret = auth.getApiSecret();
+        String clientId = StringUtils.hasText(auth.getApiKey()) ? auth.getApiKey().trim() : "";
+        String clientSecret = StringUtils.hasText(auth.getApiSecret()) ? auth.getApiSecret().trim() : "";
+        if (!StringUtils.hasText(clientId) || !StringUtils.hasText(clientSecret)) {
+            throw new IllegalArgumentException("API Key와 API Secret이 필요합니다.");
+        }
         String signature = generateSignature(clientId, clientSecret, timestamp);
 
         HttpHeaders headers = new HttpHeaders();
@@ -76,16 +79,27 @@ public class NaverCommerceTokenService {
         params.add("timestamp", String.valueOf(timestamp));
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
-        ResponseEntity<TokenResponse> response = restTemplate.exchange(
-                TOKEN_URL,
-                HttpMethod.POST,
-                request,
-                TokenResponse.class
-        );
+        ResponseEntity<TokenResponse> response;
+        try {
+            response = restTemplate.exchange(
+                    TOKEN_URL,
+                    HttpMethod.POST,
+                    request,
+                    TokenResponse.class
+            );
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            log.warn("네이버 토큰 발급 API 오류: status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new IllegalStateException("네이버 토큰 발급 실패: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
+        } catch (org.springframework.web.client.RestClientException e) {
+            log.warn("네이버 토큰 발급 요청 실패: {}", e.getMessage());
+            throw new IllegalStateException("네이버 토큰 발급 실패: " + e.getMessage());
+        }
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null
                 || !StringUtils.hasText(response.getBody().getAccessToken())) {
-            throw new IllegalStateException("네이버 토큰 발급에 실패했습니다.");
+            String body = response.getBody() != null ? response.getBody().toString() : "null";
+            log.warn("네이버 토큰 발급 응답 이상: status={}, body={}", response.getStatusCode(), body);
+            throw new IllegalStateException("네이버 토큰 발급에 실패했습니다. status=" + response.getStatusCode());
         }
 
         TokenResponse body = response.getBody();
@@ -98,12 +112,18 @@ public class NaverCommerceTokenService {
     }
 
     /**
-     * 전자서명: bcrypt(client_id + "_" + timestamp, client_secret) → Base64
+     * 전자서명: bcrypt(client_id + "_" + timestamp, client_secret) → Base64 (URL-safe)
+     * client_secret은 네이버 커머스API센터에서 발급한 값으로, $2a$10$... 형태의 BCrypt salt 형식이어야 함.
+     * @see https://apicenter.commerce.naver.com/docs/auth
      */
     private String generateSignature(String clientId, String clientSecret, long timestamp) {
+        if (clientSecret == null || (!clientSecret.startsWith("$2a$") && !clientSecret.startsWith("$2b$"))) {
+            throw new IllegalArgumentException(
+                "Client Secret은 네이버 커머스API센터 [애플리케이션 상세]의 '애플리케이션 시크릿'($2a$10$... 형태)을 그대로 입력해야 합니다.");
+        }
         String password = clientId + "_" + timestamp;
         String hashed = org.springframework.security.crypto.bcrypt.BCrypt.hashpw(password, clientSecret);
-        return Base64.getEncoder().encodeToString(hashed.getBytes(StandardCharsets.UTF_8));
+        return Base64.getUrlEncoder().encodeToString(hashed.getBytes(StandardCharsets.UTF_8));
     }
 
     @Data

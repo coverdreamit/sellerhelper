@@ -1,5 +1,6 @@
 package com.sellerhelper.service.naver;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sellerhelper.dto.naver.NaverProductItem;
@@ -15,12 +16,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 네이버 스마트스토어(커머스) API - 상품목록 조회
@@ -36,7 +36,7 @@ public class NaverCommerceProductService {
     private final StoreRepository storeRepository;
     private final StoreAuthRepository storeAuthRepository;
     private final NaverCommerceTokenService tokenService;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     /**
      * 네이버 스토어의 상품목록 조회 (페이징)
@@ -80,11 +80,7 @@ public class NaverCommerceProductService {
             }
 
             ProductSearchApiResponse body = response.getBody();
-            List<NaverProductItem> items = body.getContents() != null
-                    ? body.getContents().stream()
-                    .map(this::toProductItem)
-                    .collect(Collectors.toList())
-                    : Collections.emptyList();
+            List<NaverProductItem> items = flattenToProductItems(body);
 
             return NaverProductSearchResult.builder()
                     .contents(items)
@@ -98,16 +94,36 @@ public class NaverCommerceProductService {
         }
     }
 
-    private NaverProductItem toProductItem(ProductSearchContent c) {
-        if (c == null) return NaverProductItem.empty();
+    /**
+     * API 응답 구조: contents[] 안에 channelProducts[] 가 있음.
+     * contents[].channelProducts[] 를 평탄화하여 NaverProductItem 리스트로 변환.
+     */
+    private List<NaverProductItem> flattenToProductItems(ProductSearchApiResponse body) {
+        if (body == null || body.getContents() == null) {
+            return Collections.emptyList();
+        }
+        List<NaverProductItem> result = new ArrayList<>();
+        for (ProductSearchContentRow row : body.getContents()) {
+            if (row.getChannelProducts() == null) continue;
+            for (ChannelProduct cp : row.getChannelProducts()) {
+                result.add(toProductItem(cp));
+            }
+        }
+        return result;
+    }
+
+    private NaverProductItem toProductItem(ChannelProduct cp) {
+        if (cp == null) return NaverProductItem.empty();
+        String imageUrl = cp.getRepresentativeImage() != null ? cp.getRepresentativeImage().getUrl() : null;
+        String channelProductNo = cp.getChannelProductNo() != null ? String.valueOf(cp.getChannelProductNo()) : null;
         return NaverProductItem.builder()
-                .channelProductNo(c.getChannelProductNo())
-                .productName(c.getProductName())
-                .salePrice(c.getSalePrice())
-                .stockQuantity(c.getStockQuantity())
-                .statusType(c.getStatusType())
-                .representativeImageUrl(c.getRepresentativeImageUrl())
-                .leafCategoryId(c.getLeafCategoryId())
+                .channelProductNo(channelProductNo)
+                .productName(cp.getName())
+                .salePrice(cp.getSalePrice())
+                .stockQuantity(cp.getStockQuantity())
+                .statusType(cp.getStatusType())
+                .representativeImageUrl(imageUrl)
+                .leafCategoryId(cp.getCategoryId())
                 .build();
     }
 
@@ -126,27 +142,53 @@ public class NaverCommerceProductService {
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static class ProductSearchApiResponse {
-        private List<ProductSearchContent> contents;
+        @JsonProperty("contents")
+        private List<ProductSearchContentRow> contents;
         @JsonProperty("totalCount")
+        @JsonAlias("total_count")
         private Integer totalCount;
     }
 
+    /** API 응답의 contents[] 한 행 (원상품/그룹 단위, channelProducts 배열 포함) */
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class ProductSearchContent {
+    private static class ProductSearchContentRow {
+        @JsonProperty("groupProductNo")
+        private Long groupProductNo;
+        @JsonProperty("originProductNo")
+        private Long originProductNo;
+        @JsonProperty("channelProducts")
+        private List<ChannelProduct> channelProducts;
+    }
+
+    /** 채널 상품 1건 (실제 상품 필드가 여기 있음) */
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class ChannelProduct {
         @JsonProperty("channelProductNo")
-        private String channelProductNo;
-        @JsonProperty("productName")
-        private String productName;
+        private Long channelProductNo;
+        @JsonProperty("name")
+        private String name;
+        @JsonProperty("statusType")
+        private String statusType;
+        @JsonProperty("channelProductDisplayStatusType")
+        private String channelProductDisplayStatusType;
         @JsonProperty("salePrice")
         private Long salePrice;
         @JsonProperty("stockQuantity")
         private Integer stockQuantity;
-        @JsonProperty("statusType")
-        private String statusType;
-        @JsonProperty("representativeImageUrl")
-        private String representativeImageUrl;
-        @JsonProperty("leafCategoryId")
-        private String leafCategoryId;
+        @JsonProperty("representativeImage")
+        private RepresentativeImage representativeImage;
+        @JsonProperty("categoryId")
+        private String categoryId;
+        @JsonProperty("modifiedDate")
+        private String modifiedDate;
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class RepresentativeImage {
+        @JsonProperty("url")
+        private String url;
     }
 }

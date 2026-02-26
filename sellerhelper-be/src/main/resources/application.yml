@@ -30,3 +30,5 @@ logging:
   level:
     org.hibernate.SQL: debug
     com.sellerhelper: debug
+    # API 요청/응답 로그 (네이버 등 외부 API 호출 시 콘솔 출력)
+    API: info

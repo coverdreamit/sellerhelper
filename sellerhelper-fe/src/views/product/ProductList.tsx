@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from '@/components/Link';
 import { fetchStoreProducts } from '@/services/myStore.service';
 import { useMyStoreStore } from '@/stores';
@@ -23,7 +23,7 @@ function formatFetchedAt(date) {
 
 export default function ProductList() {
   const { myStores } = useMyStoreStore();
-  const storeTabs = buildStoreTabs(myStores);
+  const storeTabs = useMemo(() => buildStoreTabs(myStores), [myStores]);
 
   const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50, 100];
 
@@ -48,17 +48,37 @@ export default function ProductList() {
     setCurrentPage(1);
   }, [storeTab, pageSize]);
 
-  /** 네이버 스토어 상품 API 응답 → 테이블용 형식 변환 */
-  const toTableProduct = (p: { channelProductNo?: string; productName?: string; salePrice?: number; stockQuantity?: number; statusType?: string; representativeImageUrl?: string }, storeLabel: string, filterValue: string) => ({
-    id: p.channelProductNo,
-    productNo: p.channelProductNo,
-    name: p.productName,
-    imageUrl: p.representativeImageUrl,
-    price: p.salePrice,
-    stock: p.stockQuantity,
-    status: p.statusType === 'SALE' ? '판매중' : p.statusType === 'OUTOFSTOCK' ? '품절' : p.statusType === 'SUSPENSION' ? '판매중지' : p.statusType ?? '-',
-    store: filterValue,
-  });
+  /** 네이버 스토어 상품 API 응답 → 테이블용 형식 변환 (백엔드/API 필드명 모두 허용) */
+  const toTableProduct = (
+    p: Record<string, unknown> & {
+      channelProductNo?: string;
+      productName?: string;
+      channelProductName?: string;
+      salePrice?: number;
+      stockQuantity?: number;
+      statusType?: string;
+      representativeImageUrl?: string;
+    },
+    _storeLabel: string,
+    filterValue: string
+  ) => {
+    const name = String(p.productName ?? p.channelProductName ?? '').trim() || '-';
+    const statusType = String(p.statusType ?? p.channelProductStatusType ?? '');
+    const rawPrice = p.salePrice ?? (p as Record<string, unknown>).sale_price;
+    const rawStock = p.stockQuantity ?? (p as Record<string, unknown>).stock_quantity;
+    const price = typeof rawPrice === 'number' ? rawPrice : Number(rawPrice) || 0;
+    const stock = typeof rawStock === 'number' ? rawStock : Number(rawStock) || 0;
+    return {
+      id: p.channelProductNo ?? (p as Record<string, unknown>).channel_product_no,
+      productNo: p.channelProductNo ?? (p as Record<string, unknown>).channel_product_no,
+      name,
+      imageUrl: p.representativeImageUrl ?? (p as Record<string, unknown>).representative_image_url,
+      price,
+      stock,
+      status: statusType === 'SALE' || statusType === 'ON' ? '판매중' : statusType === 'OUTOFSTOCK' ? '품절' : statusType === 'SUSPENSION' ? '판매중지' : statusType || '-',
+      store: filterValue,
+    };
+  };
 
   const loadProducts = useCallback(() => {
     const tab = storeTabs.find((t) => t.key === storeTab);
@@ -178,19 +198,11 @@ export default function ProductList() {
             <button
               type="button"
               className="btn btn-outline"
-              onClick={() => window.location.reload()}
-              title="페이지 새로고침"
-            >
-              새로고침
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
               onClick={loadProducts}
               disabled={loading}
-              title="API에서 상품 데이터 다시 가져오기"
+              title="상품 목록만 다시 불러오기"
             >
-              가져오기
+              새로고침
             </button>
             <Link to="/product/register" className="btn btn-primary">
               상품 등록

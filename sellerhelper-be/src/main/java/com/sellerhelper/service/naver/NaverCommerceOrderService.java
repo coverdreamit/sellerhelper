@@ -40,7 +40,7 @@ public class NaverCommerceOrderService {
     private final StoreRepository storeRepository;
     private final StoreAuthRepository storeAuthRepository;
     private final NaverCommerceTokenService tokenService;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     /**
      * 변경 상품 주문 내역 조회 (변경 일시 기준, 최대 24시간 구간)
