@@ -21,9 +21,16 @@ export {
   type StoreCreateParams,
   type StoreUpdateParams,
 } from './storeSystem.service';
-export { fetchCompanies, type CompanyItem } from './company.service';
+export {
+  fetchCompanies,
+  fetchMyCompany,
+  createMyCompany,
+  type CompanyItem,
+  type CompanyCreateRequest,
+} from './company.service';
 export {
   fetchMyStores,
+  fetchStoreProducts,
   connectMyStore,
   disconnectMyStore,
   updateMyStore,
@@ -32,6 +39,8 @@ export {
   type MyStoreItem,
   type StoreConnectParams,
   type StoreMyUpdateParams,
+  type StoreProductsResult,
+  type NaverProductItem,
 } from './myStore.service';
 export { fetchUserStores, connectUserStore } from './userStore.service';
 export { fetchVendors } from './vendor.service';
@@ -51,6 +60,7 @@ export {
   fetchUser,
   fetchRoles,
   fetchRole,
+  createUser,
   createRole,
   updateRole,
   deleteRole,
@@ -63,5 +73,6 @@ export {
   type UserPageResponse,
   type UserResponse,
   type RoleItem,
+  type UserCreateRequest,
   type UserUpdateRequest,
 } from './user.service';

@@ -1,10 +1,15 @@
 package com.sellerhelper.controller;
 
 import com.sellerhelper.config.AuthUser;
+import com.sellerhelper.dto.naver.NaverLastChangedResult;
+import com.sellerhelper.dto.naver.NaverProductOrderDetail;
+import com.sellerhelper.dto.naver.NaverProductSearchResult;
 import com.sellerhelper.dto.store.StoreConnectRequest;
 import com.sellerhelper.dto.store.StoreMyUpdateRequest;
 import com.sellerhelper.dto.store.StoreReorderRequest;
 import com.sellerhelper.dto.store.StoreResponse;
+import com.sellerhelper.service.StoreOrderService;
+import com.sellerhelper.service.StoreProductService;
 import com.sellerhelper.service.StoreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,6 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 /** 셀러용 스토어 연동 API (환경설정 > 스토어 연동) */
@@ -22,6 +28,8 @@ import java.util.List;
 public class MyStoreController {
 
     private final StoreService storeService;
+    private final StoreProductService storeProductService;
+    private final StoreOrderService storeOrderService;
 
     /** 내 회사 스토어 목록 (연동된 스토어) */
     @GetMapping
@@ -77,6 +85,49 @@ public class MyStoreController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return ResponseEntity.ok(storeService.verifyMyStore(authUser.getUid(), uid));
+    }
+
+    /** 내 스토어 변경 주문 내역 조회 (네이버, 변경 일시 기준 최대 24시간 구간) */
+    @GetMapping("/{uid}/orders/last-changed")
+    public ResponseEntity<NaverLastChangedResult> getLastChangedOrders(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @RequestParam String lastChangedFrom,
+            @RequestParam(required = false) String lastChangedTo,
+            @RequestParam(defaultValue = "300") Integer limitCount,
+            @RequestParam(required = false) Integer moreSequence) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        ZonedDateTime from = ZonedDateTime.parse(lastChangedFrom);
+        ZonedDateTime to = lastChangedTo != null ? ZonedDateTime.parse(lastChangedTo) : null;
+        return ResponseEntity.ok(storeOrderService.getMyStoreLastChangedOrders(
+                authUser.getUid(), uid, from, to, limitCount, moreSequence));
+    }
+
+    /** 내 스토어 상품 주문 상세 조회 (상품 주문 번호 최대 300개) */
+    @PostMapping("/{uid}/orders/details")
+    public ResponseEntity<List<NaverProductOrderDetail>> getProductOrderDetails(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @RequestBody List<String> productOrderIds) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(storeOrderService.getMyStoreProductOrderDetails(authUser.getUid(), uid, productOrderIds));
+    }
+
+    /** 내 스토어 상품목록 조회 (네이버 스마트스토어) */
+    @GetMapping("/{uid}/products")
+    public ResponseEntity<NaverProductSearchResult> getProducts(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(storeProductService.getMyStoreProducts(authUser.getUid(), uid, page, size));
     }
 
     /** 연동 해제 (본인 회사 스토어만) */

@@ -11,6 +11,7 @@ import {
   resetUsersExceptAdmin,
   type UserListItem,
 } from '@/services/user.service';
+import { useAuthStore } from '@/stores';
 import '../../../styles/Settings.css';
 
 function formatLastLogin(iso: string | null): string {
@@ -44,6 +45,7 @@ function formatCreatedAt(iso: string | null | undefined): string {
 }
 
 export default function UserList() {
+  const { user: authUser } = useAuthStore();
   const [pendingList, setPendingList] = useState<UserListItem[]>([]);
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [totalElements, setTotalElements] = useState(0);
@@ -179,6 +181,21 @@ export default function UserList() {
       alert('거절 처리되었습니다.');
     } catch (err) {
       setError(err instanceof Error ? err.message : '거절 처리 실패');
+    }
+  };
+
+  const handleDeleteUser = async (u: UserListItem) => {
+    if (authUser?.uid === u.uid) {
+      alert('본인 계정은 삭제할 수 없습니다.');
+      return;
+    }
+    if (!confirm(`"${u.name}"(${u.loginId}) 님을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) return;
+    try {
+      await deleteUser(u.uid);
+      await reloadList();
+      alert('삭제되었습니다.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '사용자 삭제 실패');
     }
   };
 
@@ -401,7 +418,18 @@ export default function UserList() {
                       </td>
                       <td>{formatLastLogin(u.lastLoginAt)}</td>
                       <td className="cell-actions">
-                        <Link to={`/system/user/${u.uid}/edit`}>수정</Link>
+                        <Link to={`/system/user/${u.uid}/edit`} style={{ marginRight: 12 }}>
+                          수정
+                        </Link>
+                        <button
+                          type="button"
+                          className="btn-link text-danger"
+                          onClick={() => handleDeleteUser(u)}
+                          disabled={authUser?.uid === u.uid}
+                          title={authUser?.uid === u.uid ? '본인 계정은 삭제할 수 없습니다' : '사용자 삭제'}
+                        >
+                          삭제
+                        </button>
                       </td>
                     </tr>
                   ))

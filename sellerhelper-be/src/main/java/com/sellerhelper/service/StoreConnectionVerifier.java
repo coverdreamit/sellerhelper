@@ -3,6 +3,7 @@ package com.sellerhelper.service;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sellerhelper.entity.Store;
 import com.sellerhelper.entity.StoreAuth;
+import com.sellerhelper.repository.StoreAuthRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Base64;
 
 /**
@@ -25,6 +27,7 @@ import java.util.Base64;
 @RequiredArgsConstructor
 public class StoreConnectionVerifier {
 
+    private final StoreAuthRepository storeAuthRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
     private static final String NAVER_TOKEN_URL = "https://api.commerce.naver.com/external/v1/oauth2/token";
@@ -35,28 +38,37 @@ public class StoreConnectionVerifier {
      * @return 성공 여부
      */
     public boolean verify(Store store, StoreAuth auth) {
+        log.info("[스토어 연동테스트] 시작 storeUid={}, mall={}",
+                store != null ? store.getUid() : null,
+                store != null && store.getMall() != null ? store.getMall().getCode() : null);
         if (auth == null || !StringUtils.hasText(auth.getApiKey()) || !StringUtils.hasText(auth.getApiSecret())) {
+            log.info("[스토어 연동테스트] 실패 - API Key/Secret 없음");
             return false;
         }
         String mallCode = store.getMall() != null ? store.getMall().getCode() : null;
-        if (mallCode == null) return false;
+        if (mallCode == null) {
+            log.info("[스토어 연동테스트] 실패 - 플랫폼 정보 없음");
+            return false;
+        }
 
         switch (mallCode.toUpperCase()) {
             case "NAVER":
-                return verifyNaver(auth);
+                return verifyNaver(store, auth);
             case "COUPANG":
                 return verifyCoupang(auth);
             default:
-                log.debug("해당 플랫폼({})의 연동 검증은 아직 지원되지 않습니다.", mallCode);
+                log.info("[스토어 연동테스트] 해당 플랫폼({}) 연동 검증 미지원", mallCode);
                 return false;
         }
     }
 
-    private boolean verifyNaver(StoreAuth auth) {
+    private boolean verifyNaver(Store store, StoreAuth auth) {
+        log.info("[스토어 연동테스트] 네이버 토큰 발급 시도 storeUid={}", store.getUid());
         try {
             long timestamp = System.currentTimeMillis();
             String clientId = auth.getApiKey();
             String clientSecret = auth.getApiSecret();
+            log.debug("[스토어 연동테스트] client_id={}, timestamp={}", clientId, timestamp);
             String signature = generateNaverSignature(clientId, clientSecret, timestamp);
 
             HttpHeaders headers = new HttpHeaders();
@@ -78,11 +90,22 @@ public class StoreConnectionVerifier {
             );
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null
                     && StringUtils.hasText(response.getBody().getAccessToken())) {
+                NaverTokenResponse body = response.getBody();
+                long expiresIn = body.getExpiresIn() != null ? body.getExpiresIn() : 3600;
+                auth.setAccessToken(body.getAccessToken());
+                auth.setTokenExpiresAt(Instant.now().plusSeconds(expiresIn));
+                storeAuthRepository.save(auth);
+                log.info("[스토어 연동테스트] 네이버 성공 storeUid={}, expiresIn={}초", store.getUid(), expiresIn);
                 return true;
             }
+            log.info("[스토어 연동테스트] 네이버 실패 - 응답 status={}, body={}",
+                    response.getStatusCode(), response.getBody());
             return false;
         } catch (Exception e) {
-            log.debug("네이버 연동 검증 실패: {}", e.getMessage());
+            log.info("[스토어 연동테스트] 네이버 예외 storeUid={}: {} - {}", store.getUid(), e.getClass().getSimpleName(), e.getMessage());
+            if (log.isDebugEnabled()) {
+                log.debug("[스토어 연동테스트] 상세 스택", e);
+            }
             return false;
         }
     }
@@ -97,8 +120,7 @@ public class StoreConnectionVerifier {
     }
 
     private boolean verifyCoupang(StoreAuth auth) {
-        // TODO: 쿠팡 API 연동 검증 구현
-        log.debug("쿠팡 연동 검증은 아직 미구현");
+        log.info("[스토어 연동테스트] 쿠팡 연동 검증 미구현");
         return false;
     }
 

@@ -180,6 +180,29 @@ export async function deleteRole(uid: number): Promise<void> {
   }
 }
 
+export interface UserCreateRequest {
+  loginId: string;
+  password: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  enabled?: boolean;
+  roleUids?: number[];
+}
+
+/** 사용자 생성 */
+export async function createUser(data: UserCreateRequest): Promise<UserResponse> {
+  const res = await apiFetch('/api/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '사용자 등록에 실패했습니다.');
+  }
+  return res.json();
+}
+
 /** 사용자 수정 (승인 시 enabled: true) */
 export async function updateUser(uid: number, data: UserUpdateRequest): Promise<void> {
   const res = await apiFetch(`/api/users/${uid}`, {

@@ -37,6 +37,8 @@ export interface LoginResponse {
   roleCodes: string[];
   /** 사용자 권한들의 메뉴 접근 키 합집합 */
   menuKeys?: string[];
+  /** 소속 회사 UID (null이면 회사 정보 미등록 → 회사 등록 페이지로 리다이렉트) */
+  companyUid?: number | null;
 }
 
 export interface RegisterRequest {

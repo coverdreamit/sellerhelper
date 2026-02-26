@@ -78,6 +78,38 @@ export async function connectMyStore(params: StoreConnectParams): Promise<MyStor
   return res.json();
 }
 
+/** 스토어 상품목록 조회 (네이버 스마트스토어) */
+export interface NaverProductItem {
+  channelProductNo?: string;
+  productName?: string;
+  salePrice?: number;
+  stockQuantity?: number;
+  statusType?: string;
+  representativeImageUrl?: string;
+  leafCategoryId?: string;
+}
+
+export interface StoreProductsResult {
+  contents: NaverProductItem[];
+  page: number;
+  size: number;
+  totalCount: number;
+}
+
+export async function fetchStoreProducts(
+  storeUid: number,
+  page = 1,
+  size = 20
+): Promise<StoreProductsResult> {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  const res = await apiFetch(`/api/my-stores/${storeUid}/products?${params}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '상품 목록 조회 실패');
+  }
+  return res.json();
+}
+
 /** 연동 테스트 (실제 API 호출로 검증, 성공 시 연동됨으로 표시) */
 export async function verifyMyStore(storeUid: number): Promise<MyStoreItem> {
   const res = await apiFetch(`/api/my-stores/${storeUid}/verify`, { method: 'POST' });

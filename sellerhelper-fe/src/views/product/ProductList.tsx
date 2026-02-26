@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from '@/components/Link';
-import { fetchProducts } from '@/services/product.service';
+import { fetchStoreProducts } from '@/services/myStore.service';
 import { useMyStoreStore } from '@/stores';
 import { buildStoreTabs, getStoreColumns, getProductValue } from '@/config/productStoreTabs';
 import '../../styles/Settings.css';
@@ -27,11 +27,12 @@ export default function ProductList() {
 
   const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50, 100];
 
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Record<string, unknown>[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [storeTab, setStoreTab] = useState(storeTabs[0]?.key ?? '');
-  const [fetchedAt, setFetchedAt] = useState(null);
+  const [fetchedAt, setFetchedAt] = useState<Date | null>(null);
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -47,21 +48,42 @@ export default function ProductList() {
     setCurrentPage(1);
   }, [storeTab, pageSize]);
 
+  /** 네이버 스토어 상품 API 응답 → 테이블용 형식 변환 */
+  const toTableProduct = (p: { channelProductNo?: string; productName?: string; salePrice?: number; stockQuantity?: number; statusType?: string; representativeImageUrl?: string }, storeLabel: string, filterValue: string) => ({
+    id: p.channelProductNo,
+    productNo: p.channelProductNo,
+    name: p.productName,
+    imageUrl: p.representativeImageUrl,
+    price: p.salePrice,
+    stock: p.stockQuantity,
+    status: p.statusType === 'SALE' ? '판매중' : p.statusType === 'OUTOFSTOCK' ? '품절' : p.statusType === 'SUSPENSION' ? '판매중지' : p.statusType ?? '-',
+    store: filterValue,
+  });
+
   const loadProducts = useCallback(() => {
+    const tab = storeTabs.find((t) => t.key === storeTab);
+    if (!tab || tab.mallCode !== 'NAVER') {
+      setProducts([]);
+      setTotalCount(0);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
-    fetchProducts()
-      .then((data) => {
-        setProducts(Array.isArray(data) ? data : []);
+    fetchStoreProducts(tab.storeUid, currentPage, pageSize)
+      .then((res) => {
+        const items = (res.contents ?? []).map((p) => toTableProduct(p, tab.label, tab.filterValue));
+        setProducts(items);
+        setTotalCount(res.totalCount ?? 0);
         setFetchedAt(new Date());
       })
       .catch((err) => {
-        setError(err.message || '상품을 불러오는데 실패했습니다.');
+        setError(err?.message || '상품을 불러오는데 실패했습니다.');
+        setProducts([]);
+        setTotalCount(0);
       })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+      .finally(() => setLoading(false));
+  }, [storeTab, storeTabs, currentPage, pageSize]);
 
   useEffect(() => {
     loadProducts();
@@ -69,15 +91,8 @@ export default function ProductList() {
 
   const selectedTab = storeTabs.find((t) => t.key === storeTab);
   const filterValue = selectedTab?.filterValue ?? storeTab;
-  const filteredProducts =
-    storeTab && storeTabs.length > 0
-      ? products.filter((p) => (p.store ?? '') === filterValue)
-      : products;
-
-  const totalCount = filteredProducts.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const startIdx = (currentPage - 1) * pageSize;
-  const pagedProducts = filteredProducts.slice(startIdx, startIdx + pageSize);
+  const pagedProducts = products;
 
   const columns = getStoreColumns(filterValue);
 
@@ -212,7 +227,11 @@ export default function ProductList() {
                 {pagedProducts.length === 0 ? (
                   <tr>
                     <td colSpan={columns.length} style={{ padding: 24, textAlign: 'center' }}>
-                      조회된 상품이 없습니다.
+                      {selectedTab?.mallCode === 'NAVER'
+                        ? '조회된 상품이 없습니다. 네이버 스마트스토어에 등록된 상품을 불러옵니다.'
+                        : selectedTab
+                          ? `${selectedTab.mallName} 상품 조회는 준비 중입니다.`
+                          : '스토어를 연동해 주세요.'}
                     </td>
                   </tr>
                 ) : (
@@ -229,8 +248,8 @@ export default function ProductList() {
             {!loading && totalCount > 0 && (
               <div className="product-list-pagination">
                 <span className="product-list-pagination-info">
-                  전체 {totalCount.toLocaleString()}건 중 {startIdx + 1}–
-                  {Math.min(startIdx + pageSize, totalCount)}건
+                  전체 {totalCount.toLocaleString()}건 중 {(currentPage - 1) * pageSize + 1}–
+                  {Math.min(currentPage * pageSize, totalCount)}건
                 </span>
                 <div className="product-list-pagination-btns">
                   <button

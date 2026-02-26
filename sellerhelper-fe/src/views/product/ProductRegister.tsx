@@ -55,7 +55,11 @@ export default function ProductRegister() {
             </div>
           </div>
           <div className="settings-actions">
-            <button type="button" className="btn btn-primary">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => alert('상품 등록 API가 준비 중입니다.')}
+            >
               등록
             </button>
             <Link to="/product/list" className="btn">

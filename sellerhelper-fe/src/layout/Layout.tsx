@@ -102,7 +102,13 @@ export default function Layout({ children }: { children: ReactNode }) {
       return;
     }
     if (!isAuthPage && pathname && user) {
-      if (!canAccessPath(pathname, user.menuKeys ?? [])) {
+      const companyRequiredPath = '/settings/basic/company';
+      const needsCompanyRegistration = user.companyUid == null;
+      if (needsCompanyRegistration && pathname !== companyRequiredPath) {
+        router.replace(companyRequiredPath);
+        return;
+      }
+      if (!needsCompanyRegistration && !canAccessPath(pathname, user.menuKeys ?? [])) {
         router.replace('/');
         return;
       }

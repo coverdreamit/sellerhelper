@@ -121,9 +121,8 @@ public class StoreService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", userUid));
         Company company = user.getCompany();
         if (company == null) {
-            company = companyRepository.findAll().stream().findFirst().orElse(null);
+            return List.of();
         }
-        if (company == null) return List.of();
         List<Store> list = storeRepository.findByCompany_UidOrderBySortOrderAscUidAsc(company.getUid());
         Set<Long> storeIdsWithAuth = storeIdsWithAuth();
         Set<Long> storeIdsWithStoredCredentials = storeIdsWithStoredCredentials();
@@ -141,8 +140,7 @@ public class StoreService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", userUid));
         Company company = user.getCompany();
         if (company == null) {
-            company = companyRepository.findAll().stream().findFirst()
-                    .orElseThrow(() -> new IllegalStateException("회사가 등록되어 있지 않습니다. 관리자에게 문의하세요."));
+            throw new IllegalStateException("회사 정보를 먼저 등록해 주세요. 환경설정 > 회사 / 셀러 정보에서 등록할 수 있습니다.");
         }
         Mall mall = mallRepository.findById(req.getMallUid())
                 .orElseThrow(() -> new ResourceNotFoundException("Mall", req.getMallUid()));
@@ -179,9 +177,6 @@ public class StoreService {
         Store store = storeRepository.findById(storeUid)
                 .orElseThrow(() -> new ResourceNotFoundException("Store", storeUid));
         Company userCompany = user.getCompany();
-        if (userCompany == null) {
-            userCompany = companyRepository.findAll().stream().findFirst().orElse(null);
-        }
         if (userCompany == null || store.getCompany() == null
                 || !store.getCompany().getUid().equals(userCompany.getUid())) {
             throw new IllegalArgumentException("해당 스토어를 수정할 권한이 없습니다.");
@@ -209,10 +204,7 @@ public class StoreService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", userUid));
         Company company = user.getCompany();
         if (company == null) {
-            company = companyRepository.findAll().stream().findFirst().orElse(null);
-        }
-        if (company == null) {
-            throw new IllegalArgumentException("회사가 등록되어 있지 않습니다.");
+            throw new IllegalArgumentException("회사 정보를 먼저 등록해 주세요. 환경설정 > 회사 / 셀러 정보에서 등록할 수 있습니다.");
         }
         for (int i = 0; i < storeUids.size(); i++) {
             Long uid = storeUids.get(i);
@@ -234,9 +226,6 @@ public class StoreService {
         Store store = storeRepository.findById(storeUid)
                 .orElseThrow(() -> new ResourceNotFoundException("Store", storeUid));
         Company userCompany = user.getCompany();
-        if (userCompany == null) {
-            userCompany = companyRepository.findAll().stream().findFirst().orElse(null);
-        }
         if (userCompany == null || store.getCompany() == null
                 || !store.getCompany().getUid().equals(userCompany.getUid())) {
             throw new IllegalArgumentException("해당 스토어를 연동 해제할 권한이 없습니다.");
@@ -269,9 +258,6 @@ public class StoreService {
         Store store = storeRepository.findById(storeUid)
                 .orElseThrow(() -> new ResourceNotFoundException("Store", storeUid));
         Company userCompany = user.getCompany();
-        if (userCompany == null) {
-            userCompany = companyRepository.findAll().stream().findFirst().orElse(null);
-        }
         if (userCompany == null || store.getCompany() == null
                 || !store.getCompany().getUid().equals(userCompany.getUid())) {
             throw new IllegalArgumentException("해당 스토어를 검증할 권한이 없습니다.");
