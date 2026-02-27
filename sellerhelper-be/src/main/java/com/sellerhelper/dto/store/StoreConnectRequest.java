@@ -29,4 +29,8 @@ public class StoreConnectRequest {
 
     @Size(max = 500)
     private String apiSecret;
+
+    /** 쿠팡 등: 업체코드(Vendor ID), stores.mall_seller_id에 저장 */
+    @Size(max = 100)
+    private String mallSellerId;
 }

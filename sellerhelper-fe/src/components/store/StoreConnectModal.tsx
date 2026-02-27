@@ -17,6 +17,7 @@ export default function StoreConnectModal({ onClose, onConnected }: StoreConnect
   const [malls, setMalls] = useState<MallItem[]>([]);
   const [mallUid, setMallUid] = useState<number>(0);
   const [name, setName] = useState('');
+  const [mallSellerId, setMallSellerId] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
   const [loading, setLoading] = useState(true);
@@ -61,6 +62,7 @@ export default function StoreConnectModal({ onClose, onConnected }: StoreConnect
         name: storeName,
         apiKey: apiKey.trim() || undefined,
         apiSecret: apiSecret.trim() || undefined,
+        mallSellerId: mallSellerId.trim() || undefined,
       };
       const created = await connectMyStore(params);
       if (apiKey.trim() || apiSecret.trim()) {
@@ -140,6 +142,21 @@ export default function StoreConnectModal({ onClose, onConnected }: StoreConnect
                 required
               />
             </div>
+            {malls.find((m) => m.uid === mallUid)?.code === 'COUPANG' && (
+              <div className="form-row">
+                <label>업체코드 (Vendor ID)</label>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="예: A01147037 (쿠팡 WING 판매자센터에서 확인)"
+                    value={mallSellerId}
+                    onChange={(e) => setMallSellerId(e.target.value)}
+                    maxLength={100}
+                  />
+                  <p className="form-hint">쿠팡 상품 목록 조회에 필요합니다. WING &gt; 추가판매정보에서 확인할 수 있습니다.</p>
+                </div>
+              </div>
+            )}
             <div className="form-row">
               <label>API Key / Client ID</label>
               <input

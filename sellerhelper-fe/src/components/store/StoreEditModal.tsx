@@ -12,6 +12,7 @@ interface StoreEditModalProps {
 
 export default function StoreEditModal({ store, onClose, onSaved }: StoreEditModalProps) {
   const [name, setName] = useState(store.name);
+  const [mallSellerId, setMallSellerId] = useState(store.mallSellerId ?? '');
   const [enabled, setEnabled] = useState(store.enabled);
   const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
@@ -23,6 +24,7 @@ export default function StoreEditModal({ store, onClose, onSaved }: StoreEditMod
 
   useEffect(() => {
     setName(store.name);
+    setMallSellerId(store.mallSellerId ?? '');
     setEnabled(store.enabled);
   }, [store]);
 
@@ -39,6 +41,7 @@ export default function StoreEditModal({ store, onClose, onSaved }: StoreEditMod
       const params: StoreMyUpdateParams = {
         name: trimmedName,
         enabled,
+        mallSellerId: store.mallCode === 'COUPANG' ? mallSellerId.trim() : undefined,
       };
       const keyToSend = apiKey.trim();
       const secretToSend = apiSecret.trim();
@@ -111,6 +114,21 @@ export default function StoreEditModal({ store, onClose, onSaved }: StoreEditMod
               사용 (주문·상품 등에서 이 스토어가 표시됨)
             </label>
           </div>
+          {store.mallCode === 'COUPANG' && (
+            <div className="form-row">
+              <label>업체코드 (Vendor ID)</label>
+              <div>
+                <input
+                  type="text"
+                  placeholder="예: A01147037"
+                  value={mallSellerId}
+                  onChange={(e) => setMallSellerId(e.target.value)}
+                  maxLength={100}
+                />
+                <p className="form-hint">쿠팡 상품 목록 조회에 필요합니다.</p>
+              </div>
+            </div>
+          )}
           <div className="form-row">
             <div>
               <label>API Key / Client ID</label>

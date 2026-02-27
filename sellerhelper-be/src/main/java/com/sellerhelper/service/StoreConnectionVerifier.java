@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sellerhelper.entity.Store;
 import com.sellerhelper.entity.StoreAuth;
 import com.sellerhelper.repository.StoreAuthRepository;
+import com.sellerhelper.service.coupang.CoupangApiConstants;
+import com.sellerhelper.service.coupang.CoupangHmacSigner;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,7 +57,7 @@ public class StoreConnectionVerifier {
             case "NAVER":
                 return verifyNaver(store, auth);
             case "COUPANG":
-                return verifyCoupang(auth);
+                return verifyCoupang(store, auth);
             default:
                 log.info("[스토어 연동테스트] 해당 플랫폼({}) 연동 검증 미지원", mallCode);
                 return false;
@@ -146,9 +148,60 @@ public class StoreConnectionVerifier {
         return Base64.getUrlEncoder().encodeToString(hashed.getBytes(StandardCharsets.UTF_8));
     }
 
-    private boolean verifyCoupang(StoreAuth auth) {
-        log.info("[스토어 연동테스트] 쿠팡 연동 검증 미구현");
-        return false;
+    /**
+     * 쿠팡: Access Key + Secret Key로 HMAC 서명 후 카테고리 조회 API로 연동 검증.
+     * (참고: 쇼핑몰 api/coupang - 카테고리 조회는 쿼리 없이 키만으로 호출 가능)
+     */
+    private boolean verifyCoupang(Store store, StoreAuth auth) {
+        log.info("[스토어 연동테스트] 쿠팡 HMAC 연동 검증 storeUid={}", store != null ? store.getUid() : null);
+        try {
+            String accessKey = auth.getApiKey().trim();
+            String secretKey = auth.getApiSecret().trim();
+            String method = "GET";
+            String path = CoupangApiConstants.PATH_DISPLAY_CATEGORIES;
+            String query = "";
+            if (tryCoupangRequest(accessKey, secretKey, method, path, query)) {
+                auth.setVerifiedAt(Instant.now());
+                storeAuthRepository.save(auth);
+                log.info("[스토어 연동테스트] 쿠팡 성공 storeUid={}", store != null ? store.getUid() : null);
+                return true;
+            }
+            log.warn("[스토어 연동테스트] 쿠팡 실패 - 키·시크릿·IP 화이트리스트를 확인하세요.");
+            return false;
+        } catch (Exception e) {
+            log.warn("[스토어 연동테스트] 쿠팡 예외: {} - {}", e.getClass().getSimpleName(), e.getMessage());
+            if (log.isDebugEnabled()) {
+                log.debug("[스토어 연동테스트] 상세 스택", e);
+            }
+            return false;
+        }
+    }
+
+    /** 쿠팡 HMAC 요청 1회 시도. 성공 시 true, 실패 시 로그 남기고 false */
+    private boolean tryCoupangRequest(String accessKey, String secretKey, String method, String path, String query) {
+        try {
+            String authHeader = CoupangHmacSigner.createAuthorizationHeader(accessKey, secretKey, method, path, query);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", authHeader);
+            headers.set("Content-Type", "application/json;charset=UTF-8");
+
+            String url = query != null && !query.isEmpty()
+                    ? CoupangApiConstants.BASE_URL + path + "?" + query
+                    : CoupangApiConstants.BASE_URL + path;
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return true;
+            }
+            log.warn("[스토어 연동테스트] 쿠팡 path={} status={} body={}", path, response.getStatusCode(), response.getBody());
+            return false;
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            log.warn("[스토어 연동테스트] 쿠팡 path={} status={} body={}", path, e.getStatusCode(), e.getResponseBodyAsString());
+            return false;
+        } catch (org.springframework.web.client.RestClientException e) {
+            log.warn("[스토어 연동테스트] 쿠팡 path={} error={}", path, e.getMessage());
+            return false;
+        }
     }
 
     @Data

@@ -45,7 +45,7 @@ public class SecurityConfig {
                             res.getWriter().write(objectMapper.writeValueAsString(Map.of(
                                     "status", 401,
                                     "error", "Unauthorized",
-                                    "message", "Authentication required."
+                                    "message", "로그인이 필요합니다."
                             )));
                         }))
                 .securityContext(ctx -> ctx

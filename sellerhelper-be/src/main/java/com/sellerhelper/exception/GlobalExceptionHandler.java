@@ -64,10 +64,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ApiError> handleIllegalState(IllegalStateException ex, WebRequest request) {
         log.warn("IllegalState: {}", ex.getMessage());
+        String message = sanitizeMessage(ex.getMessage());
         ApiError error = ApiError.builder()
                 .status(HttpStatus.SERVICE_UNAVAILABLE.value())
                 .error("Service Unavailable")
-                .message(ex.getMessage())
+                .message(message)
                 .timestamp(Instant.now())
                 .path(getPath(request))
                 .build();
@@ -138,5 +139,12 @@ public class GlobalExceptionHandler {
 
     private String getPath(WebRequest request) {
         return request.getDescription(false).replace("uri=", "");
+    }
+
+    /** 인코딩 깨진 메시지는 사용자에게 보내지 않음 */
+    private static String sanitizeMessage(String message) {
+        if (message == null || message.isEmpty()) return "요청을 처리하지 못했습니다.";
+        if (message.indexOf('\uFFFD') >= 0 || message.contains("?�")) return "요청을 처리하지 못했습니다. (API 응답 인코딩 오류 - 키·IP·권한을 확인하세요.)";
+        return message;
     }
 }

@@ -2,6 +2,7 @@ package com.sellerhelper.controller;
 
 import com.sellerhelper.config.AuthUser;
 import com.sellerhelper.dto.naver.NaverLastChangedResult;
+import com.sellerhelper.dto.naver.NaverProductItem;
 import com.sellerhelper.dto.naver.NaverProductOrderDetail;
 import com.sellerhelper.dto.naver.NaverProductSearchResult;
 import com.sellerhelper.dto.store.StoreConnectRequest;
@@ -117,7 +118,7 @@ public class MyStoreController {
         return ResponseEntity.ok(storeOrderService.getMyStoreProductOrderDetails(authUser.getUid(), uid, productOrderIds));
     }
 
-    /** 내 스토어 상품목록 조회 (네이버 스마트스토어) */
+    /** 내 스토어 상품목록 조회 (네이버/쿠팡) */
     @GetMapping("/{uid}/products")
     public ResponseEntity<NaverProductSearchResult> getProducts(
             @AuthenticationPrincipal AuthUser authUser,
@@ -128,6 +129,19 @@ public class MyStoreController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return ResponseEntity.ok(storeProductService.getMyStoreProducts(authUser.getUid(), uid, page, size));
+    }
+
+    /** 내 스토어 상품 단건 조회 (쿠팡: sellerProductId) */
+    @GetMapping("/{uid}/products/{productId}")
+    public ResponseEntity<NaverProductItem> getProduct(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @PathVariable String productId) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        NaverProductItem item = storeProductService.getMyStoreProduct(authUser.getUid(), uid, productId);
+        return item != null ? ResponseEntity.ok(item) : ResponseEntity.notFound().build();
     }
 
     /** 연동 해제 (본인 회사 스토어만) */

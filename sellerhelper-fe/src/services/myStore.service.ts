@@ -19,6 +19,8 @@ export interface StoreConnectParams {
   name: string;
   apiKey?: string;
   apiSecret?: string;
+  /** 쿠팡: 업체코드(Vendor ID) */
+  mallSellerId?: string;
 }
 
 export interface StoreMyUpdateParams {
@@ -26,6 +28,8 @@ export interface StoreMyUpdateParams {
   enabled?: boolean;
   apiKey?: string;
   apiSecret?: string;
+  /** 쿠팡: 업체코드(Vendor ID) */
+  mallSellerId?: string;
 }
 
 export async function fetchMyStores(): Promise<MyStoreItem[]> {

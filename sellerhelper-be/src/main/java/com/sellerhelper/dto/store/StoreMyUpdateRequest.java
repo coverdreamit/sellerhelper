@@ -19,6 +19,10 @@ public class StoreMyUpdateRequest {
     @Size(max = 100)
     private String name;
 
+    /** 쿠팡: 업체코드(Vendor ID) */
+    @Size(max = 100)
+    private String mallSellerId;
+
     private Boolean enabled;
 
     @Size(max = 500)

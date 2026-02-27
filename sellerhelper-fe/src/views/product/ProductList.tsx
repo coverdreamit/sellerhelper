@@ -68,6 +68,14 @@ export default function ProductList() {
     const rawStock = p.stockQuantity ?? (p as Record<string, unknown>).stock_quantity;
     const price = typeof rawPrice === 'number' ? rawPrice : Number(rawPrice) || 0;
     const stock = typeof rawStock === 'number' ? rawStock : Number(rawStock) || 0;
+    const status =
+      statusType === 'SALE' || statusType === 'ON' ? '판매중'
+        : statusType === 'OUTOFSTOCK' ? '품절'
+          : statusType === 'SUSPENSION' ? '판매중지'
+            : /승인|approved|sale/i.test(String(statusType)) ? '판매중'
+              : /품절|outofstock|out_of_stock/i.test(String(statusType)) ? '품절'
+                : /중지|suspension/i.test(String(statusType)) ? '판매중지'
+                  : statusType || '-';
     return {
       id: p.channelProductNo ?? (p as Record<string, unknown>).channel_product_no,
       productNo: p.channelProductNo ?? (p as Record<string, unknown>).channel_product_no,
@@ -75,14 +83,14 @@ export default function ProductList() {
       imageUrl: p.representativeImageUrl ?? (p as Record<string, unknown>).representative_image_url,
       price,
       stock,
-      status: statusType === 'SALE' || statusType === 'ON' ? '판매중' : statusType === 'OUTOFSTOCK' ? '품절' : statusType === 'SUSPENSION' ? '판매중지' : statusType || '-',
+      status,
       store: filterValue,
     };
   };
 
   const loadProducts = useCallback(() => {
     const tab = storeTabs.find((t) => t.key === storeTab);
-    if (!tab || tab.mallCode !== 'NAVER') {
+    if (!tab || tab.storeUid == null) {
       setProducts([]);
       setTotalCount(0);
       setLoading(false);
@@ -241,9 +249,11 @@ export default function ProductList() {
                     <td colSpan={columns.length} style={{ padding: 24, textAlign: 'center' }}>
                       {selectedTab?.mallCode === 'NAVER'
                         ? '조회된 상품이 없습니다. 네이버 스마트스토어에 등록된 상품을 불러옵니다.'
-                        : selectedTab
-                          ? `${selectedTab.mallName} 상품 조회는 준비 중입니다.`
-                          : '스토어를 연동해 주세요.'}
+                        : selectedTab?.mallCode === 'COUPANG'
+                          ? '조회된 상품이 없습니다. 쿠팡 WING에 등록된 상품을 불러옵니다.'
+                          : selectedTab
+                            ? `조회된 상품이 없습니다. ${selectedTab.mallName}에 등록된 상품을 불러옵니다.`
+                            : '스토어를 연동해 주세요.'}
                     </td>
                   </tr>
                 ) : (

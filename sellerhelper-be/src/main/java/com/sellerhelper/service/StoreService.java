@@ -154,6 +154,7 @@ public class StoreService {
                 .mall(mall)
                 .company(company)
                 .name(req.getName())
+                .mallSellerId(hasText(req.getMallSellerId()) ? req.getMallSellerId().trim() : null)
                 .enabled(true)
                 .build();
         store.setSortOrder(nextOrder);
@@ -182,6 +183,7 @@ public class StoreService {
             throw new IllegalArgumentException("해당 스토어를 수정할 권한이 없습니다.");
         }
         if (req.getName() != null) store.setName(req.getName());
+        if (req.getMallSellerId() != null) store.setMallSellerId(req.getMallSellerId().trim().isEmpty() ? null : req.getMallSellerId().trim());
         if (req.getEnabled() != null) store.setEnabled(req.getEnabled());
         store = storeRepository.save(store);
         if (req.getApiKey() != null || req.getApiSecret() != null) {
@@ -268,6 +270,12 @@ public class StoreService {
             throw new IllegalArgumentException("API Key와 API Secret을 모두 입력해야 연동 테스트할 수 있습니다.");
         }
         if (!storeConnectionVerifier.verify(store, auth)) {
+            String mallCode = store.getMall() != null ? store.getMall().getCode() : "";
+            if ("COUPANG".equalsIgnoreCase(mallCode)) {
+                throw new IllegalArgumentException(
+                    "쿠팡 연동 검증에 실패했습니다. Access Key·Secret Key를 확인하고, " +
+                    "쿠팡 Wing 판매자센터에서 Open API 키 발급 및 서버 IP 화이트리스트 등록 여부를 확인하세요.");
+            }
             throw new IllegalArgumentException("연동 검증에 실패했습니다. API Key·Secret을 확인하세요.");
         }
         auth.setVerifiedAt(java.time.Instant.now());

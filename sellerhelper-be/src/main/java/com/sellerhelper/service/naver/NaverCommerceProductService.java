@@ -88,9 +88,16 @@ public class NaverCommerceProductService {
                     .size(safeSize)
                     .totalCount(body.getTotalCount() != null ? body.getTotalCount() : items.size())
                     .build();
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            int status = e.getStatusCode() != null ? e.getStatusCode().value() : 0;
+            String safe = status == 403 ? "상품목록 조회에 실패했습니다. (403 접근 거부 - API 키·권한을 확인하세요.)"
+                    : status == 401 ? "상품목록 조회에 실패했습니다. (401 인증 실패 - 연동 테스트를 다시 진행하세요.)"
+                    : "상품목록 조회에 실패했습니다. (HTTP " + status + ")";
+            log.warn("네이버 상품목록 조회 실패 storeUid={}, status={}", storeUid, e.getStatusCode());
+            throw new IllegalStateException(safe);
         } catch (Exception e) {
             log.warn("네이버 상품목록 조회 실패 storeUid={}: {}", storeUid, e.getMessage());
-            throw new IllegalStateException("상품목록 조회에 실패했습니다: " + e.getMessage());
+            throw new IllegalStateException("상품목록 조회에 실패했습니다. 잠시 후 다시 시도하세요.");
         }
     }
 
