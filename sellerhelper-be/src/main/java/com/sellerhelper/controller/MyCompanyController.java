@@ -1,6 +1,6 @@
 package com.sellerhelper.controller;
 
-import com.sellerhelper.config.AuthUser;
+import com.sellerhelper.core.security.AuthUser;
 import com.sellerhelper.dto.company.CompanyCreateRequest;
 import com.sellerhelper.dto.company.CompanyResponse;
 import com.sellerhelper.service.CompanyService;
