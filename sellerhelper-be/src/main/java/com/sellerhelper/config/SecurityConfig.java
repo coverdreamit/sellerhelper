@@ -1,5 +1,8 @@
 package com.sellerhelper.config;
 
+import com.sellerhelper.core.security.JwtAuthenticationFilter;
+import com.sellerhelper.core.security.JwtRequestMatcher;
+import com.sellerhelper.core.security.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,34 +10,53 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.util.Map;
 
 /**
- * Spring Security 설정 - 세션 기반 인증
- * - 회원가입/로그인: 인증 없이 허용
- * - 그 외 API: 인증된 세션 필요
+ * JWT 토큰 인증 (Portal에서 발급한 토큰 검증)
+ * - /api/health, /api/app/config: 인증 없이 허용
+ * - 그 외 /api/**: Authorization: Bearer &lt;token&gt; 필요
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final String[] PERMIT_PATHS = {
+            "/api/health",
+            "/api/app/config",
+            "/actuator/**",
+            "/error"
+    };
+
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().antMatchers("/actuator/**", "/error");
+        return web -> web.ignoring().antMatchers("/actuator/**", "/error");
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper) throws Exception {
+    public JwtRequestMatcher jwtRequestMatcher() {
+        return JwtRequestMatcher.paths(PERMIT_PATHS);
+    }
+
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
+                                                         JwtRequestMatcher jwtRequestMatcher) {
+        return new JwtAuthenticationFilter(jwtTokenProvider, jwtRequestMatcher);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper,
+                                                   JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
-                        .maximumSessions(1)
-                        .maxSessionsPreventsLogin(false))
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeRequests(auth -> auth
-                        .antMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/health", "/api/app/config").permitAll()
+                        .antMatchers(PERMIT_PATHS).permitAll()
                         .antMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())
                 .exceptionHandling(ex -> ex
@@ -48,8 +70,7 @@ public class SecurityConfig {
                                     "message", "로그인이 필요합니다."
                             )));
                         }))
-                .securityContext(ctx -> ctx
-                        .securityContextRepository(new HttpSessionSecurityContextRepository()));
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

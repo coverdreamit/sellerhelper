@@ -1,113 +1,26 @@
 package com.sellerhelper.service;
 
-import com.sellerhelper.config.AuthUser;
-import com.sellerhelper.dto.auth.LoginRequest;
+import com.sellerhelper.core.security.AuthUser;
 import com.sellerhelper.dto.auth.LoginResponse;
-import com.sellerhelper.dto.auth.RegisterRequest;
-import com.sellerhelper.dto.auth.RegisterResponse;
-import com.sellerhelper.entity.Role;
-import com.sellerhelper.entity.User;
-import com.sellerhelper.entity.UserRole;
-import com.sellerhelper.entity.Company;
-import com.sellerhelper.exception.DuplicateLoginIdException;
-import com.sellerhelper.exception.InvalidCredentialsException;
-import com.sellerhelper.repository.CompanyRepository;
-import com.sellerhelper.repository.RoleRepository;
-import com.sellerhelper.repository.UserRepository;
-import com.sellerhelper.repository.UserRoleRepository;
 import com.sellerhelper.service.RoleService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import static org.springframework.util.StringUtils.hasText;
-
-/** 인증(로그인/회원가입) 서비스 */
+/**
+ * 인증 서비스 - JWT 기반.
+ * 로그인/회원가입은 Portal 서버에서 처리. 이 서비스는 토큰으로부터 현재 사용자 정보만 조회.
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    private static final String USER_ROLE_CODE = "USER";
-
-    private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
-    private final RoleRepository roleRepository;
-    private final CompanyRepository companyRepository;
     private final RoleService roleService;
-    private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
-    public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByLoginId(request.getLoginId())
-                .orElseThrow(InvalidCredentialsException::new);
-
-        if (!user.getEnabled()) {
-            throw new InvalidCredentialsException("Pending approval. Contact administrator.");
-        }
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new InvalidCredentialsException();
-        }
-
-        List<UserRole> userRoles = userRoleRepository.findByUser_Uid(user.getUid());
-        List<String> roleCodes = userRoles.stream()
-                .map(ur -> ur.getRole().getCode())
-                .collect(Collectors.toList());
-        List<String> menuKeys = roleService.findMenuKeysByRoleCodes(roleCodes);
-        Long companyUid = user.getCompany() != null ? user.getCompany().getUid() : null;
-
-        return LoginResponse.of(user.getUid(), user.getLoginId(), user.getName(), roleCodes, menuKeys, companyUid);
-    }
-
-    @Transactional
-    public RegisterResponse register(RegisterRequest request) {
-        if (userRepository.existsByLoginId(request.getLoginId())) {
-            throw new DuplicateLoginIdException(request.getLoginId());
-        }
-
-        Role userRole = roleRepository.findByCode(USER_ROLE_CODE)
-                .orElseThrow(() -> new IllegalStateException("USER role not found. Contact administrator."));
-
-        Company company = null;
-        if (hasText(request.getCompanyName())) {
-            company = companyRepository.findByName(request.getCompanyName().trim())
-                    .orElseGet(() -> companyRepository.save(Company.builder()
-                            .name(request.getCompanyName().trim())
-                            .build()));
-        }
-
-        User user = User.builder()
-                .loginId(request.getLoginId())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .name(request.getName())
-                .email(request.getEmail())
-                .phone(request.getPhone())
-                .company(company)
-                .enabled(false)  // 승인 대기
-                .build();
-        user = userRepository.save(user);
-        userRoleRepository.save(UserRole.builder().user(user).role(userRole).build());
-
-        return RegisterResponse.of(user.getUid(), user.getLoginId(), user.getName(), false);
-    }
-
-    /** 로그인 성공 후 세션에 인증 정보 저장 */
-    public void establishSession(LoginResponse res, HttpServletRequest request) {
-        AuthUser authUser = AuthUser.forSession(res.getUid(), res.getLoginId(), res.getName(), res.getRoleCodes());
-        UsernamePasswordAuthenticationToken token =
-                new UsernamePasswordAuthenticationToken(authUser, null, authUser.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(token);
-        request.getSession(true);
-    }
-
-    /** 현재 세션 사용자 조회 */
     public LoginResponse getCurrentUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (!(principal instanceof AuthUser)) {
@@ -115,8 +28,7 @@ public class AuthService {
         }
         AuthUser authUser = (AuthUser) principal;
         List<String> menuKeys = roleService.findMenuKeysByRoleCodes(authUser.getRoleCodes());
-        User user = userRepository.findById(authUser.getUid()).orElse(null);
-        Long companyUid = user != null && user.getCompany() != null ? user.getCompany().getUid() : null;
-        return LoginResponse.of(authUser.getUid(), authUser.getLoginId(), authUser.getName(), authUser.getRoleCodes(), menuKeys, companyUid);
+        return LoginResponse.of(authUser.getUid(), authUser.getLoginId(), authUser.getName(),
+                authUser.getRoleCodes(), menuKeys, authUser.getCompanyUid());
     }
 }

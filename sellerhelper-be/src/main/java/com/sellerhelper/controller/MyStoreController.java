@@ -1,6 +1,6 @@
 package com.sellerhelper.controller;
 
-import com.sellerhelper.config.AuthUser;
+import com.sellerhelper.core.security.AuthUser;
 import com.sellerhelper.dto.naver.NaverLastChangedResult;
 import com.sellerhelper.dto.naver.NaverProductItem;
 import com.sellerhelper.dto.naver.NaverProductOrderDetail;

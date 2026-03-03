@@ -1,0 +1,17 @@
+# Portal 이미지 빌드: sellerhelper-msa 폴더에서 docker build -f Dockerfile.portal .
+FROM eclipse-temurin:16-jdk-alpine AS builder
+RUN apk add --no-cache maven
+
+WORKDIR /msa
+COPY pom.xml .
+COPY sellerhelper-core sellerhelper-core
+COPY sellerhelper-portal sellerhelper-portal
+
+RUN mvn install -pl sellerhelper-core -am -DskipTests -B
+RUN mvn package -pl sellerhelper-portal -am -DskipTests -B
+
+FROM eclipse-temurin:16-jdk-alpine
+WORKDIR /app
+COPY --from=builder /msa/sellerhelper-portal/target/sellerhelper-portal-*.jar app.jar
+EXPOSE 8081
+ENTRYPOINT ["java", "-jar", "app.jar"]

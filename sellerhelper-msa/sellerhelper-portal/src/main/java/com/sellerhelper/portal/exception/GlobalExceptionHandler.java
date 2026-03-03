@@ -1,0 +1,139 @@
+package com.sellerhelper.portal.exception;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @Value("${spring.profiles.active:}")
+    private String activeProfile;
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiError> handleResourceNotFound(ResourceNotFoundException ex, WebRequest request) {
+        log.warn("Resource not found: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiError.builder()
+                .status(HttpStatus.NOT_FOUND.value())
+                .error("Not Found")
+                .message(ex.getMessage())
+                .timestamp(Instant.now())
+                .path(getPath(request))
+                .build());
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiError> handleInvalidCredentials(InvalidCredentialsException ex, WebRequest request) {
+        log.warn("Invalid credentials: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiError.builder()
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .error("Unauthorized")
+                .message(ex.getMessage())
+                .timestamp(Instant.now())
+                .path(getPath(request))
+                .build());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex, WebRequest request) {
+        log.warn("IllegalArgument: {}", ex.getMessage());
+        return ResponseEntity.badRequest().body(ApiError.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message(ex.getMessage())
+                .timestamp(Instant.now())
+                .path(getPath(request))
+                .build());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleIllegalState(IllegalStateException ex, WebRequest request) {
+        log.warn("IllegalState: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ApiError.builder()
+                .status(HttpStatus.SERVICE_UNAVAILABLE.value())
+                .error("Service Unavailable")
+                .message(sanitizeMessage(ex.getMessage()))
+                .timestamp(Instant.now())
+                .path(getPath(request))
+                .build());
+    }
+
+    @ExceptionHandler(DuplicateLoginIdException.class)
+    public ResponseEntity<ApiError> handleDuplicateLoginId(DuplicateLoginIdException ex, WebRequest request) {
+        log.warn("Duplicate login ID: {}", ex.getLoginId());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiError.builder()
+                .status(HttpStatus.CONFLICT.value())
+                .error("Conflict")
+                .message(ex.getMessage())
+                .timestamp(Instant.now())
+                .path(getPath(request))
+                .build());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex, WebRequest request) {
+        List<ApiError.FieldError> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> new ApiError.FieldError(fe.getField(), fe.getDefaultMessage()))
+                .collect(Collectors.toList());
+        return ResponseEntity.badRequest().body(ApiError.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Validation Failed")
+                .message("Validation failed")
+                .timestamp(Instant.now())
+                .path(getPath(request))
+                .fieldErrors(fieldErrors)
+                .build());
+    }
+
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ApiError> handleBind(BindException ex, WebRequest request) {
+        List<ApiError.FieldError> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> new ApiError.FieldError(fe.getField(), fe.getDefaultMessage()))
+                .collect(Collectors.toList());
+        return ResponseEntity.badRequest().body(ApiError.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Validation Failed")
+                .message("Validation failed")
+                .timestamp(Instant.now())
+                .path(getPath(request))
+                .fieldErrors(fieldErrors)
+                .build());
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleGeneric(Exception ex, WebRequest request) {
+        log.error("Unexpected error: {}", ex.getMessage(), ex);
+        String message = "Internal server error";
+        if ("local".equals(activeProfile)) {
+            message = ex.getMessage() != null ? ex.getMessage() : message;
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiError.builder()
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .error("Internal Server Error")
+                .message(message)
+                .timestamp(Instant.now())
+                .path(getPath(request))
+                .build());
+    }
+
+    private String getPath(WebRequest request) {
+        return request.getDescription(false).replace("uri=", "");
+    }
+
+    private static String sanitizeMessage(String message) {
+        if (message == null || message.isEmpty()) return "요청을 처리하지 못했습니다.";
+        if (message.indexOf('\uFFFD') >= 0 || message.contains("?�")) return "요청을 처리하지 못했습니다.";
+        return message;
+    }
+}

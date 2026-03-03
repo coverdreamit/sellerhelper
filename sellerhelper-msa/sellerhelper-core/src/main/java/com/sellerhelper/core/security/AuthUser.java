@@ -1,16 +1,18 @@
-package com.sellerhelper.config;
+package com.sellerhelper.core.security;
 
-import com.sellerhelper.entity.User;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** Spring Security UserDetails - 세션에 저장될 인증 정보 */
+/**
+ * JWT 클레임으로부터 복원한 인증 사용자 (Portal/API 공통)
+ */
 @Getter
 public class AuthUser implements UserDetails {
 
@@ -18,30 +20,14 @@ public class AuthUser implements UserDetails {
     private final String loginId;
     private final String name;
     private final List<String> roleCodes;
-    private final String password;
-    private final boolean enabled;
+    private final Long companyUid;
 
-    public AuthUser(User user, List<String> roleCodes) {
-        this.uid = user.getUid();
-        this.loginId = user.getLoginId();
-        this.name = user.getName();
-        this.roleCodes = roleCodes;
-        this.password = user.getPassword();
-        this.enabled = user.getEnabled();
-    }
-
-    /** 세션 저장용 - 비밀번호 제외 (보안) */
-    public static AuthUser forSession(Long uid, String loginId, String name, List<String> roleCodes) {
-        return new AuthUser(uid, loginId, name, roleCodes);
-    }
-
-    private AuthUser(Long uid, String loginId, String name, List<String> roleCodes) {
+    public AuthUser(Long uid, String loginId, String name, List<String> roleCodes, Long companyUid) {
         this.uid = uid;
         this.loginId = loginId;
         this.name = name;
-        this.roleCodes = roleCodes;
-        this.password = "";
-        this.enabled = true;
+        this.roleCodes = roleCodes != null ? roleCodes : Collections.emptyList();
+        this.companyUid = companyUid;
     }
 
     @Override
@@ -53,7 +39,7 @@ public class AuthUser implements UserDetails {
 
     @Override
     public String getPassword() {
-        return password;
+        return null;
     }
 
     @Override
@@ -73,6 +59,11 @@ public class AuthUser implements UserDetails {
 
     @Override
     public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
         return true;
     }
 }
