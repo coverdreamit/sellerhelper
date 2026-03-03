@@ -102,6 +102,66 @@ public class NaverCommerceProductService {
     }
 
     /**
+     * 네이버 상품 전체 조회 (DB 동기화용). 페이지 단위로 모두 수집.
+     */
+    @Transactional(readOnly = true)
+    public List<NaverProductItem> fetchAllProductsForSync(Long storeUid) {
+        Store store = storeRepository.findById(storeUid)
+                .orElseThrow(() -> new ResourceNotFoundException("Store", storeUid));
+        if (!"NAVER".equalsIgnoreCase(store.getMall() != null ? store.getMall().getCode() : null)) {
+            throw new IllegalArgumentException("네이버 스토어만 상품 동기화가 가능합니다.");
+        }
+        StoreAuth auth = storeAuthRepository.findByStore_Uid(storeUid)
+                .orElseThrow(() -> new IllegalArgumentException("API 인증 정보가 없습니다. 스토어 연동을 먼저 진행해 주세요."));
+
+        String token = tokenService.getOrRefreshToken(store, auth);
+        List<NaverProductItem> allItems = new ArrayList<>();
+        int page = 1;
+        int size = 100;
+
+        try {
+            while (true) {
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("Authorization", "Bearer " + token);
+                headers.set("Accept", "application/json;charset=UTF-8");
+                headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+                ProductSearchRequest requestBody = new ProductSearchRequest(page, size);
+                HttpEntity<ProductSearchRequest> request = new HttpEntity<>(requestBody, headers);
+                ResponseEntity<ProductSearchApiResponse> response = restTemplate.exchange(
+                        PRODUCT_SEARCH_URL, HttpMethod.POST, request, ProductSearchApiResponse.class);
+
+                if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                    log.warn("네이버 상품 동기화 조회 실패 storeUid={}, page={}, status={}",
+                            storeUid, page, response.getStatusCode());
+                    break;
+                }
+                ProductSearchApiResponse body = response.getBody();
+                List<NaverProductItem> items = flattenToProductItems(body);
+                if (items.isEmpty()) {
+                    break;
+                }
+                allItems.addAll(items);
+                int totalCount = body.getTotalCount() != null ? body.getTotalCount() : 0;
+                if (totalCount <= 0 || allItems.size() >= totalCount || items.size() < size) {
+                    break;
+                }
+                page++;
+            }
+            return allItems;
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            int status = e.getStatusCode() != null ? e.getStatusCode().value() : 0;
+            String safe = status == 403 ? "상품 목록 동기화에 실패했습니다. (403 접근 거부)"
+                    : status == 401 ? "상품 목록 동기화에 실패했습니다. (401 인증 실패)"
+                    : "상품 목록 동기화에 실패했습니다. (HTTP " + status + ")";
+            log.warn("네이버 상품 동기화 실패 storeUid={}, status={}", storeUid, e.getStatusCode());
+            throw new IllegalStateException(safe);
+        } catch (Exception e) {
+            log.warn("네이버 상품 동기화 실패 storeUid={}: {}", storeUid, e.getMessage());
+            throw new IllegalStateException("상품 목록 동기화에 실패했습니다. 잠시 후 다시 시도하세요.");
+        }
+    }
+
+    /**
      * API 응답 구조: contents[] 안에 channelProducts[] 가 있음.
      * contents[].channelProducts[] 를 평탄화하여 NaverProductItem 리스트로 변환.
      */

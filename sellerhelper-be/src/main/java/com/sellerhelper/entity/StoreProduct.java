@@ -1,0 +1,67 @@
+package com.sellerhelper.entity;
+
+import lombok.*;
+
+import javax.persistence.*;
+import java.math.BigDecimal;
+import java.time.Instant;
+
+/**
+ * 스토어별 상품 목록 스냅샷 (쿠팡 API 동기화 결과 저장).
+ * 엑셀(가격/재고)과 동일하게 옵션 단위로 1행.
+ */
+@Entity
+@Table(name = "store_products", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"store_uid", "seller_product_id", "vendor_item_id"})
+})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class StoreProduct {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long uid;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_uid", nullable = false)
+    private Store store;
+
+    /** 쿠팡 상품 ID (sellerProductId) */
+    @Column(name = "seller_product_id", nullable = false, length = 50)
+    private String sellerProductId;
+
+    /** 쿠팡 옵션 ID (vendorItemId). 옵션 없으면 빈 문자열 */
+    @Column(name = "vendor_item_id", nullable = false, length = 50)
+    private String vendorItemId;
+
+    @Column(name = "product_name", length = 500)
+    private String productName;
+
+    @Column(name = "option_name", length = 300)
+    private String optionName;
+
+    @Column(name = "sale_price", precision = 15, scale = 0)
+    private BigDecimal salePrice;
+
+    @Column(name = "original_price", precision = 15, scale = 0)
+    private BigDecimal originalPrice;
+
+    @Column(name = "stock_quantity")
+    private Integer stockQuantity;
+
+    @Column(name = "status_type", length = 50)
+    private String statusType;
+
+    @Column(name = "image_url", length = 1000)
+    private String imageUrl;
+
+    @Column(name = "category_id", length = 50)
+    private String categoryId;
+
+    /** 동기화 시각 (해당 스토어 전체 동기화 시 동일 값) */
+    @Column(name = "synced_at", nullable = false)
+    private Instant syncedAt;
+}

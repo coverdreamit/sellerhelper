@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from '@/components/Link';
-import { fetchStoreProducts } from '@/services/myStore.service';
+import { fetchStoreProducts, syncStoreProducts } from '@/services/myStore.service';
 import { useMyStoreStore } from '@/stores';
 import { buildStoreTabs, getStoreColumns, getProductValue } from '@/config/productStoreTabs';
 import '../../styles/Settings.css';
@@ -35,6 +35,7 @@ export default function ProductList() {
   const [fetchedAt, setFetchedAt] = useState<Date | null>(null);
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
+  const [syncing, setSyncing] = useState(false);
 
   /* 스토어 탭이 바뀌면(연동 스토어 로드 등) 첫 번째 탭 선택 */
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function ProductList() {
       channelProductNo?: string;
       productName?: string;
       channelProductName?: string;
+      optionName?: string;
       salePrice?: number;
       stockQuantity?: number;
       statusType?: string;
@@ -62,10 +64,12 @@ export default function ProductList() {
     _storeLabel: string,
     filterValue: string
   ) => {
-    const name = String(p.productName ?? p.channelProductName ?? '').trim() || '-';
+    const baseName = String(p.productName ?? p.channelProductName ?? '').trim() || '-';
+    const optionName = String((p as Record<string, unknown>).optionName ?? p.optionName ?? '').trim();
+    const name = optionName ? `${baseName} (${optionName})` : baseName;
     const statusType = String(p.statusType ?? p.channelProductStatusType ?? '');
     const rawPrice = p.salePrice ?? (p as Record<string, unknown>).sale_price;
-    const rawStock = p.stockQuantity ?? (p as Record<string, unknown>).stock_quantity;
+    const rawStock = p.stockQuantity ?? (p as Record<string, unknown>).stock_quantity ?? (p as Record<string, unknown>).quantity;
     const price = typeof rawPrice === 'number' ? rawPrice : Number(rawPrice) || 0;
     const stock = typeof rawStock === 'number' ? rawStock : Number(rawStock) || 0;
     const status =
@@ -103,7 +107,7 @@ export default function ProductList() {
         const items = (res.contents ?? []).map((p) => toTableProduct(p, tab.label, tab.filterValue));
         setProducts(items);
         setTotalCount(res.totalCount ?? 0);
-        setFetchedAt(new Date());
+        setFetchedAt(res.lastSyncedAt ? new Date(res.lastSyncedAt) : null);
       })
       .catch((err) => {
         setError(err?.message || '상품을 불러오는데 실패했습니다.');
@@ -212,6 +216,29 @@ export default function ProductList() {
             >
               새로고침
             </button>
+            {['NAVER', 'COUPANG'].includes(selectedTab?.mallCode ?? '') && (
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={async () => {
+                  if (!selectedTab?.storeUid) return;
+                  setSyncing(true);
+                  setError(null);
+                  try {
+                    await syncStoreProducts(selectedTab.storeUid);
+                    await loadProducts();
+                  } catch (e) {
+                    setError(e?.message ?? '상품 목록 동기화에 실패했습니다.');
+                  } finally {
+                    setSyncing(false);
+                  }
+                }}
+                disabled={loading || syncing}
+                title="플랫폼 API에서 상품 목록을 가져와 DB에 저장합니다"
+              >
+                {syncing ? '동기화 중…' : '상품 목록 동기화'}
+              </button>
+            )}
             <Link to="/product/register" className="btn btn-primary">
               상품 등록
             </Link>

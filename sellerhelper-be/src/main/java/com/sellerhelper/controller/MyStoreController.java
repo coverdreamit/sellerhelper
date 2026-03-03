@@ -118,7 +118,7 @@ public class MyStoreController {
         return ResponseEntity.ok(storeOrderService.getMyStoreProductOrderDetails(authUser.getUid(), uid, productOrderIds));
     }
 
-    /** 내 스토어 상품목록 조회 (네이버/쿠팡) */
+    /** 내 스토어 상품목록 조회 (네이버: API 직접, 쿠팡: DB 저장분) */
     @GetMapping("/{uid}/products")
     public ResponseEntity<NaverProductSearchResult> getProducts(
             @AuthenticationPrincipal AuthUser authUser,
@@ -129,6 +129,18 @@ public class MyStoreController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return ResponseEntity.ok(storeProductService.getMyStoreProducts(authUser.getUid(), uid, page, size));
+    }
+
+    /** 스토어 상품 목록 동기화 (네이버/쿠팡 등 API → DB 저장, 목록은 DB 조회) */
+    @PostMapping("/{uid}/products/sync")
+    public ResponseEntity<Void> syncProducts(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        storeProductService.syncStoreProducts(authUser.getUid(), uid);
+        return ResponseEntity.noContent().build();
     }
 
     /** 내 스토어 상품 단건 조회 (쿠팡: sellerProductId) */

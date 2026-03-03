@@ -10,7 +10,6 @@
 const defaultColumns = [
   { key: 'imageUrl', label: '이미지', type: 'image' },
   { key: 'name', label: '상품명', type: 'text' },
-  { key: 'store', label: '스토어', type: 'text' },
   { key: 'price', label: '판매가', type: 'price' },
   { key: 'stock', label: '재고', type: 'stock' },
   { key: 'status', label: '상태', type: 'badge' },
@@ -18,7 +17,7 @@ const defaultColumns = [
 ];
 
 /** 셀러헬퍼 표준 키 (공통 스키마) */
-export const SELLERHELPER_KEYS = ['imageUrl', 'name', 'store', 'price', 'stock', 'status', 'displayStatus', 'updated'];
+export const SELLERHELPER_KEYS = ['imageUrl', 'name', 'price', 'stock', 'status', 'displayStatus', 'updated'];
 
 /**
  * 스토어 API 키 → 셀러헬퍼 표준 키 매핑

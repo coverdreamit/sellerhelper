@@ -17,10 +17,15 @@ public class NaverProductItem {
     private String channelProductNo;
     private String productName;
     private Long salePrice;
+    private Long originalPrice;
     private Integer stockQuantity;
     private String statusType;
     private String representativeImageUrl;
     private String leafCategoryId;
+    /** 쿠팡 옵션 단위 목록용: 옵션 ID (vendorItemId) */
+    private String vendorItemId;
+    /** 쿠팡 옵션 단위 목록용: 옵션 정보 (예: 250ml 12개입) */
+    private String optionName;
 
     public static NaverProductItem empty() {
         return new NaverProductItem();

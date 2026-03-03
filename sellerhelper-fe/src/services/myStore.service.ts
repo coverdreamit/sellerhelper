@@ -98,6 +98,8 @@ export interface StoreProductsResult {
   page: number;
   size: number;
   totalCount: number;
+  /** 쿠팡 DB 동기화 시 마지막 동기화 시각 (ISO 문자열) */
+  lastSyncedAt?: string | null;
 }
 
 export async function fetchStoreProducts(
@@ -112,6 +114,15 @@ export async function fetchStoreProducts(
     throw new Error(err?.message ?? '상품 목록 조회 실패');
   }
   return res.json();
+}
+
+/** 쿠팡 상품 목록 동기화 (API → DB 저장). 완료 후 목록을 다시 불러오면 DB에서 조회됨 */
+export async function syncStoreProducts(storeUid: number): Promise<void> {
+  const res = await apiFetch(`/api/my-stores/${storeUid}/products/sync`, { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '상품 목록 동기화 실패');
+  }
 }
 
 /** 연동 테스트 (실제 API 호출로 검증, 성공 시 연동됨으로 표시) */
