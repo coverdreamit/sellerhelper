@@ -191,6 +191,7 @@ public class StoreConnectionVerifier {
             HttpEntity<Void> request = new HttpEntity<>(headers);
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
             if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("[쿠팡 API] 연동 검증(카테고리 조회) 성공 path={}, response={}", path, response.getBody());
                 return true;
             }
             log.warn("[스토어 연동테스트] 쿠팡 path={} status={} body={}", path, response.getStatusCode(), response.getBody());
