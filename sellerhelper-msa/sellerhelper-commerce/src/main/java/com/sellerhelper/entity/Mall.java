@@ -34,5 +34,6 @@ public class Mall extends BaseEntity {
     private String apiBaseUrl;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean enabled = true;
 }

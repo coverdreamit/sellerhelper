@@ -39,6 +39,7 @@ public class OrderItem {
     private String optionInfo;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer quantity = 1;
 
     @Column(name = "unit_price", precision = 15, scale = 2)

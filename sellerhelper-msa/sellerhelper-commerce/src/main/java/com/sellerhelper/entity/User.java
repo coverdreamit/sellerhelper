@@ -35,6 +35,7 @@ public class User extends BaseEntity {
     private String phone;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean enabled = true;
 
     private Instant lastLoginAt;
@@ -45,5 +46,6 @@ public class User extends BaseEntity {
     private Company company;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<UserRole> userRoles = new ArrayList<>();
 }

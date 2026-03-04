@@ -35,5 +35,6 @@ public class Store extends BaseEntity {
     private String mallSellerId;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean enabled = true;
 }

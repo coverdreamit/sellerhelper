@@ -26,5 +26,6 @@ public class Menu extends BaseEntity {
     private String parentKey;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean enabled = true;
 }

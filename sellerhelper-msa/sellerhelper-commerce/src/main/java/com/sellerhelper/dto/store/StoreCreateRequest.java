@@ -29,5 +29,6 @@ public class StoreCreateRequest {
     @Size(max = 100)
     private String mallSellerId;
 
+    @Builder.Default
     private Boolean enabled = true;
 }

@@ -34,5 +34,6 @@ public class MallCreateRequest {
     @Size(max = 255)
     private String apiBaseUrl;
 
+    @Builder.Default
     private Boolean enabled = true;
 }
