@@ -3,8 +3,7 @@
 set -e
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-BE="$ROOT/sellerhelper-be"
-PID_FILE="$BE/target/sellerhelper-be.pid"
+PID_FILE="$ROOT/sellerhelper-msa/sellerhelper-commerce/target/sellerhelper-commerce.pid"
 
 if [ ! -f "$PID_FILE" ]; then
   echo "실행 중인 백엔드가 없습니다."

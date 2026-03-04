@@ -6,10 +6,10 @@ WORKDIR /msa
 COPY . .
 
 RUN mvn install -pl sellerhelper-core -am -DskipTests -B
-RUN mvn package -pl sellerhelper-be -am -DskipTests -B
+RUN mvn package -pl sellerhelper-commerce -am -DskipTests -B
 
 FROM eclipse-temurin:16-jdk-alpine
 WORKDIR /app
-COPY --from=builder /msa/sellerhelper-be/target/sellerhelper-be-*.jar app.jar
+COPY --from=builder /msa/sellerhelper-commerce/target/sellerhelper-commerce-*.jar app.jar
 EXPOSE 5080
 ENTRYPOINT ["java", "-jar", "app.jar"]

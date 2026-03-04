@@ -1,14 +1,14 @@
-# 셀러 보조 사이트 (백엔드)
+# sellerhelper-commerce (스토어·몰·상품·주문 API)
 
-여러 온라인 쇼핑몰 API를 연동하는 셀러 보조 사이트의 백엔드입니다.
+여러 온라인 쇼핑몰 API를 연동하는 커머스 API 모듈입니다. (sellerhelper-msa 내)
 
 ## 기술 스택
 
 - Java 16
 - Spring Boot 2.7
-- Maven + Maven Wrapper (mvnw)
+- Maven
 - Spring Data JPA, PostgreSQL
-- Spring Security (세션 기반 인증)
+- Spring Security (JWT 토큰 인증)
 - Hibernate DDL: `update` (엔티티 기준 자동 스키마 반영)
 
 ## 프로젝트 구조
@@ -137,7 +137,7 @@ dev-be.bat        # Windows 개발모드 (포트 5080)
 ### Maven Wrapper 직접 실행
 
 ```bash
-cd sellerhelper-be
+cd sellerhelper-msa && mvn spring-boot:run -pl sellerhelper-commerce
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 # Windows: mvnw.cmd
 ```

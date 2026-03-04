@@ -8,7 +8,7 @@ COPY package.json yarn.lock* ./
 RUN yarn install --frozen-lockfile
 
 # 소스 복사 및 빌드 (API URL은 빌드 시 주입)
-ARG NEXT_PUBLIC_API_URL=http://sellerhelper-be:8080
+ARG NEXT_PUBLIC_API_URL=http://sellerhelper-commerce:5080
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 COPY . .
 RUN yarn build

@@ -40,14 +40,14 @@ jobs:
             ${{ env.IMAGE_PREFIX }}/sellerhelper-fe:${{ github.sha }}
             ${{ env.IMAGE_PREFIX }}/sellerhelper-fe:latest
 
-      - name: Build and push BE image
+      - name: Build and push Commerce image
         uses: docker/build-push-action@v6
         with:
-          context: ./sellerhelper-be
-          file: ./sellerhelper-be/Dockerfile
+          context: ./sellerhelper-msa
+          file: ./sellerhelper-msa/sellerhelper-commerce/Dockerfile
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}/sellerhelper-be:${{ github.sha }}
-            ${{ env.IMAGE_PREFIX }}/sellerhelper-be:latest
+            ${{ env.IMAGE_PREFIX }}/sellerhelper-commerce:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/sellerhelper-commerce:latest
 
       # 배포는 서버에서 5분마다 scripts/deploy.sh 크론으로 실행
