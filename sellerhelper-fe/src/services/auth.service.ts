@@ -1,15 +1,22 @@
 /**
- * 인증 서비스 - 세션 기반 로그인/회원가입
- * credentials: 'include' 로 세션 쿠키 전달
+ * 인증 서비스 - JWT 기반 로그인/회원가입
+ * Portal(8081) /api/auth/* 사용
  * 비밀번호 저장 금지 → 아이디만 localStorage 저장
  */
 
 import { storage } from '@/shared/storage/storage';
 import { STORAGE_KEYS } from '@/shared/storage/keys';
+import { useAuthStore } from '@/stores';
 
-const apiFetchOptions: RequestInit = {
+function authHeaders(): Record<string, string> {
+  const token = useAuthStore.getState().user?.token;
+  const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  return h;
+}
+
+const baseFetchOptions: RequestInit = {
   credentials: 'include',
-  headers: { 'Content-Type': 'application/json' },
 };
 
 /** 서버가 HTML 에러 페이지를 반환할 경우 res.json() 대신 사용 */
@@ -31,6 +38,8 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  /** JWT (Bearer) - API 호출 시 Authorization 헤더에 사용 */
+  token?: string | null;
   uid: number;
   loginId: string;
   name: string;
@@ -59,8 +68,9 @@ export interface RegisterResponse {
 
 export async function login(req: LoginRequest): Promise<LoginResponse> {
   const res = await fetch('/api/auth/login', {
-    ...apiFetchOptions,
+    ...baseFetchOptions,
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       loginId: req.loginId,
       password: req.password,
@@ -76,8 +86,9 @@ export async function login(req: LoginRequest): Promise<LoginResponse> {
 
 export async function register(req: RegisterRequest): Promise<RegisterResponse> {
   const res = await fetch('/api/auth/register', {
-    ...apiFetchOptions,
+    ...baseFetchOptions,
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
   });
   const data = await parseJsonOrThrow<RegisterResponse & { message?: string; fieldErrors?: { message?: string }[] }>(res);
@@ -87,11 +98,12 @@ export async function register(req: RegisterRequest): Promise<RegisterResponse> 
   return data;
 }
 
-/** 현재 세션 사용자 조회 (로그인 여부 확인) */
+/** 현재 로그인 사용자 조회 (JWT 필요) */
 export async function getMe(): Promise<LoginResponse | null> {
   const res = await fetch('/api/auth/me', {
-    ...apiFetchOptions,
+    ...baseFetchOptions,
     method: 'GET',
+    headers: authHeaders(),
   });
   if (res.status === 401) return null;
   if (!res.ok) return null;
@@ -105,8 +117,9 @@ export async function getMe(): Promise<LoginResponse | null> {
 /** 로그아웃 */
 export async function logout(): Promise<void> {
   await fetch('/api/auth/logout', {
-    ...apiFetchOptions,
+    ...baseFetchOptions,
     method: 'POST',
+    headers: authHeaders(),
   });
 }
 

@@ -3,6 +3,7 @@
 app:
   dev-mode: true
 
+# cicdplus와 동일 DB (devopsimp-dev, hipms/hipms)
 spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:coverdreamit.iptime.org}:${DB_PORT:9432}/${DB_NAME:sellerhelper}

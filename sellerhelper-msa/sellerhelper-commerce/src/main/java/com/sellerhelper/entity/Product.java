@@ -36,5 +36,6 @@ public class Product extends BaseEntity {
     private BigDecimal costPrice;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean enabled = true;
 }

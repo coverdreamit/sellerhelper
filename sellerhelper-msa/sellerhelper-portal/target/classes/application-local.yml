@@ -1,11 +1,13 @@
 app:
   dev-mode: true
 
+# local 프로필: cicdplus와 동일 DB (devopsimp-dev, hipms/hipms)
+# H2 사용 시: SPRING_PROFILES_ACTIVE=local,local-h2
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:sellerhelper}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: jdbc:postgresql://${DB_HOST:coverdreamit.iptime.org}:${DB_PORT:9432}/${DB_NAME:sellerhelper}
+    username: ${DB_USERNAME:hipms}
+    password: ${DB_PASSWORD:hipms}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
