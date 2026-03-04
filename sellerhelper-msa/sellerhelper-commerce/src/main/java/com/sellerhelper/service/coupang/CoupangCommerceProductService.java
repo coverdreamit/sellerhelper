@@ -3,6 +3,8 @@ package com.sellerhelper.service.coupang;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sellerhelper.dto.naver.NaverProductItem;
 import com.sellerhelper.dto.naver.NaverProductSearchResult;
 import com.sellerhelper.entity.Store;
@@ -33,6 +35,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class CoupangCommerceProductService {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final StoreRepository storeRepository;
     private final StoreAuthRepository storeAuthRepository;
@@ -89,6 +93,7 @@ public class CoupangCommerceProductService {
             if (body == null) {
                 return NaverProductSearchResult.empty(safePage, safeSize);
             }
+            log.info("[쿠팡 API] 상품목록 조회 성공 storeUid={}, page={}, size={}, response={}", storeUid, safePage, safeSize, toJson(body));
             List<NaverProductItem> items = body.getData() == null
                     ? Collections.emptyList()
                     : body.getData().stream().flatMap(p -> toProductItems(p).stream()).collect(Collectors.toList());
@@ -164,6 +169,7 @@ public class CoupangCommerceProductService {
                 if (body == null || body.getData() == null || body.getData().isEmpty()) {
                     break;
                 }
+                log.info("[쿠팡 API] 상품 동기화 페이지 조회 storeUid={}, nextToken={}, pageData={}", storeUid, nextToken, toJson(body));
                 List<NaverProductItem> pageItems = body.getData().stream()
                         .flatMap(p -> toProductItems(p).stream())
                         .collect(Collectors.toList());
@@ -172,6 +178,7 @@ public class CoupangCommerceProductService {
                 nextToken = body.getNextToken();
             } while (nextToken != null && !nextToken.isEmpty());
 
+            log.info("[쿠팡 API] 상품 동기화 완료 storeUid={}, totalItems={}, allItems={}", storeUid, allItems.size(), toJson(allItems));
             return allItems;
         } catch (org.springframework.web.client.HttpClientErrorException e) {
             String safeMessage = buildSafeApiErrorMessage(e, "상품 목록 동기화");
@@ -180,6 +187,16 @@ public class CoupangCommerceProductService {
         } catch (Exception e) {
             log.warn("쿠팡 상품 동기화 실패 storeUid={}: {}", storeUid, e.getMessage());
             throw new IllegalStateException("상품 목록 동기화에 실패했습니다. " + (e.getMessage() != null && isCleanUtf8(e.getMessage()) ? e.getMessage() : "잠시 후 다시 시도하세요."));
+        }
+    }
+
+    /** JSON 직렬화 (로그용, 실패 시 toString) */
+    private static String toJson(Object obj) {
+        if (obj == null) return "null";
+        try {
+            return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            return obj.toString();
         }
     }
 
@@ -260,6 +277,7 @@ public class CoupangCommerceProductService {
             if (body == null || body.getData() == null) {
                 return null;
             }
+            log.info("[쿠팡 API] 상품 단건 조회 성공 storeUid={}, sellerProductId={}, response={}", storeUid, sellerProductId, toJson(body));
             return toProductItem(body.getData());
         } catch (org.springframework.web.client.HttpClientErrorException e) {
             String safeMessage = buildSafeApiErrorMessage(e, "상품 조회");
