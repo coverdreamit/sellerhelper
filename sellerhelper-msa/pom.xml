@@ -14,6 +14,7 @@
     <modules>
         <module>sellerhelper-core</module>
         <module>sellerhelper-portal</module>
+        <module>sellerhelper-be</module>
     </modules>
 
     <properties>

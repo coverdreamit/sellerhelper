@@ -20,7 +20,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
   sellerhelper-be:
     build:
-      context: .
+      context: ./sellerhelper-msa
       dockerfile: sellerhelper-be/Dockerfile
     image: sellerhelper-be:latest
     container_name: sellerhelper-be
