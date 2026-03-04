@@ -101,7 +101,7 @@
 
 ---
 
-## 6. 구현 현황 (sellerhelper-be)
+## 6. 구현 현황 (sellerhelper-commerce)
 
 | 구분 | 구현 | 비고 |
 |------|------|------|

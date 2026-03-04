@@ -1,6 +1,6 @@
 # 스크립트
 
-백엔드(sellerhelper-be) 실행/종료용 스크립트입니다. Maven Wrapper(mvnw)를 사용합니다.
+백엔드(Commerce API) 실행/종료용 스크립트입니다. sellerhelper-msa 모듈을 사용합니다.
 
 ## 스크립트 목록
 

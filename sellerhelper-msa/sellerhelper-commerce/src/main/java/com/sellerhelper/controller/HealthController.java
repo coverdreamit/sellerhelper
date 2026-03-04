@@ -1,4 +1,4 @@
-package com.sellerhelper.api.controller;
+package com.sellerhelper.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +13,6 @@ public class HealthController {
 
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> health() {
-        return ResponseEntity.ok(Map.of("status", "UP", "service", "sellerhelper-api"));
+        return ResponseEntity.ok(Map.of("status", "UP", "service", "sellerhelper-commerce"));
     }
 }

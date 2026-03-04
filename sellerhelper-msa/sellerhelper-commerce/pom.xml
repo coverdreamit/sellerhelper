@@ -11,9 +11,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>sellerhelper-be</artifactId>
+    <artifactId>sellerhelper-commerce</artifactId>
     <packaging>jar</packaging>
-    <name>sellerhelper-be</name>
+    <name>sellerhelper-commerce</name>
     <description>스토어·몰·상품·주문 API (JWT 검증)</description>
 
     <dependencies>

@@ -18,12 +18,12 @@ services:
       DB_NAME: ${DB_NAME:-sellerhelper}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-  sellerhelper-be:
+  sellerhelper-commerce:
     build:
       context: ./sellerhelper-msa
-      dockerfile: sellerhelper-be/Dockerfile
-    image: sellerhelper-be:latest
-    container_name: sellerhelper-be
+      dockerfile: sellerhelper-commerce/Dockerfile
+    image: sellerhelper-commerce:latest
+    container_name: sellerhelper-commerce
     restart: unless-stopped
     ports:
       - "5080:5080"
@@ -42,14 +42,14 @@ services:
       context: ./sellerhelper-fe
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://sellerhelper-be:5080
+        NEXT_PUBLIC_API_URL: http://sellerhelper-commerce:5080
     image: sellerhelper-fe:latest
     container_name: sellerhelper-fe
     restart: unless-stopped
     ports:
       - "5000:5000"
     depends_on:
-      - sellerhelper-be
+      - sellerhelper-commerce
     environment:
       PORT: "5000"
-      NEXT_PUBLIC_API_URL: http://sellerhelper-be:5080
+      NEXT_PUBLIC_API_URL: http://sellerhelper-commerce:5080

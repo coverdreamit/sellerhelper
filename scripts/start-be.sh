@@ -1,12 +1,12 @@
 #!/bin/bash
-# 백엔드 애플리케이션 시작 (백그라운드)
+# Commerce API 시작 (백그라운드)
 set -e
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-BE="$ROOT/sellerhelper-be"
-PID_FILE="$BE/target/sellerhelper-be.pid"
+MSA="$ROOT/sellerhelper-msa"
+PID_FILE="$MSA/sellerhelper-commerce/target/sellerhelper-commerce.pid"
 
-cd "$BE"
+cd "$MSA"
 
 # 기존 프로세스 확인
 if [ -f "$PID_FILE" ]; then
@@ -18,8 +18,8 @@ if [ -f "$PID_FILE" ]; then
   rm -f "$PID_FILE"
 fi
 
-mkdir -p "$BE/target"
-LOG_FILE="$BE/target/sellerhelper-be.log"
-nohup ./mvnw spring-boot:run -Dspring-boot.run.profiles="${SPRING_PROFILES_ACTIVE:-local}" >> "$LOG_FILE" 2>&1 &
+mkdir -p "$MSA/sellerhelper-commerce/target"
+LOG_FILE="$MSA/sellerhelper-commerce/target/sellerhelper-commerce.log"
+nohup mvn spring-boot:run -pl sellerhelper-commerce -Dspring-boot.run.profiles="${SPRING_PROFILES_ACTIVE:-local}" >> "$LOG_FILE" 2>&1 &
 echo $! > "$PID_FILE"
-echo "백엔드 시작됨 (PID: $(cat "$PID_FILE"), 로그: $LOG_FILE)"
+echo "Commerce API 시작됨 (PID: $(cat "$PID_FILE"), 로그: $LOG_FILE)"
