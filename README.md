@@ -12,16 +12,15 @@
 ```
 sellerhelper/
 ├── sellerhelper-fe/      # Next.js 프론트엔드
-├── sellerhelper-msa/     # Spring Boot 백엔드 (Portal + Commerce)
-│   ├── sellerhelper-core/      # JWT 공통
-│   ├── sellerhelper-portal/    # 인증·사용자·권한·회사 (5081)
-│   └── sellerhelper-commerce/   # 스토어·몰·상품·주문 (5080)
+├── sellerhelper-msa/     # Spring Boot 백엔드 (단일 프로젝트)
+│   ├── src/              # 인증·사용자·스토어·몰·상품·주문 통합
+│   └── pom.xml
 ├── scripts/              # 백엔드 시작/종료 스크립트
 └── README.md             # 본 파일
 ```
 
 - **sellerhelper-fe/** – Next.js 14 (App Router) + React 18. [sellerhelper-fe/README.md](sellerhelper-fe/README.md)
-- **sellerhelper-msa/** – Spring Boot 백엔드 (Portal 5081 + Commerce 5080). [sellerhelper-msa/README.md](sellerhelper-msa/README.md)
+- **sellerhelper-msa/** – Spring Boot 백엔드 (단일 프로젝트, 포트 5080). [sellerhelper-msa/README.md](sellerhelper-msa/README.md)
 - **scripts/** – 백엔드 start/stop/restart/dev/run 스크립트 (.bat, .sh)
 
 ## 빠른 실행

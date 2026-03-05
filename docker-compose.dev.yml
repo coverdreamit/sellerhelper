@@ -1,19 +1,15 @@
-# 로컬 개발용 PostgreSQL (프로필: local)
-# 사용법: docker-compose -f docker-compose.dev.yml up -d
-# 실행 후 Portal/Commerce를 local 프로필로 실행
-services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: sellerhelper-postgres
-    restart: unless-stopped
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: sellerhelper
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - sellerhelper-postgres-data:/var/lib/postgresql/data
+# Dev 환경 오버라이드 (sellerhelper-dev DB, 별도 포트)
+# 사용: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
-volumes:
-  sellerhelper-postgres-data:
+services:
+  sellerhelper-be:
+    container_name: sellerhelper-be-dev
+    ports:
+      - "5082:5080"
+    environment:
+      DB_NAME: sellerhelper-dev
+
+  sellerhelper-fe:
+    container_name: sellerhelper-fe-dev
+    ports:
+      - "5001:5000"

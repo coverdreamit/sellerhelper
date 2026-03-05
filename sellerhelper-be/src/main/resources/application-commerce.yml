@@ -1,0 +1,10 @@
+# 커머스 서비스 - 스토어/몰/상품/주문 API (JWT 검증)
+# 사용: SPRING_PROFILES_ACTIVE=commerce
+# n개 인스턴스: SERVER_PORT로 포트 분리 (5080, 5082, 5083...)
+
+spring:
+  application:
+    name: sellerhelper-commerce
+
+server:
+  port: ${SERVER_PORT:5080}

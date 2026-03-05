@@ -1,0 +1,9 @@
+# 포털(인증) 서비스 - JWT 발급, 사용자/회사/권한 관리
+# 사용: SPRING_PROFILES_ACTIVE=portal
+
+spring:
+  application:
+    name: sellerhelper-portal
+
+server:
+  port: ${SERVER_PORT:5081}

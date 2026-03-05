@@ -25,20 +25,26 @@ git clone https://github.com/coverdreamit/sellerhelper.git .
 
 ---
 
-### 3단계: 환경 변수 파일(.env) 생성
+### 3단계: 환경 변수 파일 생성
+
+**Test 환경** (기본 운영):
 
 ```bash
-nano .env
+cp .env.test.example .env.test
+nano .env.test
 ```
 
 아래 내용 입력 (DB 계정은 실제 값으로 변경):
 
 ```
+DB_NAME=sellerhelper-test
 DB_USERNAME=실제DB사용자명
 DB_PASSWORD=실제DB비밀번호
 ```
 
 저장: `Ctrl+O` → Enter → `Ctrl+X` 종료
+
+> Dev 환경 추가 시: `cp .env.dev.example .env.dev` 후 동일하게 입력. [환경 분리 상세](dev-test-env.md)
 
 ---
 
@@ -53,10 +59,10 @@ chmod +x scripts/deploy.sh
 ### 5단계: 최초 배포 실행 (동작 확인)
 
 ```bash
-./scripts/deploy.sh
+./scripts/deploy.sh test
 ```
 
-에러 없이 끝나면 Docker 컨테이너가 실행된 상태입니다.
+에러 없이 끝나면 Docker 컨테이너가 실행된 상태입니다. (dev 환경: `./scripts/deploy.sh dev`)
 
 ---
 
@@ -69,7 +75,7 @@ crontab -e
 에디터가 뜨면 **맨 아래에** 다음 줄 추가:
 
 ```
-*/5 * * * * bash $HOME/sellerhelper/scripts/deploy.sh >> $HOME/sellerhelper/deploy.log 2>&1
+*/5 * * * * bash $HOME/sellerhelper/scripts/deploy.sh test >> $HOME/sellerhelper/deploy.log 2>&1
 ```
 
 > `bash`로 실행하면 실행 권한(Permission denied) 문제를 피할 수 있습니다. `$HOME`은 크론이 사용자 홈 디렉터리(~/)로 자동 설정합니다.

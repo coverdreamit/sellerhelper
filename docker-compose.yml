@@ -1,29 +1,10 @@
 services:
-  sellerhelper-portal:
+  sellerhelper-be:
     build:
       context: ./sellerhelper-msa
-      dockerfile: Dockerfile.portal
-    image: sellerhelper-portal:latest
-    container_name: sellerhelper-portal
-    restart: unless-stopped
-    ports:
-      - "5081:5081"
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-      SERVER_PORT: "5081"
-      JWT_SECRET: ${JWT_SECRET:-sellerhelper-jwt-secret-key-at-least-32-bytes-long-for-hs256}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
-      DB_HOST: ${DB_HOST:-coverdreamit.iptime.org}
-      DB_PORT: ${DB_PORT:-9432}
-      DB_NAME: ${DB_NAME:-sellerhelper}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-  sellerhelper-commerce:
-    build:
-      context: ./sellerhelper-msa
-      dockerfile: sellerhelper-commerce/Dockerfile
-    image: sellerhelper-commerce:latest
-    container_name: sellerhelper-commerce
+      dockerfile: Dockerfile
+    image: sellerhelper-be:latest
+    container_name: sellerhelper-be
     restart: unless-stopped
     ports:
       - "5080:5080"
@@ -42,14 +23,16 @@ services:
       context: ./sellerhelper-fe
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://sellerhelper-commerce:5080
+        NEXT_PUBLIC_API_URL: http://sellerhelper-be:5080
+        NEXT_PUBLIC_PORTAL_URL: http://sellerhelper-be:5080
     image: sellerhelper-fe:latest
     container_name: sellerhelper-fe
     restart: unless-stopped
     ports:
       - "5000:5000"
     depends_on:
-      - sellerhelper-commerce
+      - sellerhelper-be
     environment:
       PORT: "5000"
-      NEXT_PUBLIC_API_URL: http://sellerhelper-commerce:5080
+      NEXT_PUBLIC_API_URL: http://sellerhelper-be:5080
+      NEXT_PUBLIC_PORTAL_URL: http://sellerhelper-be:5080
