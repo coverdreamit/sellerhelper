@@ -16,7 +16,7 @@ spring:
     open-in-view: false
 
 server:
-  port: ${SERVER_PORT:8081}
+  port: ${SERVER_PORT:5081}
 
 # JWT (Portal에서 발급, API에서 동일 secret으로 검증)
 jwt:

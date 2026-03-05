@@ -13,5 +13,5 @@ RUN mvn package -pl sellerhelper-portal -am -DskipTests -B
 FROM eclipse-temurin:16-jdk-alpine
 WORKDIR /app
 COPY --from=builder /msa/sellerhelper-portal/target/sellerhelper-portal-*.jar app.jar
-EXPOSE 8081
+EXPOSE 5081
 ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -1,6 +1,6 @@
 /**
  * 인증 서비스 - JWT 기반 로그인/회원가입
- * Portal(8081) /api/auth/* 사용
+ * Portal(5081) /api/auth/* 사용
  * 비밀번호 저장 금지 → 아이디만 localStorage 저장
  */
 
