@@ -1,0 +1,104 @@
+# 포털 1개 + 커머스 n개 + nginx (프로필 분리 배포)
+# 사용: docker compose -f docker-compose.scale.yml up -d
+#
+# DB 등 공통 설정은 .env 또는 docker-compose.override.yml에서
+
+services:
+  sellerhelper-portal:
+    build:
+      context: ./sellerhelper-be
+      dockerfile: Dockerfile
+    image: sellerhelper-be:latest
+    container_name: sellerhelper-portal
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: portal,prod
+      SERVER_PORT: "5081"
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - sellerhelper-net
+
+  # 커머스 인스턴스 - 개수 조정 시 아래 블록 복사 (commerce-2, commerce-3 ...)
+  sellerhelper-commerce-1:
+    build:
+      context: ./sellerhelper-be
+      dockerfile: Dockerfile
+    image: sellerhelper-be:latest
+    container_name: sellerhelper-commerce-1
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: commerce,prod
+      SERVER_PORT: "5080"
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - sellerhelper-net
+
+  sellerhelper-commerce-2:
+    build:
+      context: ./sellerhelper-be
+      dockerfile: Dockerfile
+    image: sellerhelper-be:latest
+    container_name: sellerhelper-commerce-2
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: commerce,prod
+      SERVER_PORT: "5080"
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - sellerhelper-net
+
+  sellerhelper-commerce-3:
+    build:
+      context: ./sellerhelper-be
+      dockerfile: Dockerfile
+    image: sellerhelper-be:latest
+    container_name: sellerhelper-commerce-3
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: commerce,prod
+      SERVER_PORT: "5080"
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - sellerhelper-net
+
+  sellerhelper-nginx:
+    image: nginx:alpine
+    container_name: sellerhelper-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/sellerhelper.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - sellerhelper-portal
+      - sellerhelper-commerce-1
+    networks:
+      - sellerhelper-net
+
+networks:
+  sellerhelper-net:
+    driver: bridge

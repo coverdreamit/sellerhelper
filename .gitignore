@@ -6,6 +6,7 @@ node_modules/
 # Build / cache
 dist/
 build/
+target/
 .vite/
 .parcel-cache/
 .turbo
@@ -19,6 +20,7 @@ build/
 .env.development
 .env.production
 .env.test
+.env.dev
 
 # Logs
 *.log
