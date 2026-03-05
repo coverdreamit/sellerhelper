@@ -92,7 +92,7 @@ public class NaverCommerceTokenService {
             throw new IllegalStateException("네이버 토큰 발급 실패: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
         } catch (org.springframework.web.client.RestClientException e) {
             log.warn("네이버 토큰 발급 요청 실패: {}", e.getMessage());
-            throw new IllegalStateException("네이버 토큰 발급 실패: " + e.getMessage());
+            throw new IllegalStateException("네이버 토큰 발급 실패: " + toUserFriendlyMessage(e));
         }
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null
@@ -124,6 +124,25 @@ public class NaverCommerceTokenService {
         String password = clientId + "_" + timestamp;
         String hashed = org.springframework.security.crypto.bcrypt.BCrypt.hashpw(password, clientSecret);
         return Base64.getUrlEncoder().encodeToString(hashed.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** 영문 기술 에러 메시지를 사용자 친화적 한글로 변환 */
+    private static String toUserFriendlyMessage(Throwable e) {
+        if (e == null) return "잠시 후 다시 시도해 주세요.";
+        String msg = e.getMessage();
+        if (msg == null) msg = "";
+        String lower = msg.toLowerCase();
+        if (lower.contains("pkix") || lower.contains("certification path") || lower.contains("unable to find valid cert") || lower.contains("sslhandshake") || lower.contains("sun.security.provider.certpath")) {
+            return "SSL 인증서 검증에 실패했습니다. Java 신뢰 저장소에 네이버 API 인증서가 등록되어 있는지 확인해 주세요.";
+        }
+        if (lower.contains("connection refused") || lower.contains("connection reset")) {
+            return "서버에 연결할 수 없습니다. 네트워크 연결을 확인해 주세요.";
+        }
+        if (lower.contains("timeout") || lower.contains("timed out")) {
+            return "요청 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.";
+        }
+        if (!msg.isBlank()) return msg;
+        return "잠시 후 다시 시도해 주세요.";
     }
 
     @Data

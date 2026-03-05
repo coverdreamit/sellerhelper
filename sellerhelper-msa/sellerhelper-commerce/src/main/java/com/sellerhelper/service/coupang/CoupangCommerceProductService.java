@@ -112,7 +112,7 @@ public class CoupangCommerceProductService {
             throw new IllegalStateException(safeMessage);
         } catch (Exception e) {
             log.warn("쿠팡 상품목록 조회 실패 storeUid={}: {}", storeUid, e.getMessage());
-            throw new IllegalStateException("상품목록 조회에 실패했습니다. " + (e.getMessage() != null && isCleanUtf8(e.getMessage()) ? e.getMessage() : "잠시 후 다시 시도하세요."));
+            throw new IllegalStateException("상품목록 조회에 실패했습니다. " + toUserFriendlyMessage(e));
         }
     }
 
@@ -186,7 +186,7 @@ public class CoupangCommerceProductService {
             throw new IllegalStateException(safeMessage);
         } catch (Exception e) {
             log.warn("쿠팡 상품 동기화 실패 storeUid={}: {}", storeUid, e.getMessage());
-            throw new IllegalStateException("상품 목록 동기화에 실패했습니다. " + (e.getMessage() != null && isCleanUtf8(e.getMessage()) ? e.getMessage() : "잠시 후 다시 시도하세요."));
+            throw new IllegalStateException("상품 목록 동기화에 실패했습니다. " + toUserFriendlyMessage(e));
         }
     }
 
@@ -228,6 +228,25 @@ public class CoupangCommerceProductService {
             if (Character.isSurrogate(c)) return false;
         }
         return true;
+    }
+
+    /** 영문 기술 에러 메시지를 사용자 친화적 한글로 변환 */
+    private static String toUserFriendlyMessage(Exception e) {
+        if (e == null) return "잠시 후 다시 시도하세요.";
+        String msg = e.getMessage();
+        if (msg == null) msg = "";
+        String lower = msg.toLowerCase();
+        if (lower.contains("pkix") || lower.contains("certification path") || lower.contains("unable to find valid cert") || lower.contains("sslhandshake") || lower.contains("sun.security.provider.certpath")) {
+            return "SSL 인증서 검증에 실패했습니다. Java 신뢰 저장소에 쿠팡 API 인증서가 등록되어 있는지 확인해 주세요.";
+        }
+        if (lower.contains("connection refused") || lower.contains("connection reset")) {
+            return "서버에 연결할 수 없습니다. 네트워크 연결을 확인해 주세요.";
+        }
+        if (lower.contains("timeout") || lower.contains("timed out")) {
+            return "요청 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.";
+        }
+        if (isCleanUtf8(msg) && !msg.isBlank()) return msg;
+        return "잠시 후 다시 시도하세요.";
     }
 
     /**
@@ -285,7 +304,7 @@ public class CoupangCommerceProductService {
             throw new IllegalStateException(safeMessage);
         } catch (Exception e) {
             log.warn("쿠팡 상품 단건 조회 실패 storeUid={}, sellerProductId={}: {}", storeUid, sellerProductId, e.getMessage());
-            throw new IllegalStateException("상품 조회에 실패했습니다. " + (e.getMessage() != null && isCleanUtf8(e.getMessage()) ? e.getMessage() : "잠시 후 다시 시도하세요."));
+            throw new IllegalStateException("상품 조회에 실패했습니다. " + toUserFriendlyMessage(e));
         }
     }
 
