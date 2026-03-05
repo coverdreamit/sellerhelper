@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /** 헬스체크 - 포털/커머스 모두 (nginx upstream 체크용) */
-@Profile({"portal", "commerce"})
+@Profile({"portal", "commerce", "local"})
 @RestController
 @RequestMapping("/api")
 public class HealthController {

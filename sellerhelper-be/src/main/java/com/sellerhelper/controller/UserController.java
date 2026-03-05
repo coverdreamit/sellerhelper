@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 
 /** 사용자 관리 REST API */
-@Profile("portal")
+@Profile({"portal", "local"})
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor

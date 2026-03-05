@@ -91,7 +91,9 @@ export async function register(req: RegisterRequest): Promise<RegisterResponse> 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
   });
-  const data = await parseJsonOrThrow<RegisterResponse & { message?: string; fieldErrors?: { message?: string }[] }>(res);
+  const data = await parseJsonOrThrow<
+    RegisterResponse & { message?: string; fieldErrors?: { message?: string }[] }
+  >(res);
   if (!res.ok) {
     throw new Error(data?.message ?? data?.fieldErrors?.[0]?.message ?? '회원가입에 실패했습니다.');
   }

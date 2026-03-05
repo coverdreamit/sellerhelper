@@ -13,7 +13,7 @@ import javax.validation.Valid;
 import java.util.List;
 
 /** 권한 관리 REST API */
-@Profile("portal")
+@Profile({"portal", "local"})
 @RestController
 @RequestMapping("/api/roles")
 @RequiredArgsConstructor

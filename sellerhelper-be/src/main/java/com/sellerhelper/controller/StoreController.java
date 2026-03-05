@@ -14,7 +14,7 @@ import javax.validation.Valid;
 import java.util.List;
 
 /** 스토어 REST API (commerce 프로필) */
-@Profile("commerce")
+@Profile({"commerce", "local"})
 @RestController
 @RequestMapping("/api/stores")
 @RequiredArgsConstructor

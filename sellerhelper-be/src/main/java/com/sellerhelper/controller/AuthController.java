@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
-/** 인증 API - JWT 발급 (portal 프로필) */
-@Profile("portal")
+/** 인증 API - JWT 발급 (portal 프로필, local 개발 시에도 활성화) */
+@Profile({"portal", "local"})
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor

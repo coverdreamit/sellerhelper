@@ -26,9 +26,10 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'sellerhelper_auth',
       storage: createJSONStorage(() =>
-        typeof window !== 'undefined' ? sessionStorage : (noopStorage as unknown as Storage)
+        typeof window !== 'undefined' ? localStorage : (noopStorage as unknown as Storage)
       ),
       partialize: (state) => ({ user: state.user }),
+      skipHydration: true,
     }
   )
 );

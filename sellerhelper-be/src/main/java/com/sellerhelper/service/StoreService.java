@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -52,12 +53,12 @@ public class StoreService {
         } else {
             list = storeRepository.findAll();
         }
-        Set<Long> storeIdsWithAuth = storeIdsWithAuth();
-        Set<Long> storeIdsWithStoredCredentials = storeIdsWithStoredCredentials();
+        List<Long> storeUids = list.stream().map(Store::getUid).collect(Collectors.toList());
+        var authInfo = getStoreAuthInfo(storeUids);
         return list.stream()
                 .map(s -> toResponse(s,
-                        storeIdsWithAuth.contains(s.getUid()),
-                        storeIdsWithStoredCredentials.contains(s.getUid())))
+                        authInfo.storeIdsWithAuth.contains(s.getUid()),
+                        authInfo.storeIdsWithStoredCredentials.contains(s.getUid())))
                 .collect(Collectors.toList());
     }
 
@@ -123,13 +124,13 @@ public class StoreService {
         if (company == null) {
             return List.of();
         }
-        List<Store> list = storeRepository.findByCompany_UidOrderBySortOrderAscUidAsc(company.getUid());
-        Set<Long> storeIdsWithAuth = storeIdsWithAuth();
-        Set<Long> storeIdsWithStoredCredentials = storeIdsWithStoredCredentials();
+        List<Store> list = storeRepository.findByCompany_UidOrderBySortOrderAscUidAscWithMallAndCompany(company.getUid());
+        List<Long> storeUids = list.stream().map(Store::getUid).collect(Collectors.toList());
+        var authInfo = getStoreAuthInfo(storeUids);
         return list.stream()
                 .map(s -> toResponse(s,
-                        storeIdsWithAuth.contains(s.getUid()),
-                        storeIdsWithStoredCredentials.contains(s.getUid())))
+                        authInfo.storeIdsWithAuth.contains(s.getUid()),
+                        authInfo.storeIdsWithStoredCredentials.contains(s.getUid())))
                 .collect(Collectors.toList());
     }
 
@@ -244,12 +245,22 @@ public class StoreService {
                 .isPresent();
     }
 
-    private Set<Long> storeIdsWithAuth() {
-        return storeAuthRepository.findAll().stream()
+    /** 스토어 UID 목록 기준 StoreAuth 한 번에 조회 후 연동/저장 여부 분리 (findAll 2회 → IN 1회) */
+    private StoreAuthInfo getStoreAuthInfo(List<Long> storeUids) {
+        if (storeUids == null || storeUids.isEmpty()) {
+            return new StoreAuthInfo(Collections.emptySet(), Collections.emptySet());
+        }
+        List<StoreAuth> auths = storeAuthRepository.findByStore_UidInWithStore(storeUids);
+        Set<Long> withAuth = auths.stream()
                 .filter(a -> hasText(a.getApiKey()) || hasText(a.getApiSecret()))
                 .filter(a -> a.getVerifiedAt() != null)
                 .map(a -> a.getStore().getUid())
                 .collect(Collectors.toSet());
+        Set<Long> withStoredCreds = auths.stream()
+                .filter(a -> hasText(a.getApiKey()) || hasText(a.getApiSecret()))
+                .map(a -> a.getStore().getUid())
+                .collect(Collectors.toSet());
+        return new StoreAuthInfo(withAuth, withStoredCreds);
     }
 
     /** 셀러: 연동 테스트 (실제 API 호출로 검증, 성공 시 연동됨으로 표시) */
@@ -290,13 +301,6 @@ public class StoreService {
                 .isPresent();
     }
 
-    private Set<Long> storeIdsWithStoredCredentials() {
-        return storeAuthRepository.findAll().stream()
-                .filter(a -> hasText(a.getApiKey()) || hasText(a.getApiSecret()))
-                .map(a -> a.getStore().getUid())
-                .collect(Collectors.toSet());
-    }
-
     private StoreResponse toResponse(Store s, boolean hasAuth, boolean hasStoredCredentials) {
         return StoreResponse.builder()
                 .uid(s.getUid())
@@ -313,4 +317,6 @@ public class StoreService {
                 .hasStoredCredentials(hasStoredCredentials)
                 .build();
     }
+
+    private record StoreAuthInfo(Set<Long> storeIdsWithAuth, Set<Long> storeIdsWithStoredCredentials) {}
 }

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 
 /** 셀러용 내 회사 API (회사 정보 등록) */
-@Profile("portal")
+@Profile({"portal", "local"})
 @RestController
 @RequestMapping("/api/my-company")
 @RequiredArgsConstructor

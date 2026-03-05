@@ -21,7 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /** 스토어별 상품목록 조회. 모든 플랫폼(네이버/쿠팡 등) 공통으로 DB 저장분 조회. */
@@ -138,7 +141,20 @@ public class StoreProductService {
         List<StoreProduct> toSave = items.stream()
                 .map(item -> toStoreProduct(store, item, syncedAt))
                 .collect(Collectors.toList());
+        toSave = deduplicateByStoreProductVendor(toSave);
         storeProductRepository.saveAll(toSave);
+    }
+
+    /** (store_uid, seller_product_id, vendor_item_id) 기준 중복 제거 (마지막 항목 유지). */
+    private List<StoreProduct> deduplicateByStoreProductVendor(List<StoreProduct> list) {
+        Map<String, StoreProduct> seen = new LinkedHashMap<>();
+        for (StoreProduct p : list) {
+            long storeUid = p.getStore() != null ? p.getStore().getUid() : 0;
+            String vid = (p.getVendorItemId() != null) ? p.getVendorItemId() : "";
+            String key = storeUid + "|" + p.getSellerProductId() + "|" + vid;
+            seen.put(key, p);
+        }
+        return new ArrayList<>(seen.values());
     }
 
     private StoreProduct toStoreProduct(Store store, NaverProductItem item, Instant syncedAt) {

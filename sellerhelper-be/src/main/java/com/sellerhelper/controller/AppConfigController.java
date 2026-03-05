@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /** 프론트엔드 앱 설정 (portal 프로필) */
-@Profile("portal")
+@Profile({"portal", "local"})
 @RestController
 @RequestMapping("/api/app")
 public class AppConfigController {

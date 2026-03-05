@@ -64,7 +64,8 @@ export default function Layout({ children }: { children: ReactNode }) {
       .then((me) => {
         setSessionChecked(true);
         if (me) {
-          setUser(me);
+          const currentToken = useAuthStore.getState().user?.token;
+          setUser({ ...me, token: me.token ?? currentToken });
         } else {
           logoutStore();
         }
@@ -75,10 +76,21 @@ export default function Layout({ children }: { children: ReactNode }) {
       });
   }, [setUser, logoutStore]);
 
+  /** skipHydration 사용 → 수동 rehydrate 후 refreshSession (토큰 복원 순서 보장) */
   useEffect(() => {
-    if (!mounted) return;
-    refreshSession();
+    if (!mounted || typeof window === 'undefined') return;
+    useAuthStore.persist.rehydrate().then(() => {
+      setTimeout(() => {
+        const { user } = useAuthStore.getState();
+        if (user?.token) {
+          refreshSession();
+        } else {
+          setSessionChecked(true);
+        }
+      }, 0);
+    });
   }, [mounted, refreshSession]);
+
 
   /** 탭으로 돌아왔을 때 권한 변경 반영 (새로고침 없이) */
   useEffect(() => {
@@ -130,7 +142,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
-  if (!isLoggedIn) {
+  if (!isLoggedIn()) {
     return null;
   }
 

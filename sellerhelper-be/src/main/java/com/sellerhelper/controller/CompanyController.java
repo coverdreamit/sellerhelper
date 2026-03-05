@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /** 회사 REST API */
-@Profile("portal")
+@Profile({"portal", "local"})
 @RestController
 @RequestMapping("/api/companies")
 @RequiredArgsConstructor

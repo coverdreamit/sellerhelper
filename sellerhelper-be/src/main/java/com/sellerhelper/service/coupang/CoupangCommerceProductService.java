@@ -23,7 +23,9 @@ import org.springframework.web.client.RestTemplate;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -433,10 +435,12 @@ public class CoupangCommerceProductService {
         return null;
     }
 
-    /** 목록 API에 가격/재고가 없을 때 상품 조회(단건) API로 보강. 상세에 옵션이 있으면 해당 상품을 옵션 단위 행으로 확장(엑셀과 동일). */
+    /** 목록 API에 가격/재고가 없을 때 상품 조회(단건) API로 보강. 상세에 옵션이 있으면 해당 상품을 옵션 단위 행으로 확장(엑셀과 동일).
+     * 동일 sellerProductId에 대해 상세 API는 1회만 호출하여 중복 제거. */
     private void enrichPriceAndStockFromDetail(Long storeUid, List<NaverProductItem> items) {
         if (items == null || items.isEmpty()) return;
         List<NaverProductItem> result = new ArrayList<>();
+        Set<String> processedProductIds = new HashSet<>();
         for (NaverProductItem it : items) {
             boolean needPrice = it.getSalePrice() == null || it.getSalePrice() == 0;
             boolean needStock = it.getStockQuantity() == null || it.getStockQuantity() == 0;
@@ -449,9 +453,13 @@ public class CoupangCommerceProductService {
                 result.add(it);
                 continue;
             }
+            if (processedProductIds.contains(id)) {
+                continue;
+            }
             CoupangProductListItem raw = fetchProductDetailRaw(storeUid, id);
             if (raw != null && raw.getItems() != null && !raw.getItems().isEmpty()) {
                 result.addAll(toProductItems(raw));
+                processedProductIds.add(id);
             } else {
                 if (raw != null) {
                     Long salePrice = resolveSalePrice(raw);

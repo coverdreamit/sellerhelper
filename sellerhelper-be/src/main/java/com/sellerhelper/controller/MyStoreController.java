@@ -24,7 +24,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 /** 셀러용 스토어 연동 API (commerce 프로필) */
-@Profile("commerce")
+@Profile({"commerce", "local"})
 @RestController
 @RequestMapping("/api/my-stores")
 @RequiredArgsConstructor
