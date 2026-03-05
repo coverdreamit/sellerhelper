@@ -3,10 +3,10 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone', // Docker 빌드 최적화
   // Spring Boot API 프록시
-  // - 인증(login/register/logout) → Portal (8081)
+  // - 인증(login/register/logout) → Portal (5081)
   // - 그 외 API → Commerce (5080)
   async rewrites() {
-    const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL || 'http://localhost:8081';
+    const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL || 'http://localhost:5081';
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5080';
     return [
       { source: '/api/auth/login', destination: `${portalUrl}/api/auth/login` },
