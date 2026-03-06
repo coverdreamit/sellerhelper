@@ -1,7 +1,7 @@
 services:
   sellerhelper-be:
     build:
-      context: ./sellerhelper-msa
+      context: ./sellerhelper-be
       dockerfile: Dockerfile
     image: sellerhelper-be:latest
     container_name: sellerhelper-be

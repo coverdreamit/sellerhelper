@@ -51,23 +51,25 @@ export default function ProductList() {
 
   /** 네이버 스토어 상품 API 응답 → 테이블용 형식 변환 (백엔드/API 필드명 모두 허용) */
   const toTableProduct = (
-    p: Record<string, unknown> & {
-      channelProductNo?: string;
-      productName?: string;
-      channelProductName?: string;
-      optionName?: string;
-      salePrice?: number;
-      stockQuantity?: number;
-      statusType?: string;
-      representativeImageUrl?: string;
-    },
+    p:
+      | Record<string, unknown>
+      | {
+          channelProductNo?: string;
+          productName?: string;
+          channelProductName?: string;
+          optionName?: string;
+          salePrice?: number;
+          stockQuantity?: number;
+          statusType?: string;
+          representativeImageUrl?: string;
+        },
     _storeLabel: string,
     filterValue: string
   ) => {
     const baseName = String(p.productName ?? p.channelProductName ?? '').trim() || '-';
     const optionName = String((p as Record<string, unknown>).optionName ?? p.optionName ?? '').trim();
     const name = optionName ? `${baseName} (${optionName})` : baseName;
-    const statusType = String(p.statusType ?? p.channelProductStatusType ?? '');
+    const statusType = String(p.statusType ?? (p as Record<string, unknown>).channelProductStatusType ?? '');
     const rawPrice = p.salePrice ?? (p as Record<string, unknown>).sale_price;
     const rawStock = p.stockQuantity ?? (p as Record<string, unknown>).stock_quantity ?? (p as Record<string, unknown>).quantity;
     const price = typeof rawPrice === 'number' ? rawPrice : Number(rawPrice) || 0;
@@ -284,8 +286,8 @@ export default function ProductList() {
                     </td>
                   </tr>
                 ) : (
-                  pagedProducts.map((p) => (
-                    <tr key={p.id || p.productNo}>
+                  pagedProducts.map((p, idx) => (
+                    <tr key={String(p.id ?? p.productNo ?? idx)}>
                       {columns.map((col) => (
                         <td key={col.key}>{renderCell(p, col)}</td>
                       ))}

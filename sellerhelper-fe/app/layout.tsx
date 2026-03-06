@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import './globals.css';
 import Layout from '@/layout/Layout';
+import BackendHealthBanner from '@/components/BackendHealthBanner';
 
 export const metadata = {
   // title: 'Seller Helper',
@@ -11,6 +12,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko">
       <body>
+        <BackendHealthBanner />
         <Layout>{children}</Layout>
       </body>
     </html>

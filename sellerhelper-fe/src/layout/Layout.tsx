@@ -79,7 +79,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   /** skipHydration 사용 → 수동 rehydrate 후 refreshSession (토큰 복원 순서 보장) */
   useEffect(() => {
     if (!mounted || typeof window === 'undefined') return;
-    useAuthStore.persist.rehydrate().then(() => {
+    void Promise.resolve(useAuthStore.persist.rehydrate()).then(() => {
       setTimeout(() => {
         const { user } = useAuthStore.getState();
         if (user?.token) {
