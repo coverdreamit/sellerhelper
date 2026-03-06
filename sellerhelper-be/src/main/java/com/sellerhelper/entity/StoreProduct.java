@@ -11,9 +11,17 @@ import java.time.Instant;
  * 엑셀(가격/재고)과 동일하게 옵션 단위로 1행.
  */
 @Entity
-@Table(name = "store_products", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"store_uid", "seller_product_id", "vendor_item_id"})
-})
+@Table(
+    name = "store_products",
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"store_uid", "seller_product_id", "vendor_item_id"})
+    },
+    indexes = {
+        @Index(name = "idx_store_products_store_uid", columnList = "store_uid"),
+        @Index(name = "idx_store_products_vendor_item_id", columnList = "vendor_item_id"),
+        @Index(name = "idx_store_products_seller_product_id", columnList = "seller_product_id")
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor
