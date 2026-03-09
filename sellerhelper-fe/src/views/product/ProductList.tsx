@@ -5,6 +5,8 @@ import Link from '@/components/Link';
 import { fetchStoreProducts, syncStoreProducts } from '@/services/myStore.service';
 import { useMyStoreStore } from '@/stores';
 import { buildStoreTabs, getStoreColumns, getProductValue } from '@/config/productStoreTabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import '../../styles/Settings.css';
 import './ProductList.css';
 
@@ -178,20 +180,20 @@ export default function ProductList() {
         </div>
         <div className="settings-toolbar">
           <div className="product-list-left">
-            <input
+            <Input
               type="text"
               placeholder="상품명 검색"
-              style={{ padding: '6px 12px', marginRight: 8 }}
+              className="h-9 w-[200px]"
             />
-            <select style={{ padding: '6px 12px', marginRight: 8 }} aria-label="전체 상태">
+            <select className="select-shadcn" aria-label="전체 상태" style={{ marginRight: 8 }}>
               <option value="">전체 상태</option>
               <option value="on">판매중</option>
               <option value="out">품절</option>
               <option value="stop">판매중지</option>
             </select>
-            <button type="button" className="btn">
+            <Button type="button" variant="secondary" size="sm">
               검색
-            </button>
+            </Button>
             <label className="product-list-page-size">
               <span>한 화면에 보기</span>
               <select
@@ -209,19 +211,21 @@ export default function ProductList() {
           </div>
           <div className="product-list-actions">
             <span className="product-list-fetched">가져온 시간: {formatFetchedAt(fetchedAt)}</span>
-            <button
+            <Button
               type="button"
-              className="btn btn-outline"
+              variant="outline"
+              size="sm"
               onClick={loadProducts}
               disabled={loading}
               title="상품 목록만 다시 불러오기"
             >
               새로고침
-            </button>
+            </Button>
             {['NAVER', 'COUPANG'].includes(selectedTab?.mallCode ?? '') && (
-              <button
+              <Button
                 type="button"
-                className="btn btn-outline"
+                variant="outline"
+                size="sm"
                 onClick={async () => {
                   if (!selectedTab?.storeUid) return;
                   setSyncing(true);
@@ -239,29 +243,20 @@ export default function ProductList() {
                 title="플랫폼 API에서 상품 목록을 가져와 DB에 저장합니다"
               >
                 {syncing ? '동기화 중…' : '상품 목록 동기화'}
-              </button>
+              </Button>
             )}
-            <Link to="/product/register" className="btn btn-primary">
-              상품 등록
-            </Link>
+            <Button asChild>
+              <Link to="/product/register">상품 등록</Link>
+            </Button>
           </div>
         </div>
         {error && (
-          <div
-            className="error-message"
-            style={{
-              padding: 12,
-              marginBottom: 16,
-              background: '#fee',
-              color: '#c00',
-              borderRadius: 6,
-            }}
-          >
+          <div className="form-error">
             {error}
           </div>
         )}
         {loading ? (
-          <p style={{ padding: 24, textAlign: 'center' }}>상품 목록을 불러오는 중...</p>
+          <p className="empty-state">상품 목록을 불러오는 중...</p>
         ) : (
           <div className="settings-table-wrap">
             <table className="settings-table">
@@ -275,7 +270,7 @@ export default function ProductList() {
               <tbody>
                 {pagedProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={columns.length} style={{ padding: 24, textAlign: 'center' }}>
+                    <td colSpan={columns.length} className="empty-state">
                       {selectedTab?.mallCode === 'NAVER'
                         ? '조회된 상품이 없습니다. 네이버 스마트스토어에 등록된 상품을 불러옵니다.'
                         : selectedTab?.mallCode === 'COUPANG'
@@ -303,24 +298,28 @@ export default function ProductList() {
                   {Math.min(currentPage * pageSize, totalCount)}건
                 </span>
                 <div className="product-list-pagination-btns">
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-outline product-list-page-btn"
+                    variant="outline"
+                    size="icon"
+                    className="product-list-page-btn h-9 w-9"
                     onClick={() => setCurrentPage(1)}
                     disabled={currentPage <= 1}
                     aria-label="처음 페이지"
                   >
                     «
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className="btn btn-outline product-list-page-btn"
+                    variant="outline"
+                    size="icon"
+                    className="product-list-page-btn h-9 w-9"
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage <= 1}
                     aria-label="이전 페이지"
                   >
                     ‹
-                  </button>
+                  </Button>
                   <span className="product-list-page-nums">
                     {(() => {
                       const maxVisible = 5;
@@ -330,14 +329,16 @@ export default function ProductList() {
                       const pages = [];
                       if (start > 1) {
                         pages.push(
-                          <button
+                          <Button
                             key={1}
                             type="button"
-                            className="product-list-page-num"
+                            variant="outline"
+                            size="sm"
+                            className="product-list-page-num min-w-8 h-8 p-0"
                             onClick={() => setCurrentPage(1)}
                           >
                             1
-                          </button>
+                          </Button>
                         );
                         if (start > 2)
                           pages.push(
@@ -348,14 +349,16 @@ export default function ProductList() {
                       }
                       for (let n = start; n <= end; n++) {
                         pages.push(
-                          <button
+                          <Button
                             key={n}
                             type="button"
-                            className={`product-list-page-num ${currentPage === n ? 'active' : ''}`}
+                            variant={currentPage === n ? 'default' : 'outline'}
+                            size="sm"
+                            className={`product-list-page-num min-w-8 h-8 p-0 ${currentPage === n ? 'active' : ''}`}
                             onClick={() => setCurrentPage(n)}
                           >
                             {n}
-                          </button>
+                          </Button>
                         );
                       }
                       if (end < totalPages) {
@@ -366,37 +369,43 @@ export default function ProductList() {
                             </span>
                           );
                         pages.push(
-                          <button
+                          <Button
                             key={totalPages}
                             type="button"
-                            className="product-list-page-num"
+                            variant="outline"
+                            size="sm"
+                            className="product-list-page-num min-w-8 h-8 p-0"
                             onClick={() => setCurrentPage(totalPages)}
                           >
                             {totalPages}
-                          </button>
+                          </Button>
                         );
                       }
                       return pages;
                     })()}
                   </span>
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-outline product-list-page-btn"
+                    variant="outline"
+                    size="icon"
+                    className="product-list-page-btn h-9 w-9"
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage >= totalPages}
                     aria-label="다음 페이지"
                   >
                     ›
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className="btn btn-outline product-list-page-btn"
+                    variant="outline"
+                    size="icon"
+                    className="product-list-page-btn h-9 w-9"
                     onClick={() => setCurrentPage(totalPages)}
                     disabled={currentPage >= totalPages}
                     aria-label="마지막 페이지"
                   >
                     »
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}

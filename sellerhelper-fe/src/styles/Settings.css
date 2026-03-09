@@ -1,4 +1,4 @@
-/* 환경설정 공통 스타일 */
+/* 환경설정 공통 - Shadcn 테마 변수 사용 */
 .settings-page {
   max-width: 900px;
 }
@@ -7,24 +7,25 @@
   margin: 0 0 8px 0;
   font-size: 1.5rem;
   font-weight: 600;
+  color: hsl(var(--foreground));
 }
 
 .settings-page .page-desc {
   margin: 0 0 24px 0;
-  color: #666;
+  color: hsl(var(--muted-foreground));
   font-size: 0.9rem;
 }
 
 .page-desc .link-inline,
 .link-inline {
-  color: #1967d2;
+  color: hsl(var(--primary));
   text-decoration: underline;
   font-weight: 500;
 }
 
 .page-desc .link-inline:hover,
 .link-inline:hover {
-  color: #0d47a1;
+  color: hsl(var(--primary) / 0.9);
 }
 
 .settings-page--compact h1 {
@@ -42,11 +43,12 @@
 }
 
 .settings-section {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
   padding: 24px;
   margin-bottom: 24px;
+  color: hsl(var(--card-foreground));
 }
 
 .settings-section h2 {
@@ -54,7 +56,8 @@
   font-size: 1.1rem;
   font-weight: 600;
   padding-bottom: 12px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
 }
 
 .settings-form {
@@ -79,12 +82,12 @@
 .form-row label {
   padding-top: 8px;
   font-size: 0.9rem;
-  color: #333;
+  color: hsl(var(--foreground));
 }
 
 .form-row .required::after {
   content: ' *';
-  color: #c00;
+  color: hsl(var(--destructive));
 }
 
 .form-row input[type='text'],
@@ -94,16 +97,19 @@
 .form-row select,
 .form-row textarea {
   padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1px solid hsl(var(--input));
+  border-radius: calc(var(--radius) - 2px);
   font-size: 0.9rem;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 .form-row input:focus,
 .form-row select:focus,
 .form-row textarea:focus {
   outline: none;
-  border-color: #1967d2;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
 }
 
 .form-row textarea {
@@ -113,19 +119,18 @@
 
 .form-hint {
   font-size: 0.8rem;
-  color: #888;
+  color: hsl(var(--muted-foreground));
   margin-top: 4px;
 }
 
 .form-input-readonly,
 .form-row input.form-input-readonly {
-  background: #f5f5f5;
-  color: #555;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
   cursor: not-allowed;
-  border-color: #ddd;
+  border-color: hsl(var(--border));
 }
 
-/* 회사/셀러 정보 - 수정 불가 */
 .company-info-approval-badge {
   display: flex;
   align-items: center;
@@ -135,7 +140,7 @@
 
 .company-info-approval-text {
   font-size: 0.9rem;
-  color: #888;
+  color: hsl(var(--muted-foreground));
 }
 
 .company-info-address-wrap {
@@ -153,12 +158,12 @@
   white-space: nowrap;
 }
 
-/* 사용자 로그 탭 */
+/* 탭 - Shadcn 스타일 */
 .user-log-tabs {
   display: flex;
   gap: 4px;
   margin-bottom: 20px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .user-log-tab {
@@ -166,21 +171,21 @@
   font-size: 0.9rem;
   border: none;
   background: transparent;
-  color: #666;
+  color: hsl(var(--muted-foreground));
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  transition: color 0.2s;
+  transition: color 0.2s, border-color 0.2s;
 }
 
 .user-log-tab:hover {
-  color: #1967d2;
+  color: hsl(var(--foreground));
 }
 
 .user-log-tab.active {
-  color: #1967d2;
+  color: hsl(var(--primary));
   font-weight: 600;
-  border-bottom-color: #1967d2;
+  border-bottom-color: hsl(var(--primary));
 }
 
 .settings-actions {
@@ -189,41 +194,48 @@
   margin-top: 8px;
 }
 
+/* 버튼 - Shadcn 스타일 */
 .btn {
   padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  border: 1px solid #ccc;
-  background: #fff;
+  border: 1px solid hsl(var(--input));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.btn:hover:not(:disabled) {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
 }
 
 .btn-primary {
-  background: #1967d2;
-  color: #fff;
-  border-color: #1967d2;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
 }
 
-.btn-primary:hover {
-  background: #1557b0;
-}
-
-.btn:hover {
-  background: #f5f5f5;
-}
-
-.btn-primary:hover {
-  background: #1557b0;
+.btn-primary:hover:not(:disabled) {
+  background: hsl(var(--primary) / 0.9);
+  border-color: hsl(var(--primary) / 0.9);
 }
 
 .btn-danger {
-  color: #c00;
-  border-color: #c00;
-  background: #fff;
+  color: hsl(var(--destructive));
+  border-color: hsl(var(--destructive));
+  background: transparent;
 }
 
-.btn-danger:hover {
-  background: #ffebee;
+.btn-danger:hover:not(:disabled) {
+  background: hsl(var(--destructive) / 0.1);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-block {
@@ -232,7 +244,6 @@
   justify-content: flex-start;
 }
 
-/* 스토어 연동 추가 모달 목록 */
 .store-add-list {
   list-style: none;
   padding: 0;
@@ -246,7 +257,6 @@
   margin: 0;
 }
 
-/* 목록 페이지 */
 .settings-toolbar {
   display: flex;
   justify-content: space-between;
@@ -258,29 +268,35 @@
 
 .settings-table-wrap {
   overflow-x: auto;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
 }
 
 .settings-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .settings-table th,
 .settings-table td {
-  padding: 10px 12px;
+  padding: 12px 16px;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .settings-table th {
   font-weight: 600;
-  color: #555;
-  background: #f8f9fa;
+  color: hsl(var(--foreground));
+  background: hsl(var(--muted));
 }
 
 .settings-table tbody tr:hover {
-  background: #f8f9fa;
+  background: hsl(var(--muted) / 0.5);
+}
+
+.settings-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .settings-table .cell-actions {
@@ -289,7 +305,7 @@
 
 .settings-table .cell-actions a {
   margin-right: 8px;
-  color: #1967d2;
+  color: hsl(var(--primary));
   text-decoration: none;
   font-size: 0.85rem;
 }
@@ -299,7 +315,7 @@
 }
 
 .settings-table a {
-  color: #1967d2;
+  color: hsl(var(--primary));
   text-decoration: none;
 }
 
@@ -307,28 +323,61 @@
   text-decoration: underline;
 }
 
+/* 배지 - Shadcn 스타일 */
 .badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  border-radius: calc(var(--radius) - 4px);
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .badge-active {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: hsl(142 76% 36% / 0.15);
+  color: hsl(142 76% 26%);
 }
+
 .badge-inactive {
-  background: #ffebee;
-  color: #c62828;
+  background: hsl(var(--destructive) / 0.1);
+  color: hsl(var(--destructive));
 }
 
 .badge-warning {
-  background: #fff8e1;
-  color: #f57c00;
+  background: hsl(38 92% 50% / 0.15);
+  color: hsl(38 92% 40%);
 }
 
-/* 체크박스/스위치 영역 */
+.badge.status-connected,
+.badge.status-success {
+  background: hsl(142 76% 36% / 0.15);
+  color: hsl(142 76% 26%);
+}
+
+.badge.status-disconnected {
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+
+.badge.status-error {
+  background: hsl(var(--destructive) / 0.1);
+  color: hsl(var(--destructive));
+}
+
+.badge.status-idle {
+  background: hsl(217 91% 60% / 0.15);
+  color: hsl(217 91% 50%);
+}
+
+.badge.status-running {
+  background: hsl(142 76% 36% / 0.15);
+  color: hsl(142 76% 26%);
+}
+
+.badge.status-stopped {
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+
 .form-check {
   display: flex;
   align-items: center;
@@ -338,6 +387,7 @@
 .form-check input[type='checkbox'] {
   width: 18px;
   height: 18px;
+  accent-color: hsl(var(--primary));
 }
 
 .form-check-group {
@@ -355,21 +405,22 @@
 .form-check-item input[type='checkbox'] {
   width: 18px;
   height: 18px;
+  accent-color: hsl(var(--primary));
 }
 
 .form-check-item label {
   margin: 0;
   cursor: pointer;
+  color: hsl(var(--foreground));
 }
 
 .empty-state {
   text-align: center;
   padding: 40px 20px;
-  color: #888;
+  color: hsl(var(--muted-foreground));
   font-size: 0.9rem;
 }
 
-/* 목록/관리 페이지 공통 (상품·주문·배송·정산·고객) */
 .list-page {
   max-width: 1200px;
 }
@@ -378,11 +429,12 @@
   margin: 0 0 8px 0;
   font-size: 1.5rem;
   font-weight: 600;
+  color: hsl(var(--foreground));
 }
 
 .list-page .page-desc {
   margin: 0 0 20px 0;
-  color: #666;
+  color: hsl(var(--muted-foreground));
   font-size: 0.9rem;
 }
 
@@ -390,7 +442,7 @@
   margin-bottom: 0;
 }
 
-/* ===== 스토어 관리 그리드 + 카드 ===== */
+/* 스토어 카드 - Shadcn */
 .store-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -398,10 +450,11 @@
 }
 
 .store-card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
   padding: 16px;
-  background: #fff;
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -421,12 +474,13 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
+  color: hsl(var(--foreground));
 }
 
 .store-meta {
   margin: 0;
   font-size: 0.85rem;
-  color: #666;
+  color: hsl(var(--muted-foreground));
 }
 
 .toggle-row {
@@ -435,11 +489,13 @@
   align-items: center;
   font-size: 0.9rem;
   cursor: pointer;
+  color: hsl(var(--foreground));
 }
 
 .toggle-row input[type='checkbox'] {
   width: 18px;
   height: 18px;
+  accent-color: hsl(var(--primary));
 }
 
 .store-card-actions {
@@ -448,31 +504,11 @@
   margin-top: 4px;
 }
 
-.badge.status-connected {
-  background: #e6f7e6;
-  color: #2d8a2d;
-}
-
-.badge.status-disconnected {
-  background: #eee;
-  color: #666;
-}
-
-.badge.status-error {
-  background: #fdeaea;
-  color: #c00;
-}
-
-.badge.status-success {
-  background: #e6f7e6;
-  color: #2d8a2d;
-}
-
-/* ===== 모달 ===== */
+/* 모달 - Shadcn */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: hsl(0 0% 0% / 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -480,25 +516,29 @@
 }
 
 .modal {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 24px;
   width: 420px;
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 32px);
   overflow: auto;
+  color: hsl(var(--card-foreground));
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 }
 
 .modal h2 {
   margin: 0 0 8px 0;
   font-size: 1.25rem;
   font-weight: 600;
+  color: hsl(var(--foreground));
 }
 
 .modal-desc {
   margin: 0 0 16px 0;
   font-size: 0.9rem;
-  color: #666;
+  color: hsl(var(--muted-foreground));
 }
 
 .modal-lg {
@@ -517,29 +557,31 @@
   margin-top: 16px;
 }
 
-/* 에러 메시지 (모달/설정 페이지 공통) */
 .form-error {
   padding: 12px 16px;
   margin-bottom: 16px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 6px;
-  color: #dc2626;
+  background: hsl(var(--destructive) / 0.1);
+  border: 1px solid hsl(var(--destructive) / 0.2);
+  border-radius: calc(var(--radius) - 2px);
+  color: hsl(var(--destructive));
   font-size: 0.9rem;
 }
 
-/* 링크형 버튼 - 삭제 등 */
 .btn-link.text-danger {
-  color: #dc2626;
-}
-.btn-link.text-danger:hover {
-  color: #b91c1c;
+  color: hsl(var(--destructive));
 }
 
-/* ===== 배치 관리 카드 (콤팩트) ===== */
+.btn-link.text-danger:hover {
+  color: hsl(var(--destructive) / 0.9);
+}
+
+/* 배치 카드 */
 .batch-card {
   margin-bottom: 10px;
   padding: 10px 14px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
 }
 
 .batch-card-header {
@@ -553,6 +595,7 @@
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
+  color: hsl(var(--foreground));
 }
 
 .batch-card-actions {
@@ -566,25 +609,27 @@
 }
 
 .btn-outline {
-  border: 1px dashed #999;
-  color: #666;
+  border: 1px solid hsl(var(--input));
+  background: transparent;
+  color: hsl(var(--foreground));
 }
 
-.btn-outline:hover {
-  border-color: #1967d2;
-  color: #1967d2;
+.btn-outline:hover:not(:disabled) {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  border-color: hsl(var(--ring));
 }
 
 .btn-remove {
-  color: #999;
-  border-color: #ddd;
+  color: hsl(var(--muted-foreground));
+  border-color: hsl(var(--border));
   padding: 2px 8px;
   font-size: 0.75rem;
 }
 
-.btn-remove:hover {
-  color: #c00;
-  border-color: #c00;
+.btn-remove:hover:not(:disabled) {
+  color: hsl(var(--destructive));
+  border-color: hsl(var(--destructive));
 }
 
 .batch-card-row {
@@ -593,10 +638,11 @@
   gap: 16px 24px;
   padding: 6px 0;
   font-size: 0.82rem;
+  color: hsl(var(--foreground));
 }
 
 .batch-card-status {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid hsl(var(--border));
   margin-bottom: 8px;
 }
 
@@ -607,31 +653,11 @@
 }
 
 .batch-label {
-  color: #666;
+  color: hsl(var(--muted-foreground));
 }
 
 .batch-value {
-  color: #333;
-}
-
-.badge.status-idle {
-  background: #e3f2fd;
-  color: #1565c0;
-}
-
-.badge.status-running {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.badge.status-stopped {
-  background: #f5f5f5;
-  color: #757575;
-}
-
-.badge.status-error {
-  background: #ffebee;
-  color: #c62828;
+  color: hsl(var(--foreground));
 }
 
 .batch-card-body {
@@ -649,7 +675,7 @@
 }
 
 .batch-form-row label {
-  color: #555;
+  color: hsl(var(--muted-foreground));
 }
 
 .form-check-group--inline {
@@ -667,14 +693,16 @@
 .batch-inline-row input[type='time'],
 .batch-inline-row select {
   padding: 4px 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1px solid hsl(var(--input));
+  border-radius: calc(var(--radius) - 4px);
   font-size: 0.82rem;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 .batch-time-desc {
   font-size: 0.8rem;
-  color: #666;
+  color: hsl(var(--muted-foreground));
 }
 
 .batch-inline-row {
@@ -691,7 +719,7 @@
 }
 
 .batch-excluded-empty {
-  color: #999;
+  color: hsl(var(--muted-foreground));
   font-size: 0.8rem;
 }
 
@@ -703,9 +731,10 @@
 
 .batch-excluded-item input[type='time'] {
   padding: 4px 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1px solid hsl(var(--input));
+  border-radius: calc(var(--radius) - 4px);
   font-size: 0.82rem;
+  background: hsl(var(--background));
 }
 
 .batch-form-actions {
@@ -720,11 +749,10 @@
 .settings-table .empty-state {
   padding: 16px;
   text-align: center;
-  color: #888;
+  color: hsl(var(--muted-foreground));
   font-size: 0.85rem;
 }
 
-/* 배치 이력 모달 콤팩트 */
 .modal.modal--compact .modal-desc {
   margin: 0 0 12px 0;
   font-size: 0.85rem;

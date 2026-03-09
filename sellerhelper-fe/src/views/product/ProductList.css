@@ -1,10 +1,10 @@
-/* 상품 목록 - 스토어 탭 */
+/* 상품 목록 - Shadcn 테마 */
 .product-list-tabs-wrap {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .product-list-tabs {
@@ -13,40 +13,51 @@
 }
 
 .product-list-tab-manage {
-  font-size: 0.85rem;
-  color: #666;
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
   text-decoration: none;
-  padding: 6px 0;
+  padding: 10px 16px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
 }
 
 .product-list-tab-manage:hover {
-  color: #1967d2;
-  text-decoration: underline;
+  color: hsl(var(--foreground));
+}
+
+.product-list-tab-manage:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
 }
 
 .product-list-tab {
   padding: 10px 20px;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   border: none;
   background: transparent;
-  color: #666;
+  color: hsl(var(--muted-foreground));
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  transition: color 0.2s;
+  transition: color 0.2s, border-color 0.2s;
 }
 
 .product-list-tab:hover {
-  color: #1967d2;
+  color: hsl(var(--foreground));
 }
 
 .product-list-tab.active {
-  color: #1967d2;
+  color: hsl(var(--primary));
   font-weight: 600;
-  border-bottom-color: #1967d2;
+  border-bottom-color: hsl(var(--primary));
 }
 
-/* 우측 액션 영역 */
 .product-list-actions {
   display: flex;
   align-items: center;
@@ -54,27 +65,29 @@
 }
 
 .product-list-fetched {
-  font-size: 0.82rem;
-  color: #666;
+  font-size: 0.8125rem;
+  color: hsl(var(--muted-foreground));
   margin-right: 4px;
 }
 
 .product-list-actions .btn-outline {
-  border: 1px solid #ccc;
-  color: #555;
+  border: 1px solid hsl(var(--input));
+  color: hsl(var(--foreground));
+  background: transparent;
 }
 
 .product-list-actions .btn-outline:hover:not(:disabled) {
-  border-color: #1967d2;
-  color: #1967d2;
+  border-color: hsl(var(--ring));
+  color: hsl(var(--primary));
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
 }
 
 .product-list-actions .btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* 한 화면에 보기 */
 .product-list-left {
   display: flex;
   align-items: center;
@@ -87,18 +100,41 @@
   align-items: center;
   gap: 6px;
   font-size: 0.875rem;
-  color: #444;
+  color: hsl(var(--foreground));
 }
 
 .product-list-page-size select {
   padding: 6px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  border: 1px solid hsl(var(--input));
+  border-radius: calc(var(--radius) - 2px);
   font-size: 0.875rem;
   min-width: 70px;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
-/* 페이징 */
+.product-list-page-size select:focus {
+  outline: none;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+}
+
+.select-shadcn {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid hsl(var(--input));
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 0.875rem;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.select-shadcn:focus {
+  outline: none;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+}
+
 .product-list-pagination {
   display: flex;
   justify-content: space-between;
@@ -107,12 +143,12 @@
   gap: 12px;
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid hsl(var(--border));
 }
 
 .product-list-pagination-info {
   font-size: 0.875rem;
-  color: #666;
+  color: hsl(var(--muted-foreground));
 }
 
 .product-list-pagination-btns {
@@ -124,7 +160,7 @@
 .product-list-page-btn {
   min-width: 36px;
   padding: 6px 10px;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .product-list-page-nums {
@@ -137,28 +173,29 @@
   min-width: 32px;
   padding: 6px 8px;
   font-size: 0.875rem;
-  border: 1px solid #ddd;
-  background: #fff;
-  color: #333;
-  border-radius: 4px;
+  border: 1px solid hsl(var(--input));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  border-radius: calc(var(--radius) - 4px);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .product-list-page-num:hover {
-  background: #f0f0f0;
-  border-color: #bbb;
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  border-color: hsl(var(--ring));
 }
 
 .product-list-page-num.active {
-  background: #1967d2;
-  border-color: #1967d2;
-  color: #fff;
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   font-weight: 600;
 }
 
 .product-list-page-ell {
   padding: 0 4px;
-  color: #999;
+  color: hsl(var(--muted-foreground));
   font-size: 0.875rem;
 }

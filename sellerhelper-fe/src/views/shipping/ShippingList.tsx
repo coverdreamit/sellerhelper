@@ -1,56 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from '@/components/Link';
+import { fetchStoreShippings, syncStoreShippings } from '@/services/myStore.service';
 import { useMyStoreStore } from '@/stores';
 import { buildStoreTabs } from '@/config/productStoreTabs';
+import type { ShippingListItem } from '@/services/myStore.service';
 import '../../styles/Settings.css';
 import '../product/ProductList.css';
 
-const mockShipping = [
-  {
-    orderId: 'ORD-2024-001',
-    store: '스마트스토어',
-    buyer: '홍*동',
-    status: '출고대기',
-    invoice: '-',
-    date: '2024-02-06 14:32',
-  },
-  {
-    orderId: 'ORD-2024-002',
-    store: '쿠팡',
-    buyer: '김*수',
-    status: '배송중',
-    invoice: 'CJ 1234567890',
-    date: '2024-02-06 13:15',
-  },
-  {
-    orderId: 'ORD-2024-003',
-    store: '11번가',
-    buyer: '이*영',
-    status: '출고대기',
-    invoice: '-',
-    date: '2024-02-06 12:48',
-  },
-  {
-    orderId: 'ORD-2024-004',
-    store: '스마트스토어',
-    buyer: '박*민',
-    status: '배송완료',
-    invoice: 'CJ 1234567888',
-    date: '2024-02-06 11:20',
-  },
-  {
-    orderId: 'ORD-2024-005',
-    store: '쿠팡',
-    buyer: '최*호',
-    status: '배송중',
-    invoice: 'HAN 9876543210',
-    date: '2024-02-06 10:05',
-  },
-];
-
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50, 100];
+
+function formatOrderDate(orderDate: string | null): string {
+  if (!orderDate) return '-';
+  const d = new Date(orderDate);
+  return d.toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 export default function ShippingList() {
   const { myStores } = useMyStoreStore();
@@ -59,6 +30,36 @@ export default function ShippingList() {
   const [storeTab, setStoreTab] = useState(storeTabs[0]?.key ?? '');
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [list, setList] = useState<ShippingListItem[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  const selectedTab = storeTabs.find((t) => t.key === storeTab);
+
+  const loadShippings = useCallback(() => {
+    if (!selectedTab?.storeUid) {
+      setList([]);
+      setTotalCount(0);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    fetchStoreShippings(selectedTab.storeUid, currentPage, pageSize, statusFilter || undefined)
+      .then((res) => {
+        setList(res.contents ?? []);
+        setTotalCount(Number(res.totalCount) ?? 0);
+      })
+      .catch((err) => {
+        setError(err?.message || '배송 목록을 불러오는데 실패했습니다.');
+        setList([]);
+        setTotalCount(0);
+      })
+      .finally(() => setLoading(false));
+  }, [selectedTab?.storeUid, currentPage, pageSize, statusFilter]);
 
   useEffect(() => {
     if (storeTabs.length > 0 && !storeTabs.some((t) => t.key === storeTab)) {
@@ -68,19 +69,23 @@ export default function ShippingList() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [storeTab, pageSize]);
+  }, [storeTab, pageSize, statusFilter]);
 
-  const selectedTab = storeTabs.find((t) => t.key === storeTab);
-  const filterValue = selectedTab?.filterValue ?? storeTab;
-  const filteredShipping =
-    storeTab && storeTabs.length > 0
-      ? mockShipping.filter((s) => (s.store ?? '') === filterValue)
-      : mockShipping;
+  useEffect(() => {
+    loadShippings();
+  }, [loadShippings]);
 
-  const totalCount = filteredShipping.length;
+  const handleSync = () => {
+    if (!selectedTab?.storeUid) return;
+    setSyncing(true);
+    syncStoreShippings(selectedTab.storeUid)
+      .then(() => loadShippings())
+      .catch((err) => setError(err?.message || '동기화에 실패했습니다.'))
+      .finally(() => setSyncing(false));
+  };
+
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const startIdx = (currentPage - 1) * pageSize;
-  const pagedShipping = filteredShipping.slice(startIdx, startIdx + pageSize);
 
   function renderPagination() {
     const maxVisible = 5;
@@ -142,7 +147,7 @@ export default function ShippingList() {
   return (
     <div className="list-page">
       <h1>배송 목록</h1>
-      <p className="page-desc">전체 배송 건을 조회·관리합니다.</p>
+      <p className="page-desc">전체 배송 건을 조회·관리합니다. 동기화 후 DB에 저장된 목록이 표시됩니다.</p>
       <section className="settings-section">
         <div className="product-list-tabs-wrap">
           <div className="product-list-tabs">
@@ -163,21 +168,16 @@ export default function ShippingList() {
         </div>
         <div className="settings-toolbar">
           <div className="product-list-left">
-            <select style={{ padding: '6px 12px', marginRight: 8 }}>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{ padding: '6px 12px', marginRight: 8 }}
+            >
               <option value="">전체 상태</option>
               <option value="pending">출고대기</option>
               <option value="shipping">배송중</option>
               <option value="done">배송완료</option>
             </select>
-            <input
-              type="text"
-              placeholder="주문번호/송장번호 검색"
-              style={{ padding: '6px 12px', marginRight: 8 }}
-            />
-            <input type="date" style={{ padding: '6px 12px', marginRight: 8 }} />
-            <button type="button" className="btn">
-              검색
-            </button>
             <label className="product-list-page-size">
               <span>한 화면에 보기</span>
               <select
@@ -194,11 +194,24 @@ export default function ShippingList() {
             </label>
           </div>
           <div className="product-list-actions">
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={handleSync}
+              disabled={!selectedTab?.storeUid || syncing}
+            >
+              {syncing ? '동기화 중…' : '배송 목록 동기화'}
+            </button>
             <Link to="/shipping/pending" className="btn btn-primary">
               출고 대기
             </Link>
           </div>
         </div>
+        {error && (
+          <div style={{ padding: 12, marginBottom: 12, background: '#f8d7da', color: '#721c24', borderRadius: 4 }}>
+            {error}
+          </div>
+        )}
         <div className="settings-table-wrap">
           <table className="settings-table">
             <thead>
@@ -213,25 +226,31 @@ export default function ShippingList() {
               </tr>
             </thead>
             <tbody>
-              {pagedShipping.length === 0 ? (
+              {loading ? (
                 <tr>
                   <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
-                    조회된 배송 건이 없습니다.
+                    불러오는 중…
+                  </td>
+                </tr>
+              ) : list.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
+                    조회된 배송 건이 없습니다. 위 &quot;배송 목록 동기화&quot;를 실행하면 네이버 등 플랫폼에서 주문/배송 데이터를 가져와 저장합니다.
                   </td>
                 </tr>
               ) : (
-                pagedShipping.map((s) => (
+                list.map((s) => (
                   <tr key={s.orderId}>
                     <td>
                       <Link to={`/order/${s.orderId}`}>{s.orderId}</Link>
                     </td>
-                    <td>{s.store}</td>
-                    <td>{s.buyer}</td>
+                    <td>{s.storeName}</td>
+                    <td>{s.receiverName ?? '-'}</td>
                     <td>
                       <span className="badge badge-active">{s.status}</span>
                     </td>
                     <td>{s.invoice}</td>
-                    <td>{s.date}</td>
+                    <td>{formatOrderDate(s.orderDate)}</td>
                     <td className="cell-actions">
                       <Link to={`/order/${s.orderId}`}>상세</Link>
                       {s.status === '출고대기' && <Link to="/shipping/invoice">송장 입력</Link>}
@@ -241,7 +260,7 @@ export default function ShippingList() {
               )}
             </tbody>
           </table>
-          {totalCount > 0 && (
+          {totalCount > 0 && !loading && (
             <div className="product-list-pagination">
               <span className="product-list-pagination-info">
                 전체 {totalCount.toLocaleString()}건 중 {startIdx + 1}–

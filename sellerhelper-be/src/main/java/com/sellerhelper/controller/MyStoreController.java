@@ -5,6 +5,7 @@ import com.sellerhelper.dto.naver.NaverLastChangedResult;
 import com.sellerhelper.dto.naver.NaverProductItem;
 import com.sellerhelper.dto.naver.NaverProductOrderDetail;
 import com.sellerhelper.dto.naver.NaverProductSearchResult;
+import com.sellerhelper.dto.shipping.ShippingListResult;
 import com.sellerhelper.dto.store.StoreConnectRequest;
 import com.sellerhelper.dto.store.StoreMyUpdateRequest;
 import com.sellerhelper.dto.store.StoreReorderRequest;
@@ -12,6 +13,7 @@ import com.sellerhelper.dto.store.StoreResponse;
 import com.sellerhelper.service.StoreOrderService;
 import com.sellerhelper.service.StoreProductService;
 import com.sellerhelper.service.StoreService;
+import com.sellerhelper.service.StoreShippingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
@@ -33,6 +35,7 @@ public class MyStoreController {
     private final StoreService storeService;
     private final StoreProductService storeProductService;
     private final StoreOrderService storeOrderService;
+    private final StoreShippingService storeShippingService;
 
     /** 내 회사 스토어 목록 (연동된 스토어) */
     @GetMapping
@@ -131,6 +134,32 @@ public class MyStoreController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return ResponseEntity.ok(storeProductService.getMyStoreProducts(authUser.getUid(), uid, page, size));
+    }
+
+    /** 내 스토어 배송 목록 조회 (DB 저장분, 동기화 후 조회) */
+    @GetMapping("/{uid}/shippings")
+    public ResponseEntity<ShippingListResult> getShippings(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String status) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(storeShippingService.getShippingList(authUser.getUid(), uid, page, size, status));
+    }
+
+    /** 배송 목록 동기화 (네이버 주문/배송 API → DB 저장) */
+    @PostMapping("/{uid}/shippings/sync")
+    public ResponseEntity<Void> syncShippings(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        storeShippingService.syncShippings(authUser.getUid(), uid);
+        return ResponseEntity.noContent().build();
     }
 
     /** 스토어 상품 목록 동기화 (네이버/쿠팡 등 API → DB 저장, 목록은 DB 조회) */

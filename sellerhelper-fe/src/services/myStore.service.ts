@@ -134,3 +134,48 @@ export async function verifyMyStore(storeUid: number): Promise<MyStoreItem> {
   }
   return res.json();
 }
+
+/** 배송 목록 1건 (API 응답) */
+export interface ShippingListItem {
+  orderId: string;
+  storeName: string;
+  receiverName: string;
+  status: string;
+  invoice: string;
+  orderDate: string | null;
+}
+
+/** 배송 목록 조회 결과 */
+export interface ShippingListResult {
+  contents: ShippingListItem[];
+  page: number;
+  size: number;
+  totalCount: number;
+  lastSyncedAt?: string | null;
+}
+
+/** 스토어 배송 목록 조회 (DB 저장분). 동기화 후 조회 가능 */
+export async function fetchStoreShippings(
+  storeUid: number,
+  page = 1,
+  size = 20,
+  status?: string
+): Promise<ShippingListResult> {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  if (status) params.set('status', status);
+  const res = await apiFetch(`/api/my-stores/${storeUid}/shippings?${params}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '배송 목록 조회 실패');
+  }
+  return res.json();
+}
+
+/** 배송 목록 동기화 (네이버 등 주문/배송 API → DB 저장). 완료 후 목록 다시 불러오면 DB에서 조회 */
+export async function syncStoreShippings(storeUid: number): Promise<void> {
+  const res = await apiFetch(`/api/my-stores/${storeUid}/shippings/sync`, { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '배송 목록 동기화 실패');
+  }
+}

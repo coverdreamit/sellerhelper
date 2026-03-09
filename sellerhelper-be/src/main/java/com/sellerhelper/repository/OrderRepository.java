@@ -1,14 +1,20 @@
 package com.sellerhelper.repository;
 
 import com.sellerhelper.entity.Order;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
-    Optional<Order> findByStoreUidAndMallOrderNo(Long storeUid, String mallOrderNo);
+    @Query("SELECT o FROM Order o WHERE o.store.uid = :storeUid AND o.mallOrderNo = :mallOrderNo")
+    Optional<Order> findByStoreUidAndMallOrderNo(@Param("storeUid") Long storeUid, @Param("mallOrderNo") String mallOrderNo);
 
-    List<Order> findByStoreUidOrderByOrderDateDesc(Long storeUid, org.springframework.data.domain.Pageable pageable);
+    @Query("SELECT o FROM Order o WHERE o.store.uid = :storeUid ORDER BY o.orderDate DESC")
+    List<Order> findByStoreUidOrderByOrderDateDesc(@Param("storeUid") Long storeUid, Pageable pageable);
 }

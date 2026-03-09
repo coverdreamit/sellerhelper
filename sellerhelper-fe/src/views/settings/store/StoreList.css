@@ -1,8 +1,8 @@
-/* 스토어 관리 - 드래그 정렬 */
+/* 스토어 관리 - Shadcn 테마 */
 .store-list-hint {
   margin: 0;
   font-size: 0.85rem;
-  color: #666;
+  color: hsl(var(--muted-foreground));
 }
 
 .store-drag-cell {
@@ -14,14 +14,14 @@
 .store-drag-handle {
   display: inline-block;
   cursor: grab;
-  color: #888;
+  color: hsl(var(--muted-foreground));
   user-select: none;
   font-size: 0.9rem;
   padding: 2px 4px;
 }
 
 .store-drag-handle:hover {
-  color: #1967d2;
+  color: hsl(var(--primary));
 }
 
 .store-drag-handle:active {
@@ -29,9 +29,9 @@
 }
 
 .store-row-dragging {
-  background: #f8f9fa;
+  background: hsl(var(--muted));
 }
 
 .store-row-dragging td {
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid hsl(var(--border));
 }

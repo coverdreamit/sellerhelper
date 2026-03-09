@@ -3,7 +3,8 @@
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import Sidebar from './Sidebar';
+import AppSidebar from './Sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { initAppData, useAuthStore } from '@/stores';
 import { canAccessPath } from '@/config/menu';
 import { getMe } from '@/services/auth.service';
@@ -52,6 +53,16 @@ export default function Layout({ children }: { children: ReactNode }) {
   const isAuthPage = pathname?.startsWith('/login');
   const [mounted, setMounted] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = storage.get<string | boolean | number>(STORAGE_KEYS.SIDEBAR_COLLAPSED, false);
+    return !(saved === true || saved === '1' || saved === 1);
+  });
+
+  const handleSidebarOpenChange = useCallback((open: boolean) => {
+    setSidebarOpen(open);
+    storage.set(STORAGE_KEYS.SIDEBAR_COLLAPSED, !open);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -147,9 +158,9 @@ export default function Layout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarOpenChange} className="app-layout">
+      <AppSidebar />
       <main className="app-main">{children}</main>
-    </div>
+    </SidebarProvider>
   );
 }

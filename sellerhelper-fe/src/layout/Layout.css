@@ -1,14 +1,17 @@
-/* 레이아웃: 최소 너비 반응형 (모바일 제외) */
+/* 레이아웃 - Shadcn 테마 */
 .app-layout {
   display: flex;
   min-height: 100vh;
   overflow: hidden;
   min-width: 800px;
+  background: hsl(var(--background));
 }
 
 .app-main {
   flex: 1;
   min-width: 0;
-  padding: 16px;
+  padding: 24px;
   overflow: auto;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
