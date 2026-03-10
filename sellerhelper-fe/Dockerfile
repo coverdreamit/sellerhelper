@@ -14,6 +14,8 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_PORTAL_URL=$NEXT_PUBLIC_PORTAL_URL
 COPY . .
 RUN yarn build
+# public이 없을 수 있으므로 복사 시 존재하도록 생성
+RUN mkdir -p /app/public
 
 # ========== Production Stage ==========
 FROM node:18-alpine AS runner
