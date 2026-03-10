@@ -11,10 +11,10 @@ services:
     container_name: sellerhelper-be
     restart: unless-stopped
     ports:
-      - "5001:5080"
+      - "5001:5001"
     environment:
       SPRING_PROFILES_ACTIVE: prod,portal,commerce
-      SERVER_PORT: "5080"
+      SERVER_PORT: "5001"
       JWT_SECRET: ${JWT_SECRET:-sellerhelper-jwt-secret-key-at-least-32-bytes-long-for-hs256}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5000,http://coverdreamit.iptime.org:5000}
       DB_HOST: ${DB_HOST:-coverdreamit.iptime.org}

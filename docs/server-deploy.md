@@ -42,6 +42,9 @@ DB_HOST=coverdreamit.iptime.org
 DB_PORT=9432
 DB_USERNAME=실제DB사용자명
 DB_PASSWORD=실제DB비밀번호
+
+# FE가 BE API를 호출할 주소 (프록시 없이 직접 호출). 미설정 시 docker-compose 기본값 사용
+NEXT_PUBLIC_API_URL=http://coverdreamit.iptime.org:5001
 ```
 
 저장: `Ctrl+O` → Enter → `Ctrl+X` 종료

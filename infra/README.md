@@ -1,5 +1,12 @@
 # 배포 설정 가이드
 
+## 포트 및 API 연동
+
+- **FE**: 5000 (프론트엔드)
+- **BE**: 5001 (백엔드 API)
+- FE는 Next.js 프록시 없이 **BE를 직접 호출**합니다. 브라우저에서 API 요청은 `NEXT_PUBLIC_API_URL`(예: `http://coverdreamit.iptime.org:5001`)로 나갑니다.
+- 배포 서버에서 빌드 시 `docker-compose.yml` 기본값으로 `NEXT_PUBLIC_API_URL=http://coverdreamit.iptime.org:5001` 이 사용되며, `.env`에서 덮어쓸 수 있습니다.
+
 ## GitHub Secrets 설정
 
 Repository → Settings → Secrets and variables → Actions 에 다음 시크릿을 추가하세요.
