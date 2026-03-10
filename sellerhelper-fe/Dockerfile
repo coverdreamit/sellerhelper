@@ -18,6 +18,9 @@ RUN yarn build
 # ========== Production Stage ==========
 FROM node:18-alpine AS runner
 
+# 디버깅/헬스체크용 curl (선택)
+RUN apk add --no-cache curl
+
 WORKDIR /app
 
 ENV NODE_ENV=production
