@@ -5,8 +5,9 @@
 set -e
 
 ENV_TYPE="${1:-test}"
-APP_DIR="${APP_DIR:-$HOME/sellerhelper}"
+APP_DIR="${APP_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 cd "$APP_DIR"
+echo "$(date -Iseconds) deploy.sh: checking..."
 
 # 환경별 env 파일 로드 (test: .env.test → .env, dev: .env.dev → .env)
 ENV_FILE=".env.$ENV_TYPE"
@@ -21,10 +22,11 @@ elif [ -f .env ]; then
 fi
 
 # origin/main 최신 정보 가져오기
-git fetch origin main 2>/dev/null || true
+git fetch origin main || true
 
 # 로컬과 origin/main 비교 (변경 없으면 종료)
 if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
+  echo "$(date -Iseconds) deploy.sh: no change, skip"
   exit 0
 fi
 

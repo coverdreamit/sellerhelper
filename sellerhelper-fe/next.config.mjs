@@ -8,6 +8,7 @@ const nextConfig = {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5080';
     const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL || apiUrl;
     return [
+      { source: '/api/health', destination: `${apiUrl}/api/health` },
       { source: '/api/auth/login', destination: `${portalUrl}/api/auth/login` },
       { source: '/api/auth/register', destination: `${portalUrl}/api/auth/register` },
       { source: '/api/auth/logout', destination: `${portalUrl}/api/auth/logout` },
