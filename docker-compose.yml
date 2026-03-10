@@ -19,7 +19,7 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5000,http://coverdreamit.iptime.org:5000}
       DB_HOST: ${DB_HOST:-coverdreamit.iptime.org}
       DB_PORT: ${DB_PORT:-9432}
-      DB_NAME: ${DB_NAME:-sellerhelper-dev}
+      DB_NAME: ${DB_NAME:-sellerhelper}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
   sellerhelper-fe:

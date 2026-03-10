@@ -37,7 +37,7 @@ nano .env.dev
 아래 내용 입력 (DB 계정은 실제 값으로 변경):
 
 ```
-DB_NAME=sellerhelper-dev
+DB_NAME=sellerhelper
 DB_HOST=coverdreamit.iptime.org
 DB_PORT=9432
 DB_USERNAME=실제DB사용자명
@@ -45,6 +45,9 @@ DB_PASSWORD=실제DB비밀번호
 
 # FE가 BE API를 호출할 주소 (프록시 없이 직접 호출). 미설정 시 docker-compose 기본값 사용
 NEXT_PUBLIC_API_URL=http://coverdreamit.iptime.org:5001
+
+# BE CORS: 브라우저가 FE(5000)에서 BE(5001)로 직접 요청하므로, BE가 허용할 FE 출처 필요. 미설정 시 기본값에 포함됨
+# CORS_ALLOWED_ORIGINS=http://coverdreamit.iptime.org:5000
 ```
 
 저장: `Ctrl+O` → Enter → `Ctrl+X` 종료

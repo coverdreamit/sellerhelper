@@ -1,6 +1,6 @@
 # Dev 환경 설정
 
-현재는 **dev 환경 하나**만 사용합니다. 테스트(test)·운영(prod) 서버는 추후 추가할 예정입니다.
+현재는 **dev 환경 하나**만 사용합니다. 테스트(test)·운영(prod) 서버는 차후 추가할 예정입니다.
 
 ---
 
@@ -15,11 +15,11 @@
 
 ## DB
 
-- DB 이름: `sellerhelper-dev`
+- DB 이름: `sellerhelper`
 - PostgreSQL에서 DB 생성:
 
 ```sql
-CREATE DATABASE "sellerhelper-dev";
+CREATE DATABASE "sellerhelper";
 ```
 
 ---
