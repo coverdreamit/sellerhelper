@@ -1,4 +1,5 @@
-# Dev 환경 (FE 5000, BE 5001)
+# FE 5000, BE 5001 (프록시 없이 FE → BE 직접 호출)
+# 배포(coverdreamit.iptime.org) 시 .env에 NEXT_PUBLIC_API_URL=http://coverdreamit.iptime.org:5001 설정 후 빌드
 # 사용: .env 또는 .env.dev 설정 후 docker compose up -d
 
 services:
@@ -15,7 +16,7 @@ services:
       SPRING_PROFILES_ACTIVE: prod,portal,commerce
       SERVER_PORT: "5080"
       JWT_SECRET: ${JWT_SECRET:-sellerhelper-jwt-secret-key-at-least-32-bytes-long-for-hs256}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5000}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5000,http://coverdreamit.iptime.org:5000}
       DB_HOST: ${DB_HOST:-coverdreamit.iptime.org}
       DB_PORT: ${DB_PORT:-9432}
       DB_NAME: ${DB_NAME:-sellerhelper-dev}
@@ -26,8 +27,7 @@ services:
       context: ./sellerhelper-fe
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:5001
-        NEXT_PUBLIC_PORTAL_URL: http://localhost:5001
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://coverdreamit.iptime.org:5001}
     image: sellerhelper-fe:latest
     container_name: sellerhelper-fe
     restart: unless-stopped
@@ -37,5 +37,4 @@ services:
       - sellerhelper-be
     environment:
       PORT: "5000"
-      NEXT_PUBLIC_API_URL: http://localhost:5001
-      NEXT_PUBLIC_PORTAL_URL: http://localhost:5001
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://coverdreamit.iptime.org:5001}

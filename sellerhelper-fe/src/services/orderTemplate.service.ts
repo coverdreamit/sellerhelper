@@ -4,12 +4,13 @@
 const USE_MOCK = true;
 
 import { buildOrderTemplatesWithFields } from '@/mocks/orderTemplates';
+import { getApiBase } from '@/lib/api';
 
 export async function fetchOrderTemplates() {
   if (USE_MOCK) {
     return Promise.resolve(buildOrderTemplatesWithFields());
   }
-  const res = await fetch('/api/order-templates');
+  const res = await fetch(`${getApiBase()}/api/order-templates`);
   if (!res.ok) throw new Error('Failed to fetch order templates');
   const data = await res.json();
   return data.templates ?? data;
@@ -19,7 +20,7 @@ export async function saveOrderTemplate(template) {
   if (USE_MOCK) {
     return Promise.resolve(template);
   }
-  const res = await fetch(`/api/order-templates/${template.templateId}`, {
+  const res = await fetch(`${getApiBase()}/api/order-templates/${template.templateId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(template),

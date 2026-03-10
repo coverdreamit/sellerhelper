@@ -7,11 +7,9 @@ WORKDIR /app
 COPY package.json yarn.lock* ./
 RUN yarn install --frozen-lockfile
 
-# 소스 복사 및 빌드 (API/Portal URL은 빌드 시 주입)
-ARG NEXT_PUBLIC_API_URL=http://sellerhelper-be:5080
-ARG NEXT_PUBLIC_PORTAL_URL=http://sellerhelper-be:5080
+# 소스 복사 및 빌드 (BE 직접 호출 주소. 배포 시 예: http://coverdreamit.iptime.org:5001)
+ARG NEXT_PUBLIC_API_URL=http://localhost:5001
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_PORTAL_URL=$NEXT_PUBLIC_PORTAL_URL
 COPY . .
 RUN yarn build
 # public이 없을 수 있으므로 복사 시 존재하도록 생성

@@ -5,12 +5,13 @@
 const USE_MOCK = true;
 
 import { storesMock } from '@/mocks/stores';
+import { getApiBase } from '@/lib/api';
 
 export async function fetchStores() {
   if (USE_MOCK) {
     return Promise.resolve(storesMock.stores);
   }
-  const res = await fetch('/api/stores');
+  const res = await fetch(`${getApiBase()}/api/stores`);
   if (!res.ok) throw new Error('Failed to fetch stores');
   const data = await res.json();
   return data.stores ?? data;

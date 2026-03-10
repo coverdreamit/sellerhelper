@@ -4,12 +4,13 @@
 const USE_MOCK = true;
 
 import { userStoresMock } from '@/mocks/userStores';
+import { getApiBase } from '@/lib/api';
 
 export async function fetchUserStores() {
   if (USE_MOCK) {
     return Promise.resolve(userStoresMock.userStores);
   }
-  const res = await fetch('/api/user-stores');
+  const res = await fetch(`${getApiBase()}/api/user-stores`);
   if (!res.ok) throw new Error('Failed to fetch user stores');
   const data = await res.json();
   return data.userStores ?? data;
@@ -24,7 +25,7 @@ export async function connectUserStore(storeCode, payload = {}) {
       lastSyncAt: new Date().toISOString(),
     });
   }
-  const res = await fetch(`/api/user-stores/${storeCode}/connect`, {
+  const res = await fetch(`${getApiBase()}/api/user-stores/${storeCode}/connect`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getApiBase } from '@/lib/api';
 
 /**
- * 백엔드 /api/health 호출 가능 여부 확인.
- * 연결 실패 시 상단에 안내 배너 표시 (로컬 개발 시 백엔드 미실행 등 원인 파악용).
+ * 백엔드 /api/health 직접 호출 가능 여부 확인 (프록시 없음).
+ * 연결 실패 시 상단에 안내 배너 표시.
  */
 export default function BackendHealthBanner() {
   const [unreachable, setUnreachable] = useState<boolean | null>(null);
@@ -15,8 +16,9 @@ export default function BackendHealthBanner() {
     let cancelled = false;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const healthUrl = `${getApiBase()}/api/health`;
 
-    fetch('/api/health', { credentials: 'include', signal: controller.signal })
+    fetch(healthUrl, { credentials: 'include', signal: controller.signal })
       .then((res) => {
         if (cancelled) return;
         clearTimeout(timeoutId);
@@ -47,7 +49,7 @@ export default function BackendHealthBanner() {
     };
   }, []);
 
-  const apiUrl = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5080') : '';
+  const apiUrl = getApiBase();
 
   if (unreachable !== true || dismissed) return null;
 
@@ -71,12 +73,9 @@ export default function BackendHealthBanner() {
       <span>
         백엔드 API에 연결할 수 없습니다.
         {errorMessage && <strong style={{ marginLeft: 6 }}>({errorMessage})</strong>}{' '}
-        프론트는 <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px' }}>localhost:5000</code>에서 /api 요청을{' '}
-        <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px' }}>{apiUrl || 'http://localhost:5080'}</code>로 프록시합니다.{' '}
-        확인: 브라우저에서 <a href={`${apiUrl || 'http://localhost:5080'}/api/health`} target="_blank" rel="noopener noreferrer" style={{ color: '#fef08a' }}>백엔드 헬스 직접 열기</a>.{' '}
-        백엔드 실행: <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px' }}>sellerhelper-be</code>에서{' '}
-        <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px' }}>SPRING_PROFILES_ACTIVE=local,local-h2 mvn spring-boot:run</code>.{' '}
-        <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px' }}>NEXT_PUBLIC_API_URL</code> 변경 후 프론트 개발 서버를 반드시 재시작하세요.
+        FE(5000)에서 BE <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px' }}>{apiUrl}</code> 로 직접 호출합니다 (프록시 없음).{' '}
+        확인: <a href={`${apiUrl}/api/health`} target="_blank" rel="noopener noreferrer" style={{ color: '#fef08a' }}>백엔드 헬스 직접 열기</a>.{' '}
+        <code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px' }}>NEXT_PUBLIC_API_URL</code> 변경 후 빌드/재시작 필요.
       </span>
       <button
         type="button"

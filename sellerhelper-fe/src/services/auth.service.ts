@@ -1,12 +1,12 @@
 /**
  * 인증 서비스 - JWT 기반 로그인/회원가입
- * Portal(5081) /api/auth/* 사용
- * 비밀번호 저장 금지 → 아이디만 localStorage 저장
+ * BE(5001) /api/auth/* 직접 호출 (프록시 없음). 비밀번호 저장 금지 → 아이디만 localStorage 저장
  */
 
 import { storage } from '@/shared/storage/storage';
 import { STORAGE_KEYS } from '@/shared/storage/keys';
 import { useAuthStore } from '@/stores';
+import { getApiBase } from '@/lib/api';
 
 function authHeaders(): Record<string, string> {
   const token = useAuthStore.getState().user?.token;
@@ -67,7 +67,7 @@ export interface RegisterResponse {
 }
 
 export async function login(req: LoginRequest): Promise<LoginResponse> {
-  const res = await fetch('/api/auth/login', {
+  const res = await fetch(`${getApiBase()}/api/auth/login`, {
     ...baseFetchOptions,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -85,7 +85,7 @@ export async function login(req: LoginRequest): Promise<LoginResponse> {
 }
 
 export async function register(req: RegisterRequest): Promise<RegisterResponse> {
-  const res = await fetch('/api/auth/register', {
+  const res = await fetch(`${getApiBase()}/api/auth/register`, {
     ...baseFetchOptions,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -102,7 +102,7 @@ export async function register(req: RegisterRequest): Promise<RegisterResponse> 
 
 /** 현재 로그인 사용자 조회 (JWT 필요) */
 export async function getMe(): Promise<LoginResponse | null> {
-  const res = await fetch('/api/auth/me', {
+  const res = await fetch(`${getApiBase()}/api/auth/me`, {
     ...baseFetchOptions,
     method: 'GET',
     headers: authHeaders(),
@@ -118,7 +118,7 @@ export async function getMe(): Promise<LoginResponse | null> {
 
 /** 로그아웃 */
 export async function logout(): Promise<void> {
-  await fetch('/api/auth/logout', {
+  await fetch(`${getApiBase()}/api/auth/logout`, {
     ...baseFetchOptions,
     method: 'POST',
     headers: authHeaders(),
