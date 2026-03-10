@@ -1,10 +1,12 @@
 #!/bin/bash
 # 서버에서 5분마다 실행하는 배포 스크립트
 # 변경사항 있을 때만: git pull → docker 빌드 → docker compose up
-# 사용법: ./scripts/deploy.sh [test|dev]  (기본: test)
+# 사용법: ./scripts/deploy.sh [test|dev] [--force]  (기본: test)
 set -e
 
 ENV_TYPE="${1:-test}"
+FORCE_DEPLOY=""
+[ "${2:-}" = "--force" ] && FORCE_DEPLOY=1
 APP_DIR="${APP_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 cd "$APP_DIR"
 echo "$(date -Iseconds) deploy.sh: checking..."
@@ -25,12 +27,12 @@ fi
 git fetch origin main || true
 
 # 로컬과 origin/main 비교 (변경 없으면 종료)
-if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
+if [ -z "$FORCE_DEPLOY" ] && [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
   echo "$(date -Iseconds) deploy.sh: no change, skip"
   exit 0
 fi
 
-git pull origin main
+[ -z "$FORCE_DEPLOY" ] && git pull origin main
 
 # 환경별 compose 파일 및 env
 if [ "$ENV_TYPE" = "dev" ]; then
