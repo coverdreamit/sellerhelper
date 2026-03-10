@@ -1,7 +1,0 @@
-# Test 환경 오버라이드 (sellerhelper-test DB)
-# 사용: docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d
-
-services:
-  sellerhelper-be:
-    environment:
-      DB_NAME: sellerhelper-test

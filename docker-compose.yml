@@ -1,3 +1,6 @@
+# Dev 환경 (FE 5000, BE 5001)
+# 사용: .env 또는 .env.dev 설정 후 docker compose up -d
+
 services:
   sellerhelper-be:
     build:
@@ -7,16 +10,15 @@ services:
     container_name: sellerhelper-be
     restart: unless-stopped
     ports:
-      - "5080:5080"
+      - "5001:5080"
     environment:
-      # 한 컨테이너에서 전체 API: prod(DB설정) + portal(인증/사용자) + commerce(스토어/몰/상품)
       SPRING_PROFILES_ACTIVE: prod,portal,commerce
       SERVER_PORT: "5080"
       JWT_SECRET: ${JWT_SECRET:-sellerhelper-jwt-secret-key-at-least-32-bytes-long-for-hs256}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5000}
       DB_HOST: ${DB_HOST:-coverdreamit.iptime.org}
       DB_PORT: ${DB_PORT:-9432}
-      DB_NAME: ${DB_NAME:-sellerhelper}
+      DB_NAME: ${DB_NAME:-sellerhelper-dev}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
   sellerhelper-fe:
@@ -24,8 +26,8 @@ services:
       context: ./sellerhelper-fe
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://sellerhelper-be:5080
-        NEXT_PUBLIC_PORTAL_URL: http://sellerhelper-be:5080
+        NEXT_PUBLIC_API_URL: http://localhost:5001
+        NEXT_PUBLIC_PORTAL_URL: http://localhost:5001
     image: sellerhelper-fe:latest
     container_name: sellerhelper-fe
     restart: unless-stopped
@@ -35,5 +37,5 @@ services:
       - sellerhelper-be
     environment:
       PORT: "5000"
-      NEXT_PUBLIC_API_URL: http://sellerhelper-be:5080
-      NEXT_PUBLIC_PORTAL_URL: http://sellerhelper-be:5080
+      NEXT_PUBLIC_API_URL: http://localhost:5001
+      NEXT_PUBLIC_PORTAL_URL: http://localhost:5001

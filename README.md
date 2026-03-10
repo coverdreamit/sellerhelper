@@ -43,4 +43,4 @@ dev-be.bat        # Windows 개발모드
 # ./dev-be.sh     # Linux/macOS
 ```
 
-백엔드: `http://localhost:5080` (헬스체크: `/api/health`)
+백엔드: `http://localhost:5001` (헬스체크: `/api/health`)

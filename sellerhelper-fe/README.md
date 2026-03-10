@@ -10,7 +10,7 @@
 - **Zustand** (전역 상태)
 - **@dnd-kit** (드래그 앤 드롭)
 - TypeScript
-- Spring Boot 백엔드 연동 (API 프록시: `/api/*` → `http://localhost:5080/api/*`)
+- Spring Boot 백엔드 연동 (NEXT_PUBLIC_API_URL로 직접 호출, 기본 `http://localhost:5001`)
 
 ## 실행 방법
 
@@ -97,7 +97,7 @@ src/
 
 ## 백엔드 연동
 
-- **프록시**: `next.config.mjs`의 rewrites로 `/api/*` → `NEXT_PUBLIC_API_URL` (기본 `http://localhost:5080`)
+- **API**: 프록시 없이 `NEXT_PUBLIC_API_URL`로 직접 요청 (기본 `http://localhost:5001`)
 - **인증**: 세션 기반. `apiFetch`에서 `credentials: 'include'`로 쿠키 전송
 - **환경 변수**: `NEXT_PUBLIC_API_URL` 로 API 서버 URL 변경
 

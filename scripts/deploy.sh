@@ -1,21 +1,19 @@
 #!/bin/bash
 # 서버에서 5분마다 실행하는 배포 스크립트
 # 변경사항 있을 때만: git pull → docker 빌드 → docker compose up
-# 사용법: ./scripts/deploy.sh [test|dev] [--force]  (기본: test)
+# 사용법: ./scripts/deploy.sh [--force]
 set -e
 
-ENV_TYPE="${1:-test}"
 FORCE_DEPLOY=""
-[ "${2:-}" = "--force" ] && FORCE_DEPLOY=1
+[ "${1:-}" = "--force" ] && FORCE_DEPLOY=1
 APP_DIR="${APP_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 cd "$APP_DIR"
 echo "$(date -Iseconds) deploy.sh: checking..."
 
-# 환경별 env 파일 로드 (test: .env.test → .env, dev: .env.dev → .env)
-ENV_FILE=".env.$ENV_TYPE"
-if [ -f "$ENV_FILE" ]; then
+# .env.dev 또는 .env 로드
+if [ -f .env.dev ]; then
   set -a
-  source "$ENV_FILE"
+  source .env.dev
   set +a
 elif [ -f .env ]; then
   set -a
@@ -34,19 +32,13 @@ fi
 
 [ -z "$FORCE_DEPLOY" ] && git pull origin main
 
-# 환경별 compose 파일 및 env
-if [ "$ENV_TYPE" = "dev" ]; then
-  COMPOSE_FILES="-f docker-compose.yml -f docker-compose.dev.yml"
-  [ -f .env.dev ] && COMPOSE_ENV="--env-file .env.dev" || COMPOSE_ENV=""
-else
-  COMPOSE_FILES="-f docker-compose.yml -f docker-compose.test.yml"
-  [ -f .env.test ] && COMPOSE_ENV="--env-file .env.test" || COMPOSE_ENV=""
-fi
+COMPOSE_ENV=""
+[ -f .env.dev ] && COMPOSE_ENV="--env-file .env.dev" || [ -f .env ] && COMPOSE_ENV="--env-file .env"
 
 # docker compose 미설치 시 docker/compose 이미지 사용
 if docker compose version &>/dev/null; then
-  docker compose $COMPOSE_FILES $COMPOSE_ENV build
-  docker compose $COMPOSE_FILES $COMPOSE_ENV up -d --force-recreate
+  docker compose $COMPOSE_ENV build
+  docker compose $COMPOSE_ENV up -d --force-recreate
 else
   docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
     -v "$APP_DIR:$APP_DIR" -w="$APP_DIR" \

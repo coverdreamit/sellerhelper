@@ -2,6 +2,8 @@
 
 **서버가 5분마다** 소스를 pull 받아 **로컬에서 Docker 빌드** 후 배포합니다. (외부 이미지 저장소 사용 안 함)
 
+> 현재는 dev 환경만 사용합니다. 테스트·운영 서버는 추후 추가 예정입니다.
+
 ---
 
 ## 적용 방법 (순서대로 진행)
@@ -27,24 +29,22 @@ git clone https://github.com/coverdreamit/sellerhelper.git .
 
 ### 3단계: 환경 변수 파일 생성
 
-**Test 환경** (기본 운영):
-
 ```bash
-cp .env.test.example .env.test
-nano .env.test
+cp .env.dev.example .env.dev
+nano .env.dev
 ```
 
 아래 내용 입력 (DB 계정은 실제 값으로 변경):
 
 ```
-DB_NAME=sellerhelper-test
+DB_NAME=sellerhelper-dev
+DB_HOST=coverdreamit.iptime.org
+DB_PORT=9432
 DB_USERNAME=실제DB사용자명
 DB_PASSWORD=실제DB비밀번호
 ```
 
 저장: `Ctrl+O` → Enter → `Ctrl+X` 종료
-
-> Dev 환경 추가 시: `cp .env.dev.example .env.dev` 후 동일하게 입력. [환경 분리 상세](dev-test-env.md)
 
 ---
 
@@ -59,10 +59,10 @@ chmod +x scripts/deploy.sh
 ### 5단계: 최초 배포 실행 (동작 확인)
 
 ```bash
-./scripts/deploy.sh test
+./scripts/deploy.sh
 ```
 
-에러 없이 끝나면 Docker 컨테이너가 실행된 상태입니다. (dev 환경: `./scripts/deploy.sh dev`)
+에러 없이 끝나면 Docker 컨테이너가 실행된 상태입니다. 강제 재배포: `./scripts/deploy.sh --force`
 
 ---
 
@@ -75,7 +75,7 @@ crontab -e
 에디터가 뜨면 **맨 아래에** 다음 줄 추가:
 
 ```
-*/5 * * * * bash $HOME/sellerhelper/scripts/deploy.sh test >> $HOME/sellerhelper/deploy.log 2>&1
+*/5 * * * * bash $HOME/sellerhelper/scripts/deploy.sh >> $HOME/sellerhelper/deploy.log 2>&1
 ```
 
 > `bash`로 실행하면 실행 권한(Permission denied) 문제를 피할 수 있습니다. `$HOME`은 크론이 사용자 홈 디렉터리(~/)로 자동 설정합니다.
@@ -96,7 +96,8 @@ crontab -l
 
 ## 확인 방법
 
-- **서비스 접속**: `http://coverdreamit.iptime.org:5000` (프론트엔드)
+- **프론트엔드**: `http://coverdreamit.iptime.org:5000`
+- **백엔드 API**: `http://coverdreamit.iptime.org:5001`
 - **배포 로그**: `tail -f ~/sellerhelper/deploy.log`
 - **컨테이너 상태**: `docker ps`
 
