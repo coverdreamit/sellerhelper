@@ -29,7 +29,7 @@ public class JwtTokenProvider {
     @Value("${jwt.secret:sellerhelper-secret-key-at-least-32-bytes-long}")
     private String secretKey;
 
-    @Value("${jwt.expiration:86400000}")
+    @Value("${jwt.expiration:21600000}")
     private long tokenValidityInMs;
 
     private byte[] keyBytes;
