@@ -121,7 +121,7 @@ public class NaverCommerceOrderService {
             LastChangedApiResponse body = response.getBody();
 
             List<NaverLastChangedItem> data =
-                    body.getData() != null ? body.getData() : Collections.emptyList();
+                    body.getLastChangedStatuses() != null ? body.getLastChangedStatuses() : Collections.emptyList();
 
             return NaverLastChangedResult.builder()
                     .data(data)
@@ -192,7 +192,7 @@ public class NaverCommerceOrderService {
                 return Collections.emptyList();
             }
 
-            List<NaverProductOrderDetail> data = response.getBody().getData();
+            List<NaverProductOrderDetail> data = response.getBody().getProductOrders();
 
             return data != null ? data : Collections.emptyList();
 
@@ -209,8 +209,8 @@ public class NaverCommerceOrderService {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static class LastChangedApiResponse {
 
-        @JsonProperty("data")
-        private List<NaverLastChangedItem> data;
+        @JsonProperty("lastChangedStatuses")
+        private List<NaverLastChangedItem> lastChangedStatuses;
 
         @JsonProperty("more")
         private NaverLastChangedMore more;
@@ -220,7 +220,7 @@ public class NaverCommerceOrderService {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static class ProductOrdersQueryApiResponse {
 
-        @JsonProperty("data")
-        private List<NaverProductOrderDetail> data;
+        @JsonProperty("productOrders")
+        private List<NaverProductOrderDetail> productOrders;
     }
 }

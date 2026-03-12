@@ -17,4 +17,8 @@ public class NaverLastChangedItem {
 
     @JsonProperty("productOrderStatus")
     private String productOrderStatus;
+
+    /** 최종 변경 구분 (참고: last-changed-statuses API 응답) */
+    @JsonProperty("lastChangedType")
+    private String lastChangedType;
 }
