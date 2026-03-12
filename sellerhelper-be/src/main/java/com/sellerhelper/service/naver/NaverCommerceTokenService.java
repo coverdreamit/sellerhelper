@@ -21,6 +21,12 @@ import java.util.Base64;
 /**
  * 네이버 스마트스토어(커머스) API 토큰 발급·유지
  *
+ * <p>날짜/타임스탬프 규격 (JS 기준과 동일):</p>
+ * <ul>
+ *   <li><b>조회 기간</b> (lastChangedFrom/lastChangedTo): ISO 8601 문자열. 생성: Date → toISOString(). 예: "2026-03-05T09:05:10.602Z"</li>
+ *   <li><b>OAuth·전자서명</b>: 밀리초 숫자 문자열. 생성: Date.now().toString(). 예: "1773306180922". 토큰 요청 body의 timestamp, client_secret_sign 서명에 사용.</li>
+ * </ul>
+ *
  * <p>토큰 발급 403 발생 시 점검 사항:</p>
  * <ul>
  *   <li>애플리케이션 시크릿: 커머스API센터 [애플리케이션 상세]의 '애플리케이션 시크릿'을 그대로 입력. 반드시 $2a$10$... 형태(BCrypt salt). 공백/줄바꿈 없이.</li>
@@ -71,13 +77,15 @@ public class NaverCommerceTokenService {
     }
 
     private String issueAndSaveToken(StoreAuth auth) {
-        long timestamp = System.currentTimeMillis();
+        // OAuth·전자서명용: 밀리초 숫자 문자열 (JS Date.now().toString()에 해당). 예: "1773306180922"
+        long timestampMs = System.currentTimeMillis();
+        String timestamp = String.valueOf(timestampMs);
         String clientId = StringUtils.hasText(auth.getApiKey()) ? auth.getApiKey().trim() : "";
         String clientSecret = StringUtils.hasText(auth.getApiSecret()) ? auth.getApiSecret().trim() : "";
         if (!StringUtils.hasText(clientId) || !StringUtils.hasText(clientSecret)) {
             throw new IllegalArgumentException("API Key와 API Secret이 필요합니다.");
         }
-        String signature = generateSignature(clientId, clientSecret, timestamp);
+        String signature = generateSignature(clientId, clientSecret, timestampMs);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -87,7 +95,7 @@ public class NaverCommerceTokenService {
         params.add("client_id", clientId);
         params.add("client_secret_sign", signature);
         params.add("type", "SELF");
-        params.add("timestamp", String.valueOf(timestamp));
+        params.add("timestamp", timestamp);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
         ResponseEntity<TokenResponse> response;

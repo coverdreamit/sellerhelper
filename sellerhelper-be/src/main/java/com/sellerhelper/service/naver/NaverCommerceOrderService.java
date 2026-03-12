@@ -14,16 +14,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * 네이버 스마트스토어(커머스) API - 주문·배송 조회
+ *
+ * <p>조회 기간(lastChangedFrom/lastChangedTo): ISO 8601 문자열 사용. Java에서는 {@code ZonedDateTime.toInstant().toString()} (JS toISOString()에 해당). 예: "2026-03-05T09:05:10.602Z"</p>
  *
  * @see <a href="https://apicenter.commerce.naver.com/docs/commerce-api/current">커머스API 문서</a>
  * @see <a href="https://apicenter.commerce.naver.com/docs/commerce-api/current/get-ns-information-paged-list-nfa">SKU 목록 조회 API</a>
@@ -36,10 +39,6 @@ public class NaverCommerceOrderService {
     private static final String BASE_URL = "https://api.commerce.naver.com/external";
     private static final String LAST_CHANGED_URL = BASE_URL + "/v1/pay-order/seller/product-orders/last-changed-statuses";
     private static final String PRODUCT_ORDERS_QUERY_URL = BASE_URL + "/v1/pay-order/seller/product-orders/query";
-
-    /** API 요청 날짜 포맷 */
-    private static final DateTimeFormatter API_DATETIME =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
     private final StoreRepository storeRepository;
     private final StoreAuthRepository storeAuthRepository;
@@ -69,31 +68,26 @@ public class NaverCommerceOrderService {
 
         String token = tokenService.getOrRefreshToken(store, auth);
 
-        /**
-         * 네이버 API는 + 를 허용하지 않기 때문에 %2B 로 변환
-         */
-        String from = lastChangedFrom.format(API_DATETIME).replace("+", "%2B");
+        // 조회 기간: ISO 8601 (JS date.toISOString()). 예: "2026-03-05T09:05:10.602Z"
+        // 값은 인코딩하지 않고 그대로 queryParam에 넣고, build().encode()로 1회만 인코딩 (이중 인코딩 방지).
+        String from = lastChangedFrom.toInstant().toString();
+        String to = lastChangedTo != null ? lastChangedTo.toInstant().toString() : null;
 
         UriComponentsBuilder builder = UriComponentsBuilder
                 .fromHttpUrl(LAST_CHANGED_URL)
                 .queryParam("lastChangedFrom", from);
-
-        if (lastChangedTo != null) {
-            builder.queryParam("lastChangedTo",
-                    lastChangedTo.format(API_DATETIME).replace("+", "%2B"));
+        if (to != null) {
+            builder.queryParam("lastChangedTo", to);
         }
-
         if (limitCount != null && limitCount > 0) {
             builder.queryParam("limitCount", Math.min(300, limitCount));
         }
-
         if (moreSequence != null) {
             builder.queryParam("moreSequence", moreSequence);
         }
 
-        String uriString = builder.build(false).toUriString();
-
-        log.info("네이버 주문 조회 URI = {}", uriString);
+        URI uri = builder.build().encode().toUri();
+        log.info("네이버 주문 조회 URI = {}", uri);
 
         try {
 
@@ -105,7 +99,7 @@ public class NaverCommerceOrderService {
 
             ResponseEntity<LastChangedApiResponse> response =
                     restTemplate.exchange(
-                            uriString,
+                            uri,
                             HttpMethod.GET,
                             request,
                             LastChangedApiResponse.class
@@ -128,12 +122,14 @@ public class NaverCommerceOrderService {
                     .more(body.getMore())
                     .build();
 
+        } catch (HttpClientErrorException e) {
+            String body = e.getResponseBodyAsString();
+            log.warn("네이버 변경 주문 조회 API 오류 storeUid={}, status={}, body={}", storeUid, e.getStatusCode(), body);
+            String detail = (body != null && !body.isBlank()) ? " " + body : (" " + e.getMessage());
+            throw new IllegalStateException("네이버 변경 주문 조회에 실패했습니다:" + detail);
         } catch (Exception e) {
-
             log.warn("네이버 변경 주문 조회 실패 storeUid={}: {}", storeUid, e.getMessage());
-
-            throw new IllegalStateException(
-                    "변경 주문 조회에 실패했습니다: " + e.getMessage());
+            throw new IllegalStateException("네이버 변경 주문 조회에 실패했습니다: " + e.getMessage());
         }
     }
 
@@ -220,7 +216,8 @@ public class NaverCommerceOrderService {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static class ProductOrdersQueryApiResponse {
 
-        @JsonProperty("productOrders")
+        /** 네이버 API는 상세 조회 응답 본문을 data 필드로 반환 */
+        @JsonProperty("data")
         private List<NaverProductOrderDetail> productOrders;
     }
 }

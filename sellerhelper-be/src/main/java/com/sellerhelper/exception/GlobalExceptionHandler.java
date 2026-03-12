@@ -65,14 +65,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleIllegalState(IllegalStateException ex, WebRequest request) {
         log.warn("IllegalState: {}", ex.getMessage());
         String message = sanitizeMessage(ex.getMessage());
+        // 네이버/쿠팡 등 외부 API 실패는 502 (Bad Gateway). 그 외는 503.
+        boolean externalApiFailure = message != null && (
+                message.contains("네이버") || message.contains("쿠팡") || message.contains("API") || message.contains("토큰"));
+        HttpStatus status = externalApiFailure ? HttpStatus.BAD_GATEWAY : HttpStatus.SERVICE_UNAVAILABLE;
+        String errorLabel = externalApiFailure ? "Bad Gateway" : "Service Unavailable";
         ApiError error = ApiError.builder()
-                .status(HttpStatus.SERVICE_UNAVAILABLE.value())
-                .error("Service Unavailable")
+                .status(status.value())
+                .error(errorLabel)
                 .message(message)
                 .timestamp(Instant.now())
                 .path(getPath(request))
                 .build();
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+        return ResponseEntity.status(status).body(error);
     }
 
     @ExceptionHandler(DuplicateLoginIdException.class)
