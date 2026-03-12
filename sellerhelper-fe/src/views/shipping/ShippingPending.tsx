@@ -7,30 +7,6 @@ import { buildStoreTabs } from '@/config/productStoreTabs';
 import '../../styles/Settings.css';
 import '../product/ProductList.css';
 
-const mockPending = [
-  {
-    orderId: 'ORD-2024-001',
-    store: '스마트스토어',
-    buyer: '홍*동',
-    amount: 45000,
-    orderDate: '2024-02-06 14:32',
-  },
-  {
-    orderId: 'ORD-2024-005',
-    store: 'G마켓',
-    buyer: '김*수',
-    amount: 125000,
-    orderDate: '2024-02-06 10:05',
-  },
-  {
-    orderId: 'ORD-2024-007',
-    store: '쿠팡',
-    buyer: '이*준',
-    amount: 32000,
-    orderDate: '2024-02-06 11:20',
-  },
-];
-
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50, 100];
 
 function renderPagination(totalPages, currentPage, setCurrentPage) {
@@ -108,17 +84,10 @@ export default function ShippingPending() {
     setCurrentPage(1);
   }, [storeTab, pageSize]);
 
-  const selectedTab = storeTabs.find((t) => t.key === storeTab);
-  const filterValue = selectedTab?.filterValue ?? storeTab;
-  const filtered =
-    storeTab && storeTabs.length > 0
-      ? mockPending.filter((s) => (s.store ?? '') === filterValue)
-      : mockPending;
-
-  const totalCount = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const startIdx = (currentPage - 1) * pageSize;
-  const paged = filtered.slice(startIdx, startIdx + pageSize);
+  const totalCount = 0;
+  const totalPages = 1;
+  const startIdx = 0;
+  const paged: { orderId: string; store: string; buyer: string; amount: number; orderDate: string }[] = [];
 
   return (
     <div className="list-page">
@@ -185,31 +154,11 @@ export default function ShippingPending() {
               </tr>
             </thead>
             <tbody>
-              {paged.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
-                    출고 대기 건이 없습니다.
-                  </td>
-                </tr>
-              ) : (
-                paged.map((s) => (
-                  <tr key={s.orderId}>
-                    <td>
-                      <input type="checkbox" />
-                    </td>
-                    <td>
-                      <Link to={`/order/${s.orderId}`}>{s.orderId}</Link>
-                    </td>
-                    <td>{s.store}</td>
-                    <td>{s.buyer}</td>
-                    <td>₩{s.amount.toLocaleString()}</td>
-                    <td>{s.orderDate}</td>
-                    <td className="cell-actions">
-                      <Link to="/shipping/invoice">송장 입력</Link>
-                    </td>
-                  </tr>
-                ))
-              )}
+              <tr>
+                <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
+                  출고 대기 건이 없습니다. 주문 목록에서 동기화한 데이터를 기준으로 조회할 수 있습니다.
+                </td>
+              </tr>
             </tbody>
           </table>
           {totalCount > 0 && (

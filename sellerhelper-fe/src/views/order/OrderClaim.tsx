@@ -7,45 +7,6 @@ import { buildStoreTabs } from '@/config/productStoreTabs';
 import '../../styles/Settings.css';
 import '../product/ProductList.css';
 
-const mockClaims = [
-  {
-    id: 'CLM-001',
-    orderId: 'ORD-2024-101',
-    store: '스마트스토어',
-    type: '취소',
-    amount: 35000,
-    status: '요청접수',
-    date: '2024-02-06 13:20',
-  },
-  {
-    id: 'CLM-002',
-    orderId: 'ORD-2024-098',
-    store: '쿠팡',
-    type: '반품',
-    amount: 52000,
-    status: '처리중',
-    date: '2024-02-06 11:45',
-  },
-  {
-    id: 'CLM-003',
-    orderId: 'ORD-2024-095',
-    store: '스마트스토어',
-    type: '교환',
-    amount: 28000,
-    status: '요청접수',
-    date: '2024-02-06 10:10',
-  },
-  {
-    id: 'CLM-004',
-    orderId: 'ORD-2024-090',
-    store: '11번가',
-    type: '취소',
-    amount: 15000,
-    status: '처리완료',
-    date: '2024-02-06 09:00',
-  },
-];
-
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50, 100];
 
 function renderPagination(totalPages, currentPage, setCurrentPage) {
@@ -123,17 +84,10 @@ export default function OrderClaim() {
     setCurrentPage(1);
   }, [storeTab, pageSize]);
 
-  const selectedTab = storeTabs.find((t) => t.key === storeTab);
-  const filterValue = selectedTab?.filterValue ?? storeTab;
-  const filtered =
-    storeTab && storeTabs.length > 0
-      ? mockClaims.filter((c) => (c.store ?? '') === filterValue)
-      : mockClaims;
-
-  const totalCount = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const startIdx = (currentPage - 1) * pageSize;
-  const paged = filtered.slice(startIdx, startIdx + pageSize);
+  const totalCount = 0;
+  const totalPages = 1;
+  const startIdx = 0;
+  const paged: { id: string; orderId: string; store: string; type: string; amount: number; status: string; date: string }[] = [];
 
   return (
     <div className="list-page">
@@ -206,39 +160,11 @@ export default function OrderClaim() {
               </tr>
             </thead>
             <tbody>
-              {paged.length === 0 ? (
-                <tr>
-                  <td colSpan={8} style={{ padding: 24, textAlign: 'center' }}>
-                    조회된 클레임이 없습니다.
-                  </td>
-                </tr>
-              ) : (
-                paged.map((c) => (
-                  <tr key={c.id}>
-                    <td>
-                      <Link to={`/order/${c.orderId}`}>{c.id}</Link>
-                    </td>
-                    <td>
-                      <Link to={`/order/${c.orderId}`}>{c.orderId}</Link>
-                    </td>
-                    <td>{c.store}</td>
-                    <td>
-                      <span
-                        className={`badge ${c.type === '취소' ? 'badge-inactive' : 'badge-active'}`}
-                      >
-                        {c.type}
-                      </span>
-                    </td>
-                    <td>₩{c.amount.toLocaleString()}</td>
-                    <td>{c.status}</td>
-                    <td>{c.date}</td>
-                    <td className="cell-actions">
-                      <Link to={`/order/${c.orderId}`}>상세</Link>
-                      <a href="#처리">처리</a>
-                    </td>
-                  </tr>
-                ))
-              )}
+              <tr>
+                <td colSpan={8} style={{ padding: 24, textAlign: 'center' }}>
+                  취소·반품·교환 데이터가 없습니다. API 연동 후 조회할 수 있습니다.
+                </td>
+              </tr>
             </tbody>
           </table>
           {totalCount > 0 && (

@@ -19,7 +19,8 @@ spring:
     open-in-view: false
 
 server:
-  port: ${SERVER_PORT:5080}
+  # 로컬 개발: 5001 (FE 기본 호출 주소와 동일). 배포/스케일 시 SERVER_PORT=5080 등으로 지정
+  port: ${SERVER_PORT:5001}
 
 # JWT (단일 프로젝트 - 로그인 발급·검증 동일 서버)
 jwt:

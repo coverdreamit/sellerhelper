@@ -5,6 +5,8 @@ import com.sellerhelper.dto.naver.NaverLastChangedResult;
 import com.sellerhelper.dto.naver.NaverProductItem;
 import com.sellerhelper.dto.naver.NaverProductOrderDetail;
 import com.sellerhelper.dto.naver.NaverProductSearchResult;
+import com.sellerhelper.dto.common.PageResponse;
+import com.sellerhelper.dto.order.OrderListResponse;
 import com.sellerhelper.dto.store.StoreConnectRequest;
 import com.sellerhelper.dto.store.StoreMyUpdateRequest;
 import com.sellerhelper.dto.store.StoreReorderRequest;
@@ -118,6 +120,45 @@ public class MyStoreController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return ResponseEntity.ok(storeOrderService.getMyStoreProductOrderDetails(authUser.getUid(), uid, productOrderIds));
+    }
+
+    /** 내 스토어 주문 목록 (DB 저장분, 네이버 동기화 후 조회) */
+    @GetMapping("/{uid}/orders")
+    public ResponseEntity<PageResponse<OrderListResponse>> getOrders(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(storeOrderService.getMyStoreOrdersFromDb(authUser.getUid(), uid, page, size));
+    }
+
+    /** 내 스토어 주문 동기화 (네이버 API → DB, 최근 24시간 변경분) */
+    @PostMapping("/{uid}/orders/sync")
+    public ResponseEntity<Integer> syncOrders(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        int count = storeOrderService.syncMyStoreOrdersFromNaver(authUser.getUid(), uid);
+        return ResponseEntity.ok(count);
+    }
+
+    /** 내 스토어 배송 목록 조회 (DB 저장분, orderStatus: PAYED=출고대기, DELIVERING=배송중, DELIVERED=배송완료) */
+    @GetMapping("/{uid}/shipping")
+    public ResponseEntity<PageResponse<OrderListResponse>> getShippingList(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String orderStatus) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(storeOrderService.getMyStoreShippingList(authUser.getUid(), uid, page, size, orderStatus));
     }
 
     /** 내 스토어 상품목록 조회 (네이버: API 직접, 쿠팡: DB 저장분) */

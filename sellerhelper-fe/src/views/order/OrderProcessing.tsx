@@ -7,41 +7,6 @@ import { buildStoreTabs } from '@/config/productStoreTabs';
 import '../../styles/Settings.css';
 import '../product/ProductList.css';
 
-const mockOrders = [
-  {
-    id: 'ORD-2024-001',
-    store: '스마트스토어',
-    buyer: '홍*동',
-    amount: 45000,
-    status: '출고대기',
-    date: '2024-02-06 14:32',
-  },
-  {
-    id: 'ORD-2024-005',
-    store: 'G마켓',
-    buyer: '김*수',
-    amount: 125000,
-    status: '출고대기',
-    date: '2024-02-06 10:05',
-  },
-  {
-    id: 'ORD-2024-002',
-    store: '쿠팡',
-    buyer: '이*영',
-    amount: 32000,
-    status: '배송중',
-    date: '2024-02-06 13:15',
-  },
-  {
-    id: 'ORD-2024-006',
-    store: '스마트스토어',
-    buyer: '최*영',
-    amount: 55000,
-    status: '배송중',
-    date: '2024-02-06 09:00',
-  },
-];
-
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50, 100];
 
 function renderPagination(totalPages, currentPage, setCurrentPage) {
@@ -119,17 +84,10 @@ export default function OrderProcessing() {
     setCurrentPage(1);
   }, [storeTab, pageSize]);
 
-  const selectedTab = storeTabs.find((t) => t.key === storeTab);
-  const filterValue = selectedTab?.filterValue ?? storeTab;
-  const filtered =
-    storeTab && storeTabs.length > 0
-      ? mockOrders.filter((o) => (o.store ?? '') === filterValue)
-      : mockOrders;
-
-  const totalCount = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const startIdx = (currentPage - 1) * pageSize;
-  const paged = filtered.slice(startIdx, startIdx + pageSize);
+  const totalCount = 0;
+  const totalPages = 1;
+  const startIdx = 0;
+  const paged: { id: string; store: string; buyer: string; amount: number; status: string; date: string }[] = [];
 
   return (
     <div className="list-page">
@@ -199,32 +157,11 @@ export default function OrderProcessing() {
               </tr>
             </thead>
             <tbody>
-              {paged.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
-                    조회된 주문이 없습니다.
-                  </td>
-                </tr>
-              ) : (
-                paged.map((o) => (
-                  <tr key={o.id}>
-                    <td>
-                      <Link to={`/order/${o.id}`}>{o.id}</Link>
-                    </td>
-                    <td>{o.store}</td>
-                    <td>{o.buyer}</td>
-                    <td>₩{o.amount.toLocaleString()}</td>
-                    <td>
-                      <span className="badge badge-active">{o.status}</span>
-                    </td>
-                    <td>{o.date}</td>
-                    <td className="cell-actions">
-                      <Link to={`/order/${o.id}`}>상세</Link>
-                      {o.status === '출고대기' && <Link to="/shipping/invoice">송장 입력</Link>}
-                    </td>
-                  </tr>
-                ))
-              )}
+              <tr>
+                <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
+                  처리중 주문이 없습니다. 주문 목록에서 네이버 주문을 가져온 뒤 조회할 수 있습니다.
+                </td>
+              </tr>
             </tbody>
           </table>
           {totalCount > 0 && (

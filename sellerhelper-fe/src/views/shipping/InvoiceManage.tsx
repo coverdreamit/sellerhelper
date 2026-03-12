@@ -56,12 +56,9 @@ export default function InvoiceManage() {
             </thead>
             <tbody>
               <tr>
-                <td>
-                  <Link to="/order/ORD-2024-002">ORD-2024-002</Link>
+                <td colSpan={4} style={{ padding: 24, textAlign: 'center' }}>
+                  송장 입력 내역이 없습니다.
                 </td>
-                <td>CJ대한통운</td>
-                <td>1234567890</td>
-                <td>2024-02-06 13:20</td>
               </tr>
             </tbody>
           </table>

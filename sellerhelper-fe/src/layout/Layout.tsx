@@ -76,17 +76,13 @@ export default function Layout({ children }: { children: ReactNode }) {
       });
   }, [setUser, logoutStore]);
 
-  /** skipHydration 사용 → 수동 rehydrate 후 refreshSession (토큰 복원 순서 보장) */
+  /** skipHydration 사용 → 수동 rehydrate 후 항상 refreshSession으로 백엔드 검증 (로컬 저장만 믿지 않음) */
   useEffect(() => {
     if (!mounted || typeof window === 'undefined') return;
     void Promise.resolve(useAuthStore.persist.rehydrate()).then(() => {
       setTimeout(() => {
-        const { user } = useAuthStore.getState();
-        if (user?.token) {
-          refreshSession();
-        } else {
-          setSessionChecked(true);
-        }
+        // 토큰 유무와 관계없이 항상 getMe()로 검증. 백엔드 꺼져 있으면 로그아웃 처리됨
+        refreshSession();
       }, 0);
     });
   }, [mounted, refreshSession]);

@@ -47,4 +47,8 @@ public class OrderItem {
 
     @Column(name = "total_price", precision = 15, scale = 2)
     private BigDecimal totalPrice;
+
+    /** 네이버 상품주문 상태 (PAYED, DELIVERING 등) */
+    @Column(name = "product_order_status", length = 50)
+    private String productOrderStatus;
 }

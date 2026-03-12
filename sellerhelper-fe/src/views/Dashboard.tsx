@@ -53,80 +53,8 @@ const salesChartData = [
 const salesTotal = salesChartData.reduce((s, d) => s + d.amount, 0);
 const salesCompare = '+0.3%'; // 전주 대비
 
-const recentOrders = [
-  {
-    id: 'ORD-2024-001',
-    store: '스마트스토어',
-    amount: 45000,
-    status: '출고대기',
-    date: '2024-02-06 14:32',
-  },
-  { id: 'ORD-2024-002', store: '쿠팡', amount: 32000, status: '배송중', date: '2024-02-06 13:15' },
-  {
-    id: 'ORD-2024-003',
-    store: '11번가',
-    amount: 78000,
-    status: '신규주문',
-    date: '2024-02-06 12:48',
-  },
-  {
-    id: 'ORD-2024-004',
-    store: '스마트스토어',
-    amount: 25600,
-    status: '배송완료',
-    date: '2024-02-06 11:20',
-  },
-  {
-    id: 'ORD-2024-005',
-    store: 'G마켓',
-    amount: 125000,
-    status: '출고대기',
-    date: '2024-02-06 10:05',
-  },
-];
-
-const recentClaims = [
-  {
-    id: 'CLM-001',
-    orderId: 'ORD-2024-101',
-    type: '취소',
-    amount: 35000,
-    status: '요청접수',
-    date: '2024-02-06 13:20',
-  },
-  {
-    id: 'CLM-002',
-    orderId: 'ORD-2024-098',
-    type: '반품',
-    amount: 52000,
-    status: '처리중',
-    date: '2024-02-06 11:45',
-  },
-  {
-    id: 'CLM-003',
-    orderId: 'ORD-2024-095',
-    type: '교환',
-    amount: 28000,
-    status: '요청접수',
-    date: '2024-02-06 10:10',
-  },
-  {
-    id: 'CLM-004',
-    orderId: 'ORD-2024-090',
-    type: '취소',
-    amount: 67000,
-    status: '처리완료',
-    date: '2024-02-05 16:30',
-  },
-  {
-    id: 'CLM-005',
-    orderId: 'ORD-2024-088',
-    type: '반품',
-    amount: 41000,
-    status: '처리중',
-    date: '2024-02-05 14:00',
-  },
-];
+const recentOrders: { id: string; store: string; amount: number; status: string; date: string }[] = [];
+const recentClaims: { id: string; orderId: string; type: string; amount: number; status: string; date: string }[] = [];
 
 const quickMenus = [
   { label: '신규 주문 처리', to: '/order/new' },
@@ -325,23 +253,31 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {recentOrders.map((order) => (
-                  <tr key={order.id}>
-                    <td>
-                      <Link to={`/order/${order.id}`} className="table-link">
-                        {order.id}
-                      </Link>
+                {recentOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ padding: 16, textAlign: 'center', color: '#666' }}>
+                      최근 주문이 없습니다. 주문 목록에서 네이버 주문을 가져오세요.
                     </td>
-                    <td>{order.store}</td>
-                    <td>₩{order.amount.toLocaleString()}</td>
-                    <td>
-                      <span className={`status status-${order.status.replace(/\s/g, '')}`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td>{order.date}</td>
                   </tr>
-                ))}
+                ) : (
+                  recentOrders.map((order) => (
+                    <tr key={order.id}>
+                      <td>
+                        <Link to={`/order/${order.id}`} className="table-link">
+                          {order.id}
+                        </Link>
+                      </td>
+                      <td>{order.store}</td>
+                      <td>₩{order.amount.toLocaleString()}</td>
+                      <td>
+                        <span className={`status status-${order.status.replace(/\s/g, '')}`}>
+                          {order.status}
+                        </span>
+                      </td>
+                      <td>{order.date}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -379,26 +315,34 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {recentClaims.map((c) => (
-                <tr key={c.id}>
-                  <td>
-                    <Link to={`/order/claim?id=${c.id}`} className="table-link">
-                      {c.id}
-                    </Link>
+              {recentClaims.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: 16, textAlign: 'center', color: '#666' }}>
+                    최근 취소·반품·교환 내역이 없습니다.
                   </td>
-                  <td>
-                    <Link to={`/order/${c.orderId}`} className="table-link">
-                      {c.orderId}
-                    </Link>
-                  </td>
-                  <td>
-                    <span className={`status status-claim status-claim-${c.type}`}>{c.type}</span>
-                  </td>
-                  <td>₩{c.amount.toLocaleString()}</td>
-                  <td>{c.status}</td>
-                  <td>{c.date}</td>
                 </tr>
-              ))}
+              ) : (
+                recentClaims.map((c) => (
+                  <tr key={c.id}>
+                    <td>
+                      <Link to={`/order/claim?id=${c.id}`} className="table-link">
+                        {c.id}
+                      </Link>
+                    </td>
+                    <td>
+                      <Link to={`/order/${c.orderId}`} className="table-link">
+                        {c.orderId}
+                      </Link>
+                    </td>
+                    <td>
+                      <span className={`status status-claim status-claim-${c.type}`}>{c.type}</span>
+                    </td>
+                    <td>₩{c.amount.toLocaleString()}</td>
+                    <td>{c.status}</td>
+                    <td>{c.date}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

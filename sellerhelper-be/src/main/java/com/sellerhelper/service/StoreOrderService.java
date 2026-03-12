@@ -1,17 +1,26 @@
 package com.sellerhelper.service;
 
+import com.sellerhelper.dto.common.PageResponse;
 import com.sellerhelper.dto.naver.*;
+import com.sellerhelper.dto.order.OrderListResponse;
 import com.sellerhelper.entity.Company;
+import com.sellerhelper.entity.Order;
 import com.sellerhelper.entity.Store;
 import com.sellerhelper.entity.User;
 import com.sellerhelper.exception.ResourceNotFoundException;
+import com.sellerhelper.repository.OrderItemRepository;
+import com.sellerhelper.repository.OrderRepository;
 import com.sellerhelper.repository.StoreRepository;
 import com.sellerhelper.repository.UserRepository;
 import com.sellerhelper.service.naver.NaverCommerceOrderService;
+import com.sellerhelper.service.naver.NaverOrderSyncService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -23,7 +32,10 @@ public class StoreOrderService {
 
     private final UserRepository userRepository;
     private final StoreRepository storeRepository;
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
     private final NaverCommerceOrderService naverOrderService;
+    private final NaverOrderSyncService naverOrderSyncService;
 
     /**
      * 내 스토어 변경 주문 내역 조회 (본인 회사 스토어만, 네이버)
@@ -60,6 +72,68 @@ public class StoreOrderService {
             return Collections.emptyList();
         }
         return naverOrderService.getProductOrderDetails(storeUid, productOrderIds);
+    }
+
+    /**
+     * 내 스토어 주문 목록 DB 조회 (네이버 동기화 저장분)
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<OrderListResponse> getMyStoreOrdersFromDb(Long userUid, Long storeUid, int page, int size) {
+        ensureMyStore(userUid, storeUid);
+        Pageable pageable = PageRequest.of(page, size);
+        return PageResponse.of(
+                orderRepository.findByStore_UidOrderByOrderDateDesc(storeUid, pageable)
+                        .map(this::toOrderListResponse));
+    }
+
+    /**
+     * 내 스토어 배송 목록 조회 (주문 DB 저장분, 상태 필터 가능)
+     * orderStatus: null/전체, PAYED=출고대기, DELIVERING=배송중, DELIVERED=배송완료
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<OrderListResponse> getMyStoreShippingList(Long userUid, Long storeUid, int page, int size, String orderStatus) {
+        ensureMyStore(userUid, storeUid);
+        Pageable pageable = PageRequest.of(page, size);
+        if (orderStatus != null && !orderStatus.isBlank()) {
+            return PageResponse.of(
+                    orderRepository.findByStore_UidAndOrderStatusOrderByOrderDateDesc(storeUid, orderStatus.trim(), pageable)
+                            .map(this::toOrderListResponse));
+        }
+        return PageResponse.of(
+                orderRepository.findByStore_UidOrderByOrderDateDesc(storeUid, pageable)
+                        .map(this::toOrderListResponse));
+    }
+
+    /**
+     * 네이버 스마트스토어 주문 API → DB 동기화 (최근 24시간 변경분)
+     */
+    @Transactional
+    public int syncMyStoreOrdersFromNaver(Long userUid, Long storeUid) {
+        ensureMyStore(userUid, storeUid);
+        String mallCode = getStoreMallCode(storeUid);
+        if (!"NAVER".equalsIgnoreCase(mallCode)) {
+            throw new IllegalArgumentException("네이버 스토어만 주문 동기화가 가능합니다.");
+        }
+        ZonedDateTime from = ZonedDateTime.now(ZoneId.of("Asia/Seoul")).minusHours(24);
+        return naverOrderSyncService.syncOrdersFromNaver(storeUid, from);
+    }
+
+    private OrderListResponse toOrderListResponse(Order o) {
+        int itemCount = orderItemRepository.findByOrder_Uid(o.getUid()).size();
+        return OrderListResponse.builder()
+                .uid(o.getUid())
+                .storeUid(o.getStore() != null ? o.getStore().getUid() : null)
+                .storeName(o.getStore() != null ? o.getStore().getName() : null)
+                .mallOrderNo(o.getMallOrderNo())
+                .orderDate(o.getOrderDate())
+                .orderStatus(o.getOrderStatus())
+                .totalAmount(o.getTotalAmount())
+                .buyerName(o.getBuyerName())
+                .buyerPhone(o.getBuyerPhone())
+                .receiverName(o.getReceiverName())
+                .receiverAddress(o.getReceiverAddress())
+                .itemCount(itemCount)
+                .build();
     }
 
     private void ensureMyStore(Long userUid, Long storeUid) {

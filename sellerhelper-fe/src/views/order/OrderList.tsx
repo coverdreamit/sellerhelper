@@ -1,64 +1,47 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from '@/components/Link';
 import { useMyStoreStore } from '@/stores';
 import { buildStoreTabs } from '@/config/productStoreTabs';
+import { fetchOrderList, syncOrdersFromNaver, type OrderListItem } from '@/services/order.service';
 import '../../styles/Settings.css';
 import '../product/ProductList.css';
 
-const mockOrders = [
-  {
-    id: 'ORD-2024-001',
-    store: '스마트스토어',
-    buyer: '홍*동',
-    amount: 45000,
-    status: '출고대기',
-    date: '2024-02-06 14:32',
-  },
-  {
-    id: 'ORD-2024-002',
-    store: '쿠팡',
-    buyer: '김*수',
-    amount: 32000,
-    status: '배송중',
-    date: '2024-02-06 13:15',
-  },
-  {
-    id: 'ORD-2024-003',
-    store: '11번가',
-    buyer: '이*영',
-    amount: 78000,
-    status: '신규주문',
-    date: '2024-02-06 12:48',
-  },
-  {
-    id: 'ORD-2024-004',
-    store: '스마트스토어',
-    buyer: '박*민',
-    amount: 25600,
-    status: '배송완료',
-    date: '2024-02-06 11:20',
-  },
-  {
-    id: 'ORD-2024-005',
-    store: '쿠팡',
-    buyer: '최*호',
-    amount: 18900,
-    status: '신규주문',
-    date: '2024-02-06 10:05',
-  },
-];
-
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50, 100];
+
+function formatOrderDate(iso: string | null | undefined): string {
+  if (!iso) return '-';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return String(iso);
+  }
+}
 
 export default function OrderList() {
   const { myStores } = useMyStoreStore();
-  const storeTabs = buildStoreTabs(myStores);
+  const allTabs = buildStoreTabs(myStores);
+  const storeTabs = allTabs; // 모든 스토어 탭 표시 (호출은 네이버만)
 
   const [storeTab, setStoreTab] = useState(storeTabs[0]?.key ?? '');
+  const selectedTab = storeTabs.find((t) => t.key === storeTab);
+  const isNaverStore = selectedTab?.mallCode === 'NAVER';
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
+  const [orders, setOrders] = useState<OrderListItem[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (storeTabs.length > 0 && !storeTabs.some((t) => t.key === storeTab)) {
@@ -66,21 +49,59 @@ export default function OrderList() {
     }
   }, [storeTabs, storeTab]);
 
+  const loadOrders = useCallback(async () => {
+    if (!storeTab || storeTabs.length === 0) {
+      setOrders([]);
+      setTotalElements(0);
+      setTotalPages(0);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const page = currentPage - 1;
+      const data = await fetchOrderList(Number(storeTab), page, pageSize);
+      setOrders(data.content ?? []);
+      setTotalElements(data.totalElements ?? 0);
+      setTotalPages(data.totalPages ?? 0);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '주문 목록 조회 실패');
+      setOrders([]);
+      setTotalElements(0);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [storeTab, currentPage, pageSize, storeTabs.length]);
+
   useEffect(() => {
-    setCurrentPage(1);
-  }, [storeTab, pageSize]);
+    loadOrders();
+  }, [loadOrders]);
 
-  const selectedTab = storeTabs.find((t) => t.key === storeTab);
-  const filterValue = selectedTab?.filterValue ?? storeTab;
-  const filteredOrders =
-    storeTab && storeTabs.length > 0
-      ? mockOrders.filter((o) => (o.store ?? '') === filterValue)
-      : mockOrders;
+  async function handleSync() {
+    if (!storeTab || !isNaverStore) return;
+    setSyncing(true);
+    setError(null);
+    try {
+      const count = await syncOrdersFromNaver(Number(storeTab));
+      await loadOrders();
+      if (count > 0) {
+        setCurrentPage(1);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '주문 동기화 실패');
+    } finally {
+      setSyncing(false);
+    }
+  }
 
-  const totalCount = filteredOrders.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const startIdx = (currentPage - 1) * pageSize;
-  const pagedOrders = filteredOrders.slice(startIdx, startIdx + pageSize);
+  function handleRefresh() {
+    if (isNaverStore) loadOrders();
+  }
+
+  const totalCount = totalElements;
+  const startIdx = totalCount > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+  const endIdx = Math.min((currentPage - 1) * pageSize + pageSize, totalCount);
 
   function renderPagination() {
     const maxVisible = 5;
@@ -142,157 +163,194 @@ export default function OrderList() {
   return (
     <div className="list-page">
       <h1>주문 목록</h1>
-      <p className="page-desc">전체 주문을 조회·관리합니다.</p>
+      <p className="page-desc">
+        스토어별 주문을 조회합니다. 주문 조회·동기화는 네이버 스마트스토어만 지원됩니다.
+      </p>
       <section className="settings-section">
         <div className="product-list-tabs-wrap">
           <div className="product-list-tabs">
-            {storeTabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                className={`product-list-tab ${storeTab === tab.key ? 'active' : ''}`}
-                onClick={() => setStoreTab(tab.key)}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {storeTabs.length === 0 ? (
+              <p style={{ padding: 8, color: '#666' }}>
+                스토어를 연동하면 주문 목록 탭이 표시됩니다.
+              </p>
+            ) : (
+              storeTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={`product-list-tab ${storeTab === tab.key ? 'active' : ''}`}
+                  onClick={() => setStoreTab(tab.key)}
+                >
+                  {tab.label}
+                </button>
+              ))
+            )}
           </div>
           <Link to="/settings/store/list" className="product-list-tab-manage">
             탭 관리
           </Link>
         </div>
-        <div className="settings-toolbar">
-          <div className="product-list-left">
-            <input
-              type="text"
-              placeholder="주문번호/주문자 검색"
-              style={{ padding: '6px 12px', marginRight: 8 }}
-            />
-            <select style={{ padding: '6px 12px', marginRight: 8 }}>
-              <option value="">전체 상태</option>
-              <option value="new">신규주문</option>
-              <option value="pending">출고대기</option>
-              <option value="shipping">배송중</option>
-              <option value="done">배송완료</option>
-            </select>
-            <input type="date" style={{ padding: '6px 12px', marginRight: 8 }} />
-            <button type="button" className="btn">
-              검색
-            </button>
-            <label className="product-list-page-size">
-              <span>한 화면에 보기</span>
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                aria-label="페이지당 행 개수"
-              >
-                {PAGE_SIZE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>
-                    {n}개
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div className="product-list-actions">
-            <Link to="/order/new" className="btn btn-primary">
-              신규 주문
-            </Link>
-          </div>
-        </div>
-        <div className="settings-table-wrap">
-          <table className="settings-table">
-            <thead>
-              <tr>
-                <th>주문번호</th>
-                <th>스토어</th>
-                <th>주문자</th>
-                <th>주문금액</th>
-                <th>상태</th>
-                <th>주문일시</th>
-                <th>관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedOrders.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
-                    조회된 주문이 없습니다.
-                  </td>
-                </tr>
-              ) : (
-                pagedOrders.map((o) => (
-                  <tr key={o.id}>
-                    <td>
-                      <Link to={`/order/${o.id}`}>{o.id}</Link>
-                    </td>
-                    <td>{o.store}</td>
-                    <td>{o.buyer}</td>
-                    <td>₩{o.amount.toLocaleString()}</td>
-                    <td>
-                      <span
-                        className={`badge badge-${o.status === '배송완료' ? 'active' : 'inactive'}`}
-                      >
-                        {o.status}
-                      </span>
-                    </td>
-                    <td>{o.date}</td>
-                    <td className="cell-actions">
-                      <Link to={`/order/${o.id}`}>상세</Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-          {totalCount > 0 && (
-            <div className="product-list-pagination">
-              <span className="product-list-pagination-info">
-                전체 {totalCount.toLocaleString()}건 중 {startIdx + 1}–
-                {Math.min(startIdx + pageSize, totalCount)}건
-              </span>
-              <div className="product-list-pagination-btns">
-                <button
-                  type="button"
-                  className="btn btn-outline product-list-page-btn"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage <= 1}
-                  aria-label="처음 페이지"
-                >
-                  «
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline product-list-page-btn"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage <= 1}
-                  aria-label="이전 페이지"
-                >
-                  ‹
-                </button>
-                <span className="product-list-page-nums">{renderPagination()}</span>
-                <button
-                  type="button"
-                  className="btn btn-outline product-list-page-btn"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage >= totalPages}
-                  aria-label="다음 페이지"
-                >
-                  ›
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline product-list-page-btn"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage >= totalPages}
-                  aria-label="마지막 페이지"
-                >
-                  »
-                </button>
+        {storeTabs.length > 0 && (
+          <>
+            <div className="settings-toolbar">
+              <div className="product-list-left">
+                <label className="product-list-page-size">
+                  <span>한 화면에 보기</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    aria-label="페이지당 행 개수"
+                  >
+                    {PAGE_SIZE_OPTIONS.map((n) => (
+                      <option key={n} value={n}>
+                        {n}개
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="product-list-actions">
+                {isNaverStore && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={handleRefresh}
+                      disabled={loading}
+                      aria-label="목록 새로고침"
+                    >
+                      새로고침
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleSync}
+                      disabled={syncing || loading}
+                    >
+                      {syncing ? '동기화 중…' : '데이터 동기화'}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
-          )}
-        </div>
+            {error && (
+              <p style={{ color: '#c00', padding: '8px 0', margin: 0 }}>{error}</p>
+            )}
+            <div className="settings-table-wrap">
+              <table className="settings-table">
+                <thead>
+                  <tr>
+                    <th>주문번호</th>
+                    <th>스토어</th>
+                    <th>주문자</th>
+                    <th>연락처</th>
+                    <th>주문금액</th>
+                    <th>상태</th>
+                    <th>주문일시</th>
+                    <th>상품수</th>
+                    <th>수령인</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={10} style={{ padding: 24, textAlign: 'center' }}>
+                        조회 중…
+                      </td>
+                    </tr>
+                  ) : orders.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} style={{ padding: 24, textAlign: 'center' }}>
+                        조회된 주문이 없습니다. &quot;데이터 동기화&quot;로 최근 24시간
+                        변경분을 불러오세요.
+                      </td>
+                    </tr>
+                  ) : (
+                    orders.map((o) => (
+                      <tr key={o.uid}>
+                        <td>
+                          <Link to={`/order/${o.uid}`}>{o.mallOrderNo}</Link>
+                        </td>
+                        <td>{o.storeName ?? '-'}</td>
+                        <td>{o.buyerName ?? '-'}</td>
+                        <td>{o.buyerPhone ?? '-'}</td>
+                        <td>
+                          {o.totalAmount != null
+                            ? `₩${Number(o.totalAmount).toLocaleString()}`
+                            : '-'}
+                        </td>
+                        <td>
+                          <span
+                            className={`badge badge-${o.orderStatus === 'DELIVERED' ? 'active' : 'inactive'}`}
+                          >
+                            {o.orderStatus ?? '-'}
+                          </span>
+                        </td>
+                        <td>{formatOrderDate(o.orderDate)}</td>
+                        <td>{o.itemCount ?? '-'}</td>
+                        <td>{o.receiverName ?? '-'}</td>
+                        <td className="cell-actions">
+                          <Link to={`/order/${o.uid}`}>상세</Link>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+              {totalCount > 0 && !loading && (
+                <div className="product-list-pagination">
+                  <span className="product-list-pagination-info">
+                    전체 {totalCount.toLocaleString()}건 중 {startIdx}–
+                    {endIdx}건
+                  </span>
+                  <div className="product-list-pagination-btns">
+                    <button
+                      type="button"
+                      className="btn btn-outline product-list-page-btn"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage <= 1}
+                      aria-label="처음 페이지"
+                    >
+                      «
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline product-list-page-btn"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage <= 1}
+                      aria-label="이전 페이지"
+                    >
+                      ‹
+                    </button>
+                    <span className="product-list-page-nums">{renderPagination()}</span>
+                    <button
+                      type="button"
+                      className="btn btn-outline product-list-page-btn"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage >= totalPages}
+                      aria-label="다음 페이지"
+                    >
+                      ›
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline product-list-page-btn"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage >= totalPages}
+                      aria-label="마지막 페이지"
+                    >
+                      »
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </section>
     </div>
   );

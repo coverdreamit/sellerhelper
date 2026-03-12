@@ -7,33 +7,6 @@ import { buildStoreTabs } from '@/config/productStoreTabs';
 import '../../styles/Settings.css';
 import '../product/ProductList.css';
 
-const mockComplete = [
-  {
-    orderId: 'ORD-2024-004',
-    store: '스마트스토어',
-    buyer: '박*민',
-    carrier: 'CJ대한통운',
-    invoice: '1234567888',
-    delivered: '2024-02-06 18:00',
-  },
-  {
-    orderId: 'ORD-2024-003',
-    store: '쿠팡',
-    buyer: '이*호',
-    carrier: '한진택배',
-    invoice: '1111222233',
-    delivered: '2024-02-06 17:30',
-  },
-  {
-    orderId: 'ORD-2024-002',
-    store: '11번가',
-    buyer: '김*수',
-    carrier: 'CJ대한통운',
-    invoice: '4444555566',
-    delivered: '2024-02-06 16:00',
-  },
-];
-
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50, 100];
 
 function renderPagination(totalPages, currentPage, setCurrentPage) {
@@ -111,17 +84,10 @@ export default function ShippingComplete() {
     setCurrentPage(1);
   }, [storeTab, pageSize]);
 
-  const selectedTab = storeTabs.find((t) => t.key === storeTab);
-  const filterValue = selectedTab?.filterValue ?? storeTab;
-  const filtered =
-    storeTab && storeTabs.length > 0
-      ? mockComplete.filter((s) => (s.store ?? '') === filterValue)
-      : mockComplete;
-
-  const totalCount = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const startIdx = (currentPage - 1) * pageSize;
-  const paged = filtered.slice(startIdx, startIdx + pageSize);
+  const totalCount = 0;
+  const totalPages = 1;
+  const startIdx = 0;
+  const paged: { orderId: string; store: string; buyer: string; carrier: string; invoice: string; delivered: string }[] = [];
 
   return (
     <div className="list-page">
@@ -182,29 +148,11 @@ export default function ShippingComplete() {
               </tr>
             </thead>
             <tbody>
-              {paged.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
-                    배송 완료 건이 없습니다.
-                  </td>
-                </tr>
-              ) : (
-                paged.map((s) => (
-                  <tr key={s.orderId}>
-                    <td>
-                      <Link to={`/order/${s.orderId}`}>{s.orderId}</Link>
-                    </td>
-                    <td>{s.store}</td>
-                    <td>{s.buyer}</td>
-                    <td>{s.carrier}</td>
-                    <td>{s.invoice}</td>
-                    <td>{s.delivered}</td>
-                    <td className="cell-actions">
-                      <Link to={`/order/${s.orderId}`}>상세</Link>
-                    </td>
-                  </tr>
-                ))
-              )}
+              <tr>
+                <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
+                  배송 완료 건이 없습니다. 주문·배송 API 연동 후 조회할 수 있습니다.
+                </td>
+              </tr>
             </tbody>
           </table>
           {totalCount > 0 && (

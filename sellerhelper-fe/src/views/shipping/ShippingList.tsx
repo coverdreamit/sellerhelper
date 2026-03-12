@@ -1,56 +1,45 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from '@/components/Link';
 import { useMyStoreStore } from '@/stores';
 import { buildStoreTabs } from '@/config/productStoreTabs';
+import { fetchShippingList, SHIPPING_STATUS, type ShippingListItem } from '@/services/shipping.service';
+import { syncOrdersFromNaver } from '@/services/order.service';
 import '../../styles/Settings.css';
 import '../product/ProductList.css';
 
-const mockShipping = [
-  {
-    orderId: 'ORD-2024-001',
-    store: '스마트스토어',
-    buyer: '홍*동',
-    status: '출고대기',
-    invoice: '-',
-    date: '2024-02-06 14:32',
-  },
-  {
-    orderId: 'ORD-2024-002',
-    store: '쿠팡',
-    buyer: '김*수',
-    status: '배송중',
-    invoice: 'CJ 1234567890',
-    date: '2024-02-06 13:15',
-  },
-  {
-    orderId: 'ORD-2024-003',
-    store: '11번가',
-    buyer: '이*영',
-    status: '출고대기',
-    invoice: '-',
-    date: '2024-02-06 12:48',
-  },
-  {
-    orderId: 'ORD-2024-004',
-    store: '스마트스토어',
-    buyer: '박*민',
-    status: '배송완료',
-    invoice: 'CJ 1234567888',
-    date: '2024-02-06 11:20',
-  },
-  {
-    orderId: 'ORD-2024-005',
-    store: '쿠팡',
-    buyer: '최*호',
-    status: '배송중',
-    invoice: 'HAN 9876543210',
-    date: '2024-02-06 10:05',
-  },
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50, 100];
+
+const STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: '전체 상태' },
+  { value: SHIPPING_STATUS.PAYED, label: '출고대기' },
+  { value: SHIPPING_STATUS.DELIVERING, label: '배송중' },
+  { value: SHIPPING_STATUS.DELIVERED, label: '배송완료' },
 ];
 
-const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50, 100];
+function formatOrderDate(iso: string | null | undefined): string {
+  if (!iso) return '-';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return String(iso);
+  }
+}
+
+function orderStatusLabel(status: string): string {
+  if (status === SHIPPING_STATUS.PAYED) return '출고대기';
+  if (status === SHIPPING_STATUS.DELIVERING) return '배송중';
+  if (status === SHIPPING_STATUS.DELIVERED) return '배송완료';
+  return status || '-';
+}
 
 export default function ShippingList() {
   const { myStores } = useMyStoreStore();
@@ -59,6 +48,16 @@ export default function ShippingList() {
   const [storeTab, setStoreTab] = useState(storeTabs[0]?.key ?? '');
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
+  const [orderStatusFilter, setOrderStatusFilter] = useState('');
+  const [list, setList] = useState<ShippingListItem[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const selectedTab = storeTabs.find((t) => t.key === storeTab);
+  const isNaverStore = selectedTab?.mallCode === 'NAVER';
 
   useEffect(() => {
     if (storeTabs.length > 0 && !storeTabs.some((t) => t.key === storeTab)) {
@@ -66,21 +65,62 @@ export default function ShippingList() {
     }
   }, [storeTabs, storeTab]);
 
+  const loadShipping = useCallback(async () => {
+    if (!storeTab || storeTabs.length === 0) {
+      setList([]);
+      setTotalElements(0);
+      setTotalPages(0);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const page = currentPage - 1;
+      const orderStatus = orderStatusFilter.trim() || undefined;
+      const data = await fetchShippingList(Number(storeTab), page, pageSize, orderStatus);
+      setList(data.content);
+      setTotalElements(data.totalElements);
+      setTotalPages(data.totalPages);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '배송 목록 조회 실패');
+      setList([]);
+      setTotalElements(0);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [storeTab, currentPage, pageSize, orderStatusFilter, storeTabs.length]);
+
+  useEffect(() => {
+    loadShipping();
+  }, [loadShipping]);
+
+  /** 네이버 주문 동기화 (같은 DB를 쓰므로 주문 동기화 후 배송 목록에 반영됨) */
+  async function handleSync() {
+    if (!storeTab || !isNaverStore) return;
+    setSyncing(true);
+    setError(null);
+    try {
+      const count = await syncOrdersFromNaver(Number(storeTab));
+      await loadShipping();
+      if (count > 0) setCurrentPage(1);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '주문 동기화 실패');
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  function handleRefresh() {
+    if (isNaverStore) loadShipping();
+  }
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [storeTab, pageSize]);
+  }, [storeTab, pageSize, orderStatusFilter]);
 
-  const selectedTab = storeTabs.find((t) => t.key === storeTab);
-  const filterValue = selectedTab?.filterValue ?? storeTab;
-  const filteredShipping =
-    storeTab && storeTabs.length > 0
-      ? mockShipping.filter((s) => (s.store ?? '') === filterValue)
-      : mockShipping;
-
-  const totalCount = filteredShipping.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const startIdx = (currentPage - 1) * pageSize;
-  const pagedShipping = filteredShipping.slice(startIdx, startIdx + pageSize);
+  const totalCount = totalElements;
+  const startIdx = totalCount > 0 ? (currentPage - 1) * pageSize + 1 : 0;
 
   function renderPagination() {
     const maxVisible = 5;
@@ -142,110 +182,153 @@ export default function ShippingList() {
   return (
     <div className="list-page">
       <h1>배송 목록</h1>
-      <p className="page-desc">전체 배송 건을 조회·관리합니다.</p>
+      <p className="page-desc">
+        전체 배송 건을 조회·관리합니다. 네이버 스토어 탭에서 &quot;데이터 동기화&quot;로 최신 주문을 가져오세요.
+      </p>
       <section className="settings-section">
         <div className="product-list-tabs-wrap">
           <div className="product-list-tabs">
-            {storeTabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                className={`product-list-tab ${storeTab === tab.key ? 'active' : ''}`}
-                onClick={() => setStoreTab(tab.key)}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {storeTabs.length === 0 ? (
+              <p style={{ padding: 8, color: '#666' }}>
+                스토어를 연동하면 배송 목록을 조회할 수 있습니다.
+              </p>
+            ) : (
+              storeTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={`product-list-tab ${storeTab === tab.key ? 'active' : ''}`}
+                  onClick={() => setStoreTab(tab.key)}
+                >
+                  {tab.label}
+                </button>
+              ))
+            )}
           </div>
           <Link to="/settings/store/list" className="product-list-tab-manage">
             탭 관리
           </Link>
         </div>
-        <div className="settings-toolbar">
-          <div className="product-list-left">
-            <select style={{ padding: '6px 12px', marginRight: 8 }}>
-              <option value="">전체 상태</option>
-              <option value="pending">출고대기</option>
-              <option value="shipping">배송중</option>
-              <option value="done">배송완료</option>
-            </select>
-            <input
-              type="text"
-              placeholder="주문번호/송장번호 검색"
-              style={{ padding: '6px 12px', marginRight: 8 }}
-            />
-            <input type="date" style={{ padding: '6px 12px', marginRight: 8 }} />
-            <button type="button" className="btn">
-              검색
-            </button>
-            <label className="product-list-page-size">
-              <span>한 화면에 보기</span>
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                aria-label="페이지당 행 개수"
-              >
-                {PAGE_SIZE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>
-                    {n}개
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div className="product-list-actions">
-            <Link to="/shipping/pending" className="btn btn-primary">
-              출고 대기
-            </Link>
-          </div>
-        </div>
-        <div className="settings-table-wrap">
-          <table className="settings-table">
-            <thead>
-              <tr>
-                <th>주문번호</th>
-                <th>스토어</th>
-                <th>수령인</th>
-                <th>상태</th>
-                <th>송장번호</th>
-                <th>주문일시</th>
-                <th>관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedShipping.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
-                    조회된 배송 건이 없습니다.
-                  </td>
-                </tr>
-              ) : (
-                pagedShipping.map((s) => (
-                  <tr key={s.orderId}>
-                    <td>
-                      <Link to={`/order/${s.orderId}`}>{s.orderId}</Link>
-                    </td>
-                    <td>{s.store}</td>
-                    <td>{s.buyer}</td>
-                    <td>
-                      <span className="badge badge-active">{s.status}</span>
-                    </td>
-                    <td>{s.invoice}</td>
-                    <td>{s.date}</td>
-                    <td className="cell-actions">
-                      <Link to={`/order/${s.orderId}`}>상세</Link>
-                      {s.status === '출고대기' && <Link to="/shipping/invoice">송장 입력</Link>}
-                    </td>
+        {storeTabs.length > 0 && (
+          <>
+            <div className="settings-toolbar">
+              <div className="product-list-left">
+                <select
+                  style={{ padding: '6px 12px', marginRight: 8 }}
+                  value={orderStatusFilter}
+                  onChange={(e) => setOrderStatusFilter(e.target.value)}
+                  aria-label="배송 상태 필터"
+                >
+                  {STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value || 'all'} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <label className="product-list-page-size">
+                  <span>한 화면에 보기</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    aria-label="페이지당 행 개수"
+                  >
+                    {PAGE_SIZE_OPTIONS.map((n) => (
+                      <option key={n} value={n}>
+                        {n}개
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="product-list-actions">
+                {isNaverStore && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={handleRefresh}
+                      disabled={loading}
+                      aria-label="목록 새로고침"
+                    >
+                      새로고침
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleSync}
+                      disabled={syncing || loading}
+                    >
+                      {syncing ? '동기화 중…' : '데이터 동기화'}
+                    </button>
+                  </>
+                )}
+                <Link to="/shipping/pending" className="btn btn-primary">
+                  출고 대기
+                </Link>
+              </div>
+            </div>
+            {error && (
+              <p style={{ color: '#c00', padding: '8px 0', margin: 0 }}>{error}</p>
+            )}
+            <div className="settings-table-wrap">
+              <table className="settings-table">
+                <thead>
+                  <tr>
+                    <th>주문번호</th>
+                    <th>스토어</th>
+                    <th>수령인</th>
+                    <th>상태</th>
+                    <th>송장번호</th>
+                    <th>주문일시</th>
+                    <th>관리</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-          {totalCount > 0 && (
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
+                        조회 중…
+                      </td>
+                    </tr>
+                  ) : list.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
+                        조회된 배송 건이 없습니다. 주문 목록에서 네이버 주문 동기화 후 배송 목록을 조회할 수 있습니다.
+                      </td>
+                    </tr>
+                  ) : (
+                    list.map((row) => (
+                      <tr key={row.uid}>
+                        <td>
+                          <Link to={`/order/${row.uid}`}>{row.mallOrderNo}</Link>
+                        </td>
+                        <td>{row.storeName ?? '-'}</td>
+                        <td>{row.receiverName ?? '-'}</td>
+                        <td>
+                          <span
+                            className={`badge badge-${row.orderStatus === SHIPPING_STATUS.DELIVERED ? 'active' : 'inactive'}`}
+                          >
+                            {orderStatusLabel(row.orderStatus)}
+                          </span>
+                        </td>
+                        <td>-</td>
+                        <td>{formatOrderDate(row.orderDate)}</td>
+                        <td className="cell-actions">
+                          <Link to={`/order/${row.uid}`}>상세</Link>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+              {totalCount > 0 && !loading && (
             <div className="product-list-pagination">
               <span className="product-list-pagination-info">
-                전체 {totalCount.toLocaleString()}건 중 {startIdx + 1}–
-                {Math.min(startIdx + pageSize, totalCount)}건
+                전체 {totalCount.toLocaleString()}건 중 {startIdx}–
+                {Math.min((currentPage - 1) * pageSize + pageSize, totalCount)}건
               </span>
               <div className="product-list-pagination-btns">
                 <button
@@ -287,8 +370,10 @@ export default function ShippingList() {
                 </button>
               </div>
             </div>
-          )}
-        </div>
+              )}
+            </div>
+          </>
+        )}
       </section>
     </div>
   );
