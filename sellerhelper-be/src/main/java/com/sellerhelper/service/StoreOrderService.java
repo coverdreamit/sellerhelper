@@ -12,6 +12,7 @@ import com.sellerhelper.repository.OrderItemRepository;
 import com.sellerhelper.repository.OrderRepository;
 import com.sellerhelper.repository.StoreRepository;
 import com.sellerhelper.repository.UserRepository;
+import com.sellerhelper.service.coupang.CoupangOrderSyncService;
 import com.sellerhelper.service.naver.NaverCommerceOrderService;
 import com.sellerhelper.service.naver.NaverOrderSyncService;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class StoreOrderService {
     private final OrderItemRepository orderItemRepository;
     private final NaverCommerceOrderService naverOrderService;
     private final NaverOrderSyncService naverOrderSyncService;
+    private final CoupangOrderSyncService coupangOrderSyncService;
 
     /**
      * 내 스토어 변경 주문 내역 조회 (본인 회사 스토어만, 네이버)
@@ -116,6 +118,37 @@ public class StoreOrderService {
         }
         ZonedDateTime from = ZonedDateTime.now(ZoneId.of("Asia/Seoul")).minusHours(24);
         return naverOrderSyncService.syncOrdersFromNaver(storeUid, from);
+    }
+
+    /**
+     * 쿠팡 RG 주문 API → DB 동기화 (결제일 기준 최근 30일)
+     */
+    @Transactional
+    public int syncMyStoreOrdersFromCoupang(Long userUid, Long storeUid) {
+        ensureMyStore(userUid, storeUid);
+        String mallCode = getStoreMallCode(storeUid);
+        if (!"COUPANG".equalsIgnoreCase(mallCode)) {
+            throw new IllegalArgumentException("쿠팡 스토어만 주문 동기화가 가능합니다.");
+        }
+        java.time.LocalDate to = java.time.LocalDate.now();
+        java.time.LocalDate from = to.minusDays(30);
+        return coupangOrderSyncService.syncOrdersFromCoupang(storeUid, from, to);
+    }
+
+    /**
+     * 스토어 플랫폼에 따라 주문 동기화 (네이버: 24시간 변경분, 쿠팡: 최근 30일 결제분)
+     */
+    @Transactional
+    public int syncMyStoreOrders(Long userUid, Long storeUid) {
+        ensureMyStore(userUid, storeUid);
+        String mallCode = getStoreMallCode(storeUid);
+        if ("NAVER".equalsIgnoreCase(mallCode)) {
+            return syncMyStoreOrdersFromNaver(userUid, storeUid);
+        }
+        if ("COUPANG".equalsIgnoreCase(mallCode)) {
+            return syncMyStoreOrdersFromCoupang(userUid, storeUid);
+        }
+        throw new IllegalArgumentException("주문 동기화를 지원하지 않는 스토어입니다. (네이버/쿠팡만 가능)");
     }
 
     private OrderListResponse toOrderListResponse(Order o) {

@@ -20,7 +20,18 @@ import java.util.Base64;
 
 /**
  * 네이버 스마트스토어(커머스) API 토큰 발급·유지
- * @see https://apicenter.commerce.naver.com/docs/commerce-api/current
+ *
+ * <p>토큰 발급 403 발생 시 점검 사항:</p>
+ * <ul>
+ *   <li>애플리케이션 시크릿: 커머스API센터 [애플리케이션 상세]의 '애플리케이션 시크릿'을 그대로 입력. 반드시 $2a$10$... 형태(BCrypt salt). 공백/줄바꿈 없이.</li>
+ *   <li>client_id와 시크릿: 동일 애플리케이션에서 발급한 쌍인지 확인.</li>
+ *   <li>서버 시각: timestamp는 약 5분 유효. 서버(또는 실행 환경) 시각이 크게 어긋나면 403.</li>
+ *   <li>IP 허용 목록: 커머스API센터에서 요청 출발 IP를 허용했는지 확인.</li>
+ *   <li>type=SELF: 셀러 전용 앱은 type=SELLER 사용 불가, SELF만 사용.</li>
+ * </ul>
+ *
+ * @see <a href="https://apicenter.commerce.naver.com/docs/auth">인증 문서</a>
+ * @see <a href="https://apicenter.commerce.naver.com/docs/commerce-api/current">커머스API</a>
  */
 @Slf4j
 @Service
@@ -88,11 +99,15 @@ public class NaverCommerceTokenService {
                     TokenResponse.class
             );
         } catch (org.springframework.web.client.HttpClientErrorException e) {
-            log.warn("네이버 토큰 발급 API 오류: status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new IllegalStateException("네이버 토큰 발급 실패: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
+            String body = e.getResponseBodyAsString();
+            log.warn("네이버 토큰 발급 API 오류: status={}, body={}", e.getStatusCode(), body);
+            String hint = to403Hint(e.getStatusCode().value(), body);
+            throw new IllegalStateException("네이버 토큰 발급 실패: " + e.getStatusCode() + (body != null && !body.isBlank() ? " - " + body : "") + (hint != null ? " " + hint : ""));
         } catch (org.springframework.web.client.RestClientException e) {
             log.warn("네이버 토큰 발급 요청 실패: {}", e.getMessage());
-            throw new IllegalStateException("네이버 토큰 발급 실패: " + toUserFriendlyMessage(e));
+            String friendly = toUserFriendlyMessage(e);
+            String hint = e.getMessage() != null && e.getMessage().contains("403") ? get403HintKorean() : null;
+            throw new IllegalStateException("네이버 토큰 발급 실패: " + friendly + (hint != null ? " " + hint : ""));
         }
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null
@@ -126,12 +141,25 @@ public class NaverCommerceTokenService {
         return Base64.getUrlEncoder().encodeToString(hashed.getBytes(StandardCharsets.UTF_8));
     }
 
+    /** 403 응답 시 가능 원인 안내 (한글) */
+    private static String to403Hint(int status, String body) {
+        if (status != 403) return null;
+        return get403HintKorean();
+    }
+
+    private static String get403HintKorean() {
+        return "[점검 사항: ① 애플리케이션 시크릿이 $2a$10$... 형태로 올바른지 ② API Key와 시크릿이 동일 앱에서 발급한 쌍인지 ③ 서버 시각이 맞는지(타임스탬프 약 5분 유효) ④ 커머스API센터에서 요청 IP 허용 등록 여부. 자세한 내용은 apicenter.commerce.naver.com 인증 문서 참고]";
+    }
+
     /** 영문 기술 에러 메시지를 사용자 친화적 한글로 변환 */
     private static String toUserFriendlyMessage(Throwable e) {
         if (e == null) return "잠시 후 다시 시도해 주세요.";
         String msg = e.getMessage();
         if (msg == null) msg = "";
         String lower = msg.toLowerCase();
+        if (lower.contains("403") && lower.contains("http")) {
+            return "네이버 API가 접근을 거부했습니다(403).";
+        }
         if (lower.contains("pkix") || lower.contains("certification path") || lower.contains("unable to find valid cert") || lower.contains("sslhandshake") || lower.contains("sun.security.provider.certpath")) {
             return "SSL 인증서 검증에 실패했습니다. Java 신뢰 저장소에 네이버 API 인증서가 등록되어 있는지 확인해 주세요.";
         }

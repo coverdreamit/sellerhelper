@@ -167,6 +167,8 @@ public class CoupangCommerceProductService {
             if (imageUrl == null) {
                 imageUrl = defaultImageUrl;
             }
+            // 재고: sellableQuantity(판매가능수량) 사용. maximumBuyCount는 1회 최대 구매 수량이라 재고와 다름
+            Integer stockQty = opt.getSellableQuantity();
             items.add(CoupangSyncItem.builder()
                     .sellerProductId(sellerProductId)
                     .vendorItemId(opt.getVendorItemId() != null ? String.valueOf(opt.getVendorItemId()) : null)
@@ -174,7 +176,7 @@ public class CoupangCommerceProductService {
                     .optionName(opt.getItemName())
                     .salePrice(opt.getSalePrice() != null ? opt.getSalePrice().longValue() : null)
                     .originalPrice(opt.getOriginalPrice() != null ? opt.getOriginalPrice().longValue() : null)
-                    .stockQuantity(opt.getMaximumBuyCount())
+                    .stockQuantity(stockQty)
                     .statusType(statusName)
                     .imageUrl(imageUrl)
                     .categoryId(categoryId)
@@ -250,22 +252,35 @@ public class CoupangCommerceProductService {
         return null;
     }
 
+    /**
+     * 쿠팡 상품 대표 이미지 URL 추출.
+     * REPRESENTATION 타입 우선, 없으면 첫 번째 이미지. cdnPath 또는 vendorPath(전체 URL) 사용.
+     */
     private static String getRepresentativeImageUrl(List<CoupangImage> images) {
         if (images == null || images.isEmpty()) {
             return null;
         }
         for (CoupangImage image : images) {
-            if ("REPRESENTATION".equalsIgnoreCase(image.getImageType())
-                    && image.getCdnPath() != null && !image.getCdnPath().isBlank()) {
-                String path = image.getCdnPath().startsWith("/") ? image.getCdnPath() : "/" + image.getCdnPath();
-                return "https://image.coupang.com" + path;
+            if ("REPRESENTATION".equalsIgnoreCase(image.getImageType())) {
+                String url = toImageUrl(image);
+                if (url != null) return url;
             }
         }
         for (CoupangImage image : images) {
-            if (image.getCdnPath() != null && !image.getCdnPath().isBlank()) {
-                String path = image.getCdnPath().startsWith("/") ? image.getCdnPath() : "/" + image.getCdnPath();
-                return "https://image.coupang.com" + path;
-            }
+            String url = toImageUrl(image);
+            if (url != null) return url;
+        }
+        return null;
+    }
+
+    private static String toImageUrl(CoupangImage image) {
+        if (image.getCdnPath() != null && !image.getCdnPath().isBlank()) {
+            String path = image.getCdnPath().startsWith("/") ? image.getCdnPath() : "/" + image.getCdnPath();
+            return "https://image.coupang.com" + path;
+        }
+        if (image.getVendorPath() != null && !image.getVendorPath().isBlank()
+                && (image.getVendorPath().startsWith("http://") || image.getVendorPath().startsWith("https://"))) {
+            return image.getVendorPath().trim();
         }
         return null;
     }
@@ -338,7 +353,10 @@ public class CoupangCommerceProductService {
         private String itemName;
         private Long originalPrice;
         private Long salePrice;
+        /** 1회 최대 구매 수량 (재고 아님) */
         private Integer maximumBuyCount;
+        /** 판매 가능 재고 수량. 상품 조회 API 응답 필드 */
+        private Integer sellableQuantity;
         private List<CoupangImage> images;
     }
 

@@ -134,10 +134,22 @@ export default function ProductList() {
     const v = getProductValue(p, col.key, filterValue);
     switch (col.type) {
       case 'image':
-        return v ? (
-          <img src={v} alt="" style={{ width: 48, height: 48, objectFit: 'cover' }} />
-        ) : (
-          <span style={{ color: '#999' }}>-</span>
+        if (!v) return <span style={{ color: '#999' }}>-</span>;
+        return (
+          <span style={{ display: 'inline-flex', width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+            <img
+              src={v}
+              alt=""
+              style={{ width: 48, height: 48, objectFit: 'cover' }}
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const span = e.currentTarget.nextElementSibling as HTMLElement | null;
+                if (span) span.style.display = 'inline';
+              }}
+            />
+            <span style={{ display: 'none', fontSize: 11, color: '#999' }}>이미지 없음</span>
+          </span>
         );
       case 'price':
         return `₩${(v ?? 0).toLocaleString()}`;

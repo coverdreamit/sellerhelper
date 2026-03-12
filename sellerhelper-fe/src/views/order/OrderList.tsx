@@ -32,8 +32,6 @@ export default function OrderList() {
   const storeTabs = allTabs; // 모든 스토어 탭 표시 (호출은 네이버만)
 
   const [storeTab, setStoreTab] = useState(storeTabs[0]?.key ?? '');
-  const selectedTab = storeTabs.find((t) => t.key === storeTab);
-  const isNaverStore = selectedTab?.mallCode === 'NAVER';
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   const [orders, setOrders] = useState<OrderListItem[]>([]);
@@ -79,7 +77,7 @@ export default function OrderList() {
   }, [loadOrders]);
 
   async function handleSync() {
-    if (!storeTab || !isNaverStore) return;
+    if (!storeTab) return;
     setSyncing(true);
     setError(null);
     try {
@@ -96,7 +94,7 @@ export default function OrderList() {
   }
 
   function handleRefresh() {
-    if (isNaverStore) loadOrders();
+    loadOrders();
   }
 
   const totalCount = totalElements;
@@ -213,27 +211,23 @@ export default function OrderList() {
                 </label>
               </div>
               <div className="product-list-actions">
-                {isNaverStore && (
-                  <>
-                    <button
-                      type="button"
-                      className="btn btn-outline"
-                      onClick={handleRefresh}
-                      disabled={loading}
-                      aria-label="목록 새로고침"
-                    >
-                      새로고침
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      onClick={handleSync}
-                      disabled={syncing || loading}
-                    >
-                      {syncing ? '동기화 중…' : '데이터 동기화'}
-                    </button>
-                  </>
-                )}
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  aria-label="목록 새로고침"
+                >
+                  새로고침
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSync}
+                  disabled={syncing || loading}
+                >
+                  {syncing ? '동기화 중…' : '데이터 동기화'}
+                </button>
               </div>
             </div>
             {error && (

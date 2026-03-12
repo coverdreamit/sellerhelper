@@ -135,7 +135,7 @@ public class MyStoreController {
         return ResponseEntity.ok(storeOrderService.getMyStoreOrdersFromDb(authUser.getUid(), uid, page, size));
     }
 
-    /** 내 스토어 주문 동기화 (네이버 API → DB, 최근 24시간 변경분) */
+    /** 내 스토어 주문 동기화 (네이버: 최근 24시간 변경분, 쿠팡: 최근 30일 결제분 → DB) */
     @PostMapping("/{uid}/orders/sync")
     public ResponseEntity<Integer> syncOrders(
             @AuthenticationPrincipal AuthUser authUser,
@@ -143,7 +143,7 @@ public class MyStoreController {
         if (authUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        int count = storeOrderService.syncMyStoreOrdersFromNaver(authUser.getUid(), uid);
+        int count = storeOrderService.syncMyStoreOrders(authUser.getUid(), uid);
         return ResponseEntity.ok(count);
     }
 
