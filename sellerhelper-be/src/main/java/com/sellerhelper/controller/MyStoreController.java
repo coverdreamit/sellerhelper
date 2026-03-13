@@ -6,6 +6,7 @@ import com.sellerhelper.dto.naver.NaverProductItem;
 import com.sellerhelper.dto.naver.NaverProductOrderDetail;
 import com.sellerhelper.dto.naver.NaverProductSearchResult;
 import com.sellerhelper.dto.common.PageResponse;
+import com.sellerhelper.dto.order.ClaimListResponse;
 import com.sellerhelper.dto.order.OrderListResponse;
 import com.sellerhelper.dto.store.StoreConnectRequest;
 import com.sellerhelper.dto.store.StoreMyUpdateRequest;
@@ -145,6 +146,22 @@ public class MyStoreController {
         }
         int count = storeOrderService.syncMyStoreOrders(authUser.getUid(), uid);
         return ResponseEntity.ok(count);
+    }
+
+    /** 내 스토어 취소/반품/교환 목록 조회 (DB 저장분, claimType: cancel/return/exchange, keyword: 주문번호·클레임번호) */
+    @GetMapping("/{uid}/claims")
+    public ResponseEntity<PageResponse<ClaimListResponse>> getClaimList(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String claimType,
+            @RequestParam(required = false) String keyword) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(storeOrderService.getMyStoreClaimList(
+                authUser.getUid(), uid, page, size, claimType, keyword));
     }
 
     /** 내 스토어 배송 목록 조회 (DB 저장분, orderStatus: PAYED=출고대기, DELIVERING=배송중, DELIVERED=배송완료) */

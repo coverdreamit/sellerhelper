@@ -66,3 +66,66 @@ export async function syncOrdersFromNaver(storeUid: number): Promise<number> {
   const count = await res.json();
   return typeof count === 'number' ? count : 0;
 }
+
+/** 취소/반품/교환 목록 API */
+export interface ClaimListItem {
+  orderItemUid: number;
+  orderUid: number;
+  mallOrderNo: string;
+  mallItemId: string;
+  storeUid: number;
+  storeName: string;
+  claimType: string;
+  productOrderStatus: string;
+  productName: string;
+  optionInfo: string | null;
+  quantity: number;
+  totalPrice: number;
+  orderDate: string | null;
+}
+
+export interface ClaimListPage {
+  content: ClaimListItem[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+}
+
+export async function fetchClaimList(
+  storeUid: number,
+  page = 0,
+  size = 20,
+  claimType?: string,
+  keyword?: string
+): Promise<ClaimListPage> {
+  const params = new URLSearchParams();
+  params.set('page', String(page));
+  params.set('size', String(size));
+  if (claimType && claimType.trim()) params.set('claimType', claimType.trim());
+  if (keyword && keyword.trim()) params.set('keyword', keyword.trim());
+  const res = await apiFetch(
+    `/api/my-stores/${storeUid}/claims?${params.toString()}`
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || '취소/반품/교환 목록 조회 실패');
+  }
+  const data = await res.json();
+  const content = data.content ?? data.contents ?? [];
+  const totalElements = data.totalElements ?? data.totalCount ?? 0;
+  const totalPages =
+    data.totalPages ??
+    (data.size > 0 ? Math.ceil(totalElements / data.size) : 0);
+  return {
+    content: Array.isArray(content) ? content : [],
+    page: data.page ?? 0,
+    size: data.size ?? 20,
+    totalElements: Number(totalElements),
+    totalPages: Number(totalPages),
+    first: data.first ?? true,
+    last: data.last ?? true,
+  };
+}

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from '@/components/Link';
 import { useMyStoreStore } from '@/stores';
 import { buildStoreTabs } from '@/config/productStoreTabs';
+import { fetchClaimList, syncOrdersFromNaver, type ClaimListItem } from '@/services/order.service';
 import '../../styles/Settings.css';
 import '../product/ProductList.css';
 
@@ -66,6 +67,29 @@ function renderPagination(totalPages, currentPage, setCurrentPage) {
   return pages;
 }
 
+function formatClaimDate(iso: string | null | undefined): string {
+  if (!iso) return '-';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return String(iso);
+  }
+}
+
+function claimTypeLabel(claimType: string): string {
+  if (claimType === 'CANCEL') return '취소';
+  if (claimType === 'RETURN') return '반품';
+  if (claimType === 'EXCHANGE') return '교환';
+  return claimType || '-';
+}
+
 export default function OrderClaim() {
   const { myStores } = useMyStoreStore();
   const storeTabs = buildStoreTabs(myStores);
@@ -73,6 +97,15 @@ export default function OrderClaim() {
   const [storeTab, setStoreTab] = useState(storeTabs[0]?.key ?? '');
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
+  const [claimTypeFilter, setClaimTypeFilter] = useState('');
+  const [keyword, setKeyword] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [paged, setPaged] = useState<ClaimListItem[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (storeTabs.length > 0 && !storeTabs.some((t) => t.key === storeTab)) {
@@ -82,12 +115,64 @@ export default function OrderClaim() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [storeTab, pageSize]);
+  }, [storeTab, pageSize, claimTypeFilter, searchKeyword]);
 
-  const totalCount = 0;
-  const totalPages = 1;
-  const startIdx = 0;
-  const paged: { id: string; orderId: string; store: string; type: string; amount: number; status: string; date: string }[] = [];
+  const loadClaims = useCallback(async () => {
+    if (!storeTab || storeTabs.length === 0) {
+      setPaged([]);
+      setTotalCount(0);
+      setTotalPages(0);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const page = currentPage - 1;
+      const data = await fetchClaimList(
+        Number(storeTab),
+        page,
+        pageSize,
+        claimTypeFilter.trim() || undefined,
+        searchKeyword.trim() || undefined
+      );
+      setPaged(data.content ?? []);
+      setTotalCount(data.totalElements ?? 0);
+      setTotalPages(data.totalPages ?? 0);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '취소/반품/교환 목록 조회 실패');
+      setPaged([]);
+      setTotalCount(0);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [storeTab, currentPage, pageSize, claimTypeFilter, searchKeyword, storeTabs.length]);
+
+  useEffect(() => {
+    loadClaims();
+  }, [loadClaims]);
+
+  async function handleSync() {
+    if (!storeTab) return;
+    setSyncing(true);
+    setError(null);
+    try {
+      await syncOrdersFromNaver(Number(storeTab));
+      await loadClaims();
+      setCurrentPage(1);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '주문 동기화 실패');
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  function handleSearch() {
+    setSearchKeyword(keyword);
+    setCurrentPage(1);
+  }
+
+  const startIdx = totalCount > 0 ? (currentPage - 1) * pageSize : 0;
 
   return (
     <div className="list-page">
@@ -113,25 +198,35 @@ export default function OrderClaim() {
         </div>
         <div className="settings-toolbar">
           <div className="product-list-left">
-            <select style={{ padding: '6px 12px', marginRight: 8 }}>
+            <select
+              value={claimTypeFilter}
+              onChange={(e) => setClaimTypeFilter(e.target.value)}
+              style={{ padding: '6px 12px', marginRight: 8 }}
+            >
               <option value="">전체 유형</option>
               <option value="cancel">취소</option>
               <option value="return">반품</option>
               <option value="exchange">교환</option>
             </select>
-            <select style={{ padding: '6px 12px', marginRight: 8 }}>
-              <option value="">전체 상태</option>
-              <option value="request">요청접수</option>
-              <option value="processing">처리중</option>
-              <option value="done">처리완료</option>
-            </select>
             <input
               type="text"
               placeholder="주문번호/클레임번호 검색"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               style={{ padding: '6px 12px', marginRight: 8 }}
             />
-            <button type="button" className="btn">
+            <button type="button" className="btn" onClick={handleSearch}>
               검색
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={handleSync}
+              disabled={syncing || !storeTab}
+              style={{ marginLeft: 8 }}
+            >
+              {syncing ? '동기화 중…' : '주문 동기화'}
             </button>
             <label className="product-list-page-size">
               <span>한 화면에 보기</span>
@@ -160,11 +255,40 @@ export default function OrderClaim() {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td colSpan={8} style={{ padding: 24, textAlign: 'center' }}>
-                  취소·반품·교환 데이터가 없습니다. API 연동 후 조회할 수 있습니다.
-                </td>
-              </tr>
+              {loading ? (
+                <tr>
+                  <td colSpan={8} style={{ padding: 24, textAlign: 'center' }}>
+                    조회 중…
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={8} style={{ padding: 24, textAlign: 'center', color: 'var(--danger, #c00)' }}>
+                    {error}
+                  </td>
+                </tr>
+              ) : paged.length === 0 ? (
+                <tr>
+                  <td colSpan={8} style={{ padding: 24, textAlign: 'center' }}>
+                    취소·반품·교환 데이터가 없습니다. 주문 동기화 후 조회할 수 있습니다.
+                  </td>
+                </tr>
+              ) : (
+                paged.map((row) => (
+                  <tr key={row.orderItemUid}>
+                    <td>{row.mallItemId ?? '-'}</td>
+                    <td>{row.mallOrderNo ?? '-'}</td>
+                    <td>{row.storeName ?? '-'}</td>
+                    <td>{claimTypeLabel(row.claimType)}</td>
+                    <td>{row.totalPrice != null ? Number(row.totalPrice).toLocaleString() : '-'}</td>
+                    <td>{row.productOrderStatus ?? '-'}</td>
+                    <td>{formatClaimDate(row.orderDate)}</td>
+                    <td>
+                      <Link to={`/order/${row.orderUid}`}>상세</Link>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
           {totalCount > 0 && (
