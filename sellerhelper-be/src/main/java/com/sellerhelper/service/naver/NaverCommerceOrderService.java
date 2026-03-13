@@ -20,6 +20,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 
@@ -68,10 +69,10 @@ public class NaverCommerceOrderService {
 
         String token = tokenService.getOrRefreshToken(store, auth);
 
-        // 조회 기간: ISO 8601 (JS date.toISOString()). 예: "2026-03-05T09:05:10.602Z"
-        // 값은 인코딩하지 않고 그대로 queryParam에 넣고, build().encode()로 1회만 인코딩 (이중 인코딩 방지).
-        String from = lastChangedFrom.toInstant().toString();
-        String to = lastChangedTo != null ? lastChangedTo.toInstant().toString() : null;
+        // 조회 기간: ISO 8601 (밀리초 단위로 truncate)
+        // 예: "2026-03-05T09:05:10.602Z"
+        String from = lastChangedFrom.toInstant().truncatedTo(ChronoUnit.MILLIS).toString();
+        String to = lastChangedTo != null ? lastChangedTo.toInstant().truncatedTo(ChronoUnit.MILLIS).toString() : null;
 
         UriComponentsBuilder builder = UriComponentsBuilder
                 .fromHttpUrl(LAST_CHANGED_URL)
