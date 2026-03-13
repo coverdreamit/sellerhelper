@@ -78,10 +78,12 @@ export function SupplierPolicyModal({ vendor, onClose, onSave }) {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave?.(vendor?.vendorId, policy);
-    onClose?.();
+    await onSave?.(vendor?.vendorId, policy);
+    if (!onSave) {
+      onClose?.();
+    }
   };
 
   if (!vendor) return null;

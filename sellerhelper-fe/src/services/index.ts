@@ -43,7 +43,14 @@ export {
   type NaverProductItem,
 } from './myStore.service';
 export { fetchUserStores, connectUserStore } from './userStore.service';
-export { fetchVendors } from './vendor.service';
+export {
+  fetchVendors,
+  createVendor,
+  updateVendor,
+  saveVendorPolicy,
+  type VendorSaveRequest,
+  type VendorPolicySaveRequest,
+} from './vendor.service';
 export { fetchOrderTemplates, saveOrderTemplate } from './orderTemplate.service';
 export { fetchProducts } from './product.service';
 export {

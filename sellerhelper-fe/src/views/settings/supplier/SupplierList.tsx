@@ -9,7 +9,7 @@ import { SupplierEditModal } from '@/components/vendor/SupplierEditModal';
 import '../../../styles/Settings.css';
 
 export default function SupplierList() {
-  const { vendors, loading, error } = useVendorStore();
+  const { vendors, loading, error, saveVendor, savePolicy } = useVendorStore();
   const [policyVendor, setPolicyVendor] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editVendor, setEditVendor] = useState(null);
@@ -79,10 +79,14 @@ export default function SupplierList() {
         <SupplierEditModal
           vendor={editVendor}
           onClose={closeEditModal}
-          onSave={(data) => {
-            // TODO: API 연동 시 저장 처리
-            console.log('발주업체 저장', data);
-            closeEditModal();
+          onSave={async (data) => {
+            try {
+              await saveVendor(data);
+              closeEditModal();
+            } catch (e) {
+              const message = e instanceof Error ? e.message : '발주업체 저장에 실패했습니다.';
+              alert(message);
+            }
           }}
         />
       )}
@@ -91,10 +95,14 @@ export default function SupplierList() {
         <SupplierPolicyModal
           vendor={policyVendor}
           onClose={() => setPolicyVendor(null)}
-          onSave={(vendorId, policy) => {
-            // TODO: API 연동 시 저장 처리
-            console.log('발주정책 저장', vendorId, policy);
-            setPolicyVendor(null);
+          onSave={async (vendorId, policy) => {
+            try {
+              await savePolicy(vendorId, policy);
+              setPolicyVendor(null);
+            } catch (e) {
+              const message = e instanceof Error ? e.message : '발주정책 저장에 실패했습니다.';
+              alert(message);
+            }
           }}
         />
       )}

@@ -20,6 +20,29 @@ export function SupplierEditModal({ vendor, onClose, onSave }) {
   const [memo, setMemo] = useState('');
   const [useYn, setUseYn] = useState(true);
 
+  const formatBizNo = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 5) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
+  };
+
+  const formatPhone = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.startsWith('02')) {
+      const limited = digits.slice(0, 10);
+      if (limited.length <= 2) return limited;
+      if (limited.length <= 5) return `${limited.slice(0, 2)}-${limited.slice(2)}`;
+      if (limited.length <= 9) return `${limited.slice(0, 2)}-${limited.slice(2, 5)}-${limited.slice(5)}`;
+      return `${limited.slice(0, 2)}-${limited.slice(2, 6)}-${limited.slice(6)}`;
+    }
+
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    if (digits.length <= 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  };
+
   useEffect(() => {
     if (vendor) {
       setVendorName(vendor.vendorName ?? '');
@@ -44,9 +67,9 @@ export function SupplierEditModal({ vendor, onClose, onSave }) {
     }
   }, [vendor]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave?.({
+    await onSave?.({
       vendorId: vendor?.vendorId,
       vendorName: vendorName.trim(),
       bizNo: bizNo.trim(),
@@ -58,7 +81,9 @@ export function SupplierEditModal({ vendor, onClose, onSave }) {
       memo: memo.trim(),
       isActive: useYn,
     });
-    onClose?.();
+    if (!onSave) {
+      onClose?.();
+    }
   };
 
   const checkboxId = `supplier-use-${vendor?.vendorId ?? 'new'}`;
@@ -92,7 +117,7 @@ export function SupplierEditModal({ vendor, onClose, onSave }) {
                   type="text"
                   placeholder="000-00-00000"
                   value={bizNo}
-                  onChange={(e) => setBizNo(e.target.value)}
+                  onChange={(e) => setBizNo(formatBizNo(e.target.value))}
                 />
               </div>
             </div>
@@ -133,7 +158,7 @@ export function SupplierEditModal({ vendor, onClose, onSave }) {
                   type="text"
                   placeholder="대표 전화번호"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(formatPhone(e.target.value))}
                 />
               </div>
             </div>
