@@ -32,4 +32,15 @@ public class Company extends BaseEntity {
 
     @Column(length = 100)
     private String ceoName;
+
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "business_license_file")
+    private byte[] businessLicenseFile;
+
+    @Column(name = "business_license_file_name", length = 255)
+    private String businessLicenseFileName;
+
+    @Column(name = "business_license_content_type", length = 100)
+    private String businessLicenseContentType;
 }

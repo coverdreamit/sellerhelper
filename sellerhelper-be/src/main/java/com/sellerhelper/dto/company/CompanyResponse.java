@@ -21,4 +21,7 @@ public class CompanyResponse {
     private String phone;
     private String email;
     private String ceoName;
+    private String businessLicenseFileName;
+    private String businessLicenseContentType;
+    private Boolean hasBusinessLicenseFile;
 }

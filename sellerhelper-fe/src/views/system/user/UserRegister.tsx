@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from '@/components/Link';
 import { fetchRoles, createUser, type RoleItem } from '@/services/user.service';
+import { formatPhoneNumber } from '@/utils/inputFormat';
 import '../../../styles/Settings.css';
 
 export default function UserRegister() {
@@ -31,7 +32,8 @@ export default function UserRegister() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const nextValue = name === 'phone' ? formatPhoneNumber(value) : value;
+    setForm((prev) => ({ ...prev, [name]: nextValue }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

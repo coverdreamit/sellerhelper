@@ -18,7 +18,9 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 네이버 스마트스토어 주문 API → DB 동기화
@@ -30,59 +32,61 @@ import java.util.List;
 public class NaverOrderSyncService {
 
     private static final DateTimeFormatter NAVER_DATETIME = DateTimeFormatter.ISO_DATE_TIME;
+    private static final int LAST_CHANGED_LIMIT = 300;
+    private static final long REQUEST_INTERVAL_MS = 150L;
 
     private final StoreRepository storeRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final NaverCommerceOrderService naverCommerceOrderService;
 
-    /**
-     * 해당 스토어의 최근 변경 주문을 네이버 API에서 가져와 DB에 저장(갱신)
-     * @param storeUid 스토어 UID
-     * @param lastChangedFrom 조회 시작 일시 (예: 24시간 전)
-     */
+    /** 기본 동기화: 시작 시각부터 현재까지 */
     @Transactional
     public int syncOrdersFromNaver(Long storeUid, ZonedDateTime lastChangedFrom) {
+        return syncOrdersFromNaver(storeUid, lastChangedFrom, ZonedDateTime.now(lastChangedFrom.getZone()));
+    }
+
+    /**
+     * 해당 스토어의 변경 주문을 네이버 API에서 가져와 DB에 저장(갱신)
+     * 네이버 last-changed API의 조회 구간 제한을 고려해 24시간 창으로 분할 조회한다.
+     *
+     * @param storeUid 스토어 UID
+     * @param lastChangedFrom 조회 시작 일시
+     * @param lastChangedTo 조회 종료 일시
+     */
+    @Transactional
+    public int syncOrdersFromNaver(Long storeUid, ZonedDateTime lastChangedFrom, ZonedDateTime lastChangedTo) {
         Store store = storeRepository.findById(storeUid)
                 .orElseThrow(() -> new ResourceNotFoundException("Store", storeUid));
         if (!"NAVER".equalsIgnoreCase(store.getMall() != null ? store.getMall().getCode() : null)) {
             throw new IllegalArgumentException("네이버 스토어만 주문 동기화가 가능합니다.");
         }
 
-        List<String> allProductOrderIds = new ArrayList<>();
-        ZonedDateTime lastChangedTo = null;
-        Integer moreSequence = null;
+        if (lastChangedFrom == null || lastChangedTo == null || !lastChangedFrom.isBefore(lastChangedTo)) {
+            return 0;
+        }
 
-        do {
-            NaverLastChangedResult result = naverCommerceOrderService.getLastChangedProductOrders(
-                    storeUid, lastChangedFrom, lastChangedTo, 300, moreSequence);
-            if (result.getData() != null) {
-                result.getData().stream()
-                        .map(NaverLastChangedItem::getProductOrderId)
-                        .filter(id -> id != null && !id.isEmpty())
-                        .forEach(allProductOrderIds::add);
+        Set<String> allProductOrderIds = new LinkedHashSet<>();
+        ZonedDateTime windowFrom = lastChangedFrom;
+        while (windowFrom.isBefore(lastChangedTo)) {
+            ZonedDateTime windowTo = windowFrom.plusHours(24);
+            if (windowTo.isAfter(lastChangedTo)) {
+                windowTo = lastChangedTo;
             }
-            if (result.getMore() == null || result.getMore().getMoreSequence() == null) {
-                break;
-            }
-            moreSequence = result.getMore().getMoreSequence();
-            if (result.getMore().getMoreFrom() != null) {
-                try {
-                    lastChangedFrom = ZonedDateTime.parse(result.getMore().getMoreFrom(), NAVER_DATETIME);
-                } catch (Exception e) {
-                    break;
-                }
-            }
-        } while (moreSequence != null);
+            collectProductOrderIdsByWindow(storeUid, windowFrom, windowTo, allProductOrderIds);
+            windowFrom = windowTo;
+            sleepSafely(REQUEST_INTERVAL_MS);
+        }
 
         if (allProductOrderIds.isEmpty()) {
             return 0;
         }
 
         int saved = 0;
-        for (int i = 0; i < allProductOrderIds.size(); i += 300) {
-            int end = Math.min(i + 300, allProductOrderIds.size());
-            List<String> batch = allProductOrderIds.subList(i, end);
+        List<String> orderIds = new ArrayList<>(allProductOrderIds);
+        for (int i = 0; i < orderIds.size(); i += LAST_CHANGED_LIMIT) {
+            int end = Math.min(i + LAST_CHANGED_LIMIT, orderIds.size());
+            List<String> batch = orderIds.subList(i, end);
             List<NaverProductOrderDetail> details = naverCommerceOrderService.getProductOrderDetails(storeUid, batch);
             for (NaverProductOrderDetail d : details) {
                 try {
@@ -97,6 +101,46 @@ public class NaverOrderSyncService {
             }
         }
         return saved;
+    }
+
+    private void collectProductOrderIdsByWindow(
+            Long storeUid,
+            ZonedDateTime windowFrom,
+            ZonedDateTime windowTo,
+            Set<String> allProductOrderIds
+    ) {
+        Integer moreSequence = null;
+        ZonedDateTime cursorFrom = windowFrom;
+        do {
+            NaverLastChangedResult result = naverCommerceOrderService.getLastChangedProductOrders(
+                    storeUid, cursorFrom, windowTo, LAST_CHANGED_LIMIT, moreSequence);
+            if (result.getData() != null) {
+                result.getData().stream()
+                        .map(NaverLastChangedItem::getProductOrderId)
+                        .filter(id -> id != null && !id.isEmpty())
+                        .forEach(allProductOrderIds::add);
+            }
+            if (result.getMore() == null || result.getMore().getMoreSequence() == null) {
+                break;
+            }
+            moreSequence = result.getMore().getMoreSequence();
+            if (result.getMore().getMoreFrom() != null) {
+                try {
+                    cursorFrom = ZonedDateTime.parse(result.getMore().getMoreFrom(), NAVER_DATETIME);
+                } catch (Exception e) {
+                    break;
+                }
+            }
+            sleepSafely(REQUEST_INTERVAL_MS);
+        } while (moreSequence != null);
+    }
+
+    private static void sleepSafely(long millis) {
+        try {
+            Thread.sleep(Math.max(0L, millis));
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private void saveOrUpdateOrderAndItem(Store store, NaverProductOrderDetail d) {

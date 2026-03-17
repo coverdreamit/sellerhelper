@@ -26,6 +26,40 @@ export interface OrderListPage {
   last: boolean;
 }
 
+export interface OrderItemDetail {
+  uid: number;
+  mallItemId: string;
+  productName: string;
+  optionInfo: string | null;
+  quantity: number;
+  unitPrice: number | null;
+  totalPrice: number | null;
+  productOrderStatus: string;
+}
+
+export interface OrderDetail {
+  uid: number;
+  storeUid: number;
+  storeName: string;
+  mallOrderNo: string;
+  orderDate: string;
+  orderStatus: string;
+  totalAmount: number;
+  buyerName: string;
+  buyerPhone: string;
+  receiverName: string;
+  receiverPhone: string;
+  receiverAddress: string;
+  items: OrderItemDetail[];
+}
+
+export interface OrderActionResult {
+  success: boolean;
+  action: string;
+  requestedCount: number;
+  data?: unknown;
+}
+
 export async function fetchOrderList(
   storeUid: number,
   page = 0,
@@ -65,6 +99,48 @@ export async function syncOrdersFromNaver(storeUid: number): Promise<number> {
   }
   const count = await res.json();
   return typeof count === 'number' ? count : 0;
+}
+
+export async function fetchOrderDetail(
+  storeUid: number,
+  orderUid: number
+): Promise<OrderDetail> {
+  const res = await apiFetch(`/api/my-stores/${storeUid}/orders/${orderUid}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || '주문 상세 조회 실패');
+  }
+  return await res.json();
+}
+
+export async function confirmOrder(
+  storeUid: number,
+  orderUid: number
+): Promise<OrderActionResult> {
+  const res = await apiFetch(`/api/my-stores/${storeUid}/orders/${orderUid}/confirm`, {
+    method: 'POST',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || '발주 확인 처리 실패');
+  }
+  return await res.json();
+}
+
+export async function dispatchOrder(
+  storeUid: number,
+  orderUid: number,
+  payload: { deliveryCompany: string; trackingNumber: string }
+): Promise<OrderActionResult> {
+  const res = await apiFetch(`/api/my-stores/${storeUid}/orders/${orderUid}/dispatch`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || '발송 처리 실패');
+  }
+  return await res.json();
 }
 
 /** 취소/반품/교환 목록 API */

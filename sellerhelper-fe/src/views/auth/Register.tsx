@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { register as registerApi } from '@/services/auth.service';
+import { formatPhoneNumber } from '@/utils/inputFormat';
 import './Login.css';
 
 const KOREAN_NAMES = ['김철수', '이영희', '박민수', '최지현', '정수진', '한동훈', '윤서연', '임준혁', '강미영', '조성민'];
@@ -53,7 +54,8 @@ export default function Register() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const nextValue = name === 'phone' ? formatPhoneNumber(value) : value;
+    setForm((prev) => ({ ...prev, [name]: nextValue }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -25,6 +25,7 @@ export {
   fetchCompanies,
   fetchMyCompany,
   createMyCompany,
+  updateMyCompany,
   type CompanyItem,
   type CompanyCreateRequest,
 } from './company.service';
@@ -52,6 +53,18 @@ export {
   type VendorPolicySaveRequest,
 } from './vendor.service';
 export { fetchOrderTemplates, saveOrderTemplate } from './orderTemplate.service';
+export {
+  fetchOrderList,
+  syncOrdersFromNaver,
+  fetchOrderDetail,
+  confirmOrder,
+  dispatchOrder,
+  type OrderListItem,
+  type OrderListPage,
+  type OrderDetail,
+  type OrderItemDetail,
+  type OrderActionResult,
+} from './order.service';
 export { fetchProducts } from './product.service';
 export {
   login,

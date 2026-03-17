@@ -7,9 +7,11 @@ import com.sellerhelper.service.CompanyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 
@@ -36,14 +38,27 @@ public class MyCompanyController {
     }
 
     /** 내 회사 등록 (회사 미등록 시 1회만) */
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CompanyResponse> createMyCompany(
             @AuthenticationPrincipal AuthUser authUser,
-            @Valid @RequestBody CompanyCreateRequest request) {
+            @Valid @ModelAttribute CompanyCreateRequest request,
+            @RequestPart(value = "businessLicenseFile", required = false) MultipartFile businessLicenseFile) {
         if (authUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(companyService.createMyCompany(authUser.getUid(), request));
+                .body(companyService.createMyCompany(authUser.getUid(), request, businessLicenseFile));
+    }
+
+    /** 내 회사 수정 */
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CompanyResponse> updateMyCompany(
+            @AuthenticationPrincipal AuthUser authUser,
+            @Valid @ModelAttribute CompanyCreateRequest request,
+            @RequestPart(value = "businessLicenseFile", required = false) MultipartFile businessLicenseFile) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(companyService.updateMyCompany(authUser.getUid(), request, businessLicenseFile));
     }
 }

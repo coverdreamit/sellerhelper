@@ -2,6 +2,10 @@ package com.sellerhelper.service;
 
 import com.sellerhelper.dto.common.PageResponse;
 import com.sellerhelper.dto.naver.*;
+import com.sellerhelper.dto.order.OrderActionResponse;
+import com.sellerhelper.dto.order.OrderDetailResponse;
+import com.sellerhelper.dto.order.OrderDispatchRequest;
+import com.sellerhelper.dto.order.OrderItemDetailResponse;
 import com.sellerhelper.dto.order.ClaimListResponse;
 import com.sellerhelper.dto.order.OrderListResponse;
 import com.sellerhelper.entity.Company;
@@ -27,8 +31,10 @@ import org.springframework.util.StringUtils;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /** 스토어별 주문·배송 조회 (플랫폼별 위임) */
 @Service
@@ -146,8 +152,13 @@ public class StoreOrderService {
         if (!"NAVER".equalsIgnoreCase(mallCode)) {
             throw new IllegalArgumentException("네이버 스토어만 주문 동기화가 가능합니다.");
         }
-        ZonedDateTime from = ZonedDateTime.now(ZoneId.of("Asia/Seoul")).minusHours(24);
-        return naverOrderSyncService.syncOrdersFromNaver(storeUid, from);
+        ZoneId zone = ZoneId.of("Asia/Seoul");
+        ZonedDateTime now = ZonedDateTime.now(zone);
+        ZonedDateTime from = orderRepository.findTopByStore_UidOrderByOrderDateDesc(storeUid)
+                .map(Order::getOrderDate)
+                .map(instant -> instant.atZone(zone).minusHours(1))
+                .orElse(now.minusDays(7));
+        return naverOrderSyncService.syncOrdersFromNaver(storeUid, from, now);
     }
 
     /**
@@ -179,6 +190,91 @@ public class StoreOrderService {
             return syncMyStoreOrdersFromCoupang(userUid, storeUid);
         }
         throw new IllegalArgumentException("주문 동기화를 지원하지 않는 스토어입니다. (네이버/쿠팡만 가능)");
+    }
+
+    /** 주문 상세 조회 (DB 저장분 + 상품주문 목록) */
+    @Transactional(readOnly = true)
+    public OrderDetailResponse getMyStoreOrderDetail(Long userUid, Long storeUid, Long orderUid) {
+        ensureMyStore(userUid, storeUid);
+        Order order = orderRepository.findByUidAndStore_Uid(orderUid, storeUid)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", orderUid));
+        List<OrderItem> items = orderItemRepository.findByOrder_Uid(order.getUid());
+        return OrderDetailResponse.builder()
+                .uid(order.getUid())
+                .storeUid(order.getStore() != null ? order.getStore().getUid() : null)
+                .storeName(order.getStore() != null ? order.getStore().getName() : null)
+                .mallOrderNo(order.getMallOrderNo())
+                .orderDate(order.getOrderDate())
+                .orderStatus(order.getOrderStatus())
+                .totalAmount(order.getTotalAmount())
+                .buyerName(order.getBuyerName())
+                .buyerPhone(order.getBuyerPhone())
+                .receiverName(order.getReceiverName())
+                .receiverPhone(order.getReceiverPhone())
+                .receiverAddress(order.getReceiverAddress())
+                .items(items.stream().map(this::toOrderItemDetailResponse).collect(Collectors.toList()))
+                .build();
+    }
+
+    /** 네이버 발주 확인 처리 (주문의 상품주문번호 전체) */
+    @Transactional
+    public OrderActionResponse confirmMyStoreOrder(Long userUid, Long storeUid, Long orderUid) {
+        ensureMyStore(userUid, storeUid);
+        String mallCode = getStoreMallCode(storeUid);
+        if (!"NAVER".equalsIgnoreCase(mallCode)) {
+            throw new IllegalArgumentException("네이버 스토어만 발주 확인이 가능합니다.");
+        }
+        Order order = orderRepository.findByUidAndStore_Uid(orderUid, storeUid)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", orderUid));
+        List<String> productOrderIds = orderItemRepository.findByOrder_Uid(order.getUid()).stream()
+                .map(OrderItem::getMallItemId)
+                .filter(id -> id != null && !id.isBlank())
+                .collect(Collectors.toList());
+        if (productOrderIds.isEmpty()) {
+            throw new IllegalArgumentException("발주 확인할 상품 주문 번호가 없습니다.");
+        }
+        Object data = naverOrderService.confirmProductOrders(storeUid, productOrderIds);
+        return OrderActionResponse.builder()
+                .success(true)
+                .action("CONFIRM")
+                .requestedCount(productOrderIds.size())
+                .data(data)
+                .build();
+    }
+
+    /** 네이버 발송 처리 (주문의 상품주문번호 전체 동일 송장 적용) */
+    @Transactional
+    public OrderActionResponse dispatchMyStoreOrder(Long userUid, Long storeUid, Long orderUid, OrderDispatchRequest request) {
+        ensureMyStore(userUid, storeUid);
+        String mallCode = getStoreMallCode(storeUid);
+        if (!"NAVER".equalsIgnoreCase(mallCode)) {
+            throw new IllegalArgumentException("네이버 스토어만 발송 처리가 가능합니다.");
+        }
+        Order order = orderRepository.findByUidAndStore_Uid(orderUid, storeUid)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", orderUid));
+        List<String> productOrderIds = orderItemRepository.findByOrder_Uid(order.getUid()).stream()
+                .map(OrderItem::getMallItemId)
+                .filter(id -> id != null && !id.isBlank())
+                .collect(Collectors.toList());
+        if (productOrderIds.isEmpty()) {
+            throw new IllegalArgumentException("발송 처리할 상품 주문 번호가 없습니다.");
+        }
+        List<NaverCommerceOrderService.DispatchItem> dispatchItems = new ArrayList<>();
+        for (String productOrderId : productOrderIds) {
+            NaverCommerceOrderService.DispatchItem item = new NaverCommerceOrderService.DispatchItem();
+            item.setProductOrderId(productOrderId);
+            item.setDeliveryMethod("DELIVERY");
+            item.setDeliveryCompany(request.getDeliveryCompany().trim());
+            item.setTrackingNumber(request.getTrackingNumber().trim());
+            dispatchItems.add(item);
+        }
+        Object data = naverOrderService.dispatchProductOrders(storeUid, dispatchItems);
+        return OrderActionResponse.builder()
+                .success(true)
+                .action("DISPATCH")
+                .requestedCount(productOrderIds.size())
+                .data(data)
+                .build();
     }
 
     private ClaimListResponse toClaimListResponse(OrderItem oi) {
@@ -217,6 +313,19 @@ public class StoreOrderService {
                 .receiverName(o.getReceiverName())
                 .receiverAddress(o.getReceiverAddress())
                 .itemCount(itemCount)
+                .build();
+    }
+
+    private OrderItemDetailResponse toOrderItemDetailResponse(OrderItem oi) {
+        return OrderItemDetailResponse.builder()
+                .uid(oi.getUid())
+                .mallItemId(oi.getMallItemId())
+                .productName(oi.getProductName())
+                .optionInfo(oi.getOptionInfo())
+                .quantity(oi.getQuantity())
+                .unitPrice(oi.getUnitPrice())
+                .totalPrice(oi.getTotalPrice())
+                .productOrderStatus(oi.getProductOrderStatus())
                 .build();
     }
 

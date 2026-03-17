@@ -9,6 +9,9 @@ export interface CompanyItem {
   phone?: string;
   email?: string;
   ceoName?: string;
+  businessLicenseFileName?: string;
+  businessLicenseContentType?: string;
+  hasBusinessLicenseFile?: boolean;
 }
 
 export async function fetchCompanies(): Promise<CompanyItem[]> {
@@ -36,14 +39,49 @@ export interface CompanyCreateRequest {
 }
 
 /** 내 회사 등록 (회사 미등록 시 1회만) */
-export async function createMyCompany(req: CompanyCreateRequest): Promise<CompanyItem> {
+export async function createMyCompany(
+  req: CompanyCreateRequest,
+  businessLicenseFile?: File | null
+): Promise<CompanyItem> {
+  const body = toCompanyFormData(req, businessLicenseFile);
   const res = await apiFetch('/api/my-company', {
     method: 'POST',
-    body: JSON.stringify(req),
+    body,
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err?.message ?? '회사 등록에 실패했습니다.');
   }
   return res.json();
+}
+
+/** 내 회사 수정 */
+export async function updateMyCompany(
+  req: CompanyCreateRequest,
+  businessLicenseFile?: File | null
+): Promise<CompanyItem> {
+  const body = toCompanyFormData(req, businessLicenseFile);
+  const res = await apiFetch('/api/my-company', {
+    method: 'PUT',
+    body,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '회사 정보 수정에 실패했습니다.');
+  }
+  return res.json();
+}
+
+function toCompanyFormData(req: CompanyCreateRequest, businessLicenseFile?: File | null): FormData {
+  const formData = new FormData();
+  formData.append('name', req.name ?? '');
+  formData.append('businessNumber', req.businessNumber ?? '');
+  formData.append('address', req.address ?? '');
+  formData.append('phone', req.phone ?? '');
+  formData.append('email', req.email ?? '');
+  formData.append('ceoName', req.ceoName ?? '');
+  if (businessLicenseFile) {
+    formData.append('businessLicenseFile', businessLicenseFile);
+  }
+  return formData;
 }

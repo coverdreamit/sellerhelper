@@ -7,6 +7,9 @@ import com.sellerhelper.dto.naver.NaverProductOrderDetail;
 import com.sellerhelper.dto.naver.NaverProductSearchResult;
 import com.sellerhelper.dto.common.PageResponse;
 import com.sellerhelper.dto.order.ClaimListResponse;
+import com.sellerhelper.dto.order.OrderActionResponse;
+import com.sellerhelper.dto.order.OrderDetailResponse;
+import com.sellerhelper.dto.order.OrderDispatchRequest;
 import com.sellerhelper.dto.order.OrderListResponse;
 import com.sellerhelper.dto.store.StoreConnectRequest;
 import com.sellerhelper.dto.store.StoreMyUpdateRequest;
@@ -136,6 +139,18 @@ public class MyStoreController {
         return ResponseEntity.ok(storeOrderService.getMyStoreOrdersFromDb(authUser.getUid(), uid, page, size));
     }
 
+    /** 내 스토어 주문 상세 (DB 저장분) */
+    @GetMapping("/{uid}/orders/{orderUid}")
+    public ResponseEntity<OrderDetailResponse> getOrderDetail(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @PathVariable Long orderUid) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(storeOrderService.getMyStoreOrderDetail(authUser.getUid(), uid, orderUid));
+    }
+
     /** 내 스토어 주문 동기화 (네이버: 최근 24시간 변경분, 쿠팡: 최근 30일 결제분 → DB) */
     @PostMapping("/{uid}/orders/sync")
     public ResponseEntity<Integer> syncOrders(
@@ -146,6 +161,31 @@ public class MyStoreController {
         }
         int count = storeOrderService.syncMyStoreOrders(authUser.getUid(), uid);
         return ResponseEntity.ok(count);
+    }
+
+    /** 내 스토어 주문 발주 확인 처리 (네이버) */
+    @PostMapping("/{uid}/orders/{orderUid}/confirm")
+    public ResponseEntity<OrderActionResponse> confirmOrder(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @PathVariable Long orderUid) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(storeOrderService.confirmMyStoreOrder(authUser.getUid(), uid, orderUid));
+    }
+
+    /** 내 스토어 주문 발송 처리 (네이버) */
+    @PostMapping("/{uid}/orders/{orderUid}/dispatch")
+    public ResponseEntity<OrderActionResponse> dispatchOrder(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @PathVariable Long orderUid,
+            @Valid @RequestBody OrderDispatchRequest request) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(storeOrderService.dispatchMyStoreOrder(authUser.getUid(), uid, orderUid, request));
     }
 
     /** 내 스토어 취소/반품/교환 목록 조회 (DB 저장분, claimType: cancel/return/exchange, keyword: 주문번호·클레임번호) */

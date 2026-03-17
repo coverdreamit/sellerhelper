@@ -267,7 +267,7 @@ export default function OrderList() {
                     orders.map((o) => (
                       <tr key={o.uid}>
                         <td>
-                          <Link to={`/order/${o.uid}`}>{o.mallOrderNo}</Link>
+                          <Link to={`/order/${o.uid}?storeUid=${o.storeUid}`}>{o.mallOrderNo}</Link>
                         </td>
                         <td>{o.storeName ?? '-'}</td>
                         <td>{o.buyerName ?? '-'}</td>
@@ -288,7 +288,7 @@ export default function OrderList() {
                         <td>{o.itemCount ?? '-'}</td>
                         <td>{o.receiverName ?? '-'}</td>
                         <td className="cell-actions">
-                          <Link to={`/order/${o.uid}`}>상세</Link>
+                          <Link to={`/order/${o.uid}?storeUid=${o.storeUid}`}>상세</Link>
                         </td>
                       </tr>
                     ))

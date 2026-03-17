@@ -10,6 +10,7 @@ import {
   type UserResponse,
   type RoleItem,
 } from '@/services/user.service';
+import { formatPhoneNumber } from '@/utils/inputFormat';
 import '../../../styles/Settings.css';
 
 export default function UserEdit({ uid }: { uid: number }) {
@@ -68,7 +69,8 @@ export default function UserEdit({ uid }: { uid: number }) {
     if (type === 'checkbox') {
       setForm((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
     } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
+      const nextValue = name === 'phone' ? formatPhoneNumber(value) : value;
+      setForm((prev) => ({ ...prev, [name]: nextValue }));
     }
   };
 
