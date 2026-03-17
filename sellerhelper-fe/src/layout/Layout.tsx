@@ -49,7 +49,9 @@ export default function Layout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, setUser, logout: logoutStore, isLoggedIn } = useAuthStore();
+  const companyRequiredPath = '/settings/basic/company';
   const isAuthPage = pathname?.startsWith('/login');
+  const needsCompanyRegistration = !!user && user.companyUid == null;
   const [mounted, setMounted] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
 
@@ -110,8 +112,6 @@ export default function Layout({ children }: { children: ReactNode }) {
       return;
     }
     if (!isAuthPage && pathname && user) {
-      const companyRequiredPath = '/settings/basic/company';
-      const needsCompanyRegistration = user.companyUid == null;
       if (needsCompanyRegistration && pathname !== companyRequiredPath) {
         router.replace(companyRequiredPath);
         return;
@@ -140,6 +140,10 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   if (!isLoggedIn()) {
     return null;
+  }
+
+  if (needsCompanyRegistration) {
+    return <>{children}</>;
   }
 
   return (

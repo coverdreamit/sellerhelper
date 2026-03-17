@@ -12,6 +12,7 @@ import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import java.time.Instant;
 
 /** 셀러 발주업체 */
 @Entity
@@ -32,6 +33,28 @@ public class Vendor extends BaseEntity {
 
     @Column(name = "business_number", length = 20)
     private String businessNumber;
+
+    @Column(name = "business_verified", nullable = false)
+    @Builder.Default
+    private Boolean businessVerified = false;
+
+    @Column(name = "business_verified_at")
+    private Instant businessVerifiedAt;
+
+    @Column(name = "business_status_code", length = 20)
+    private String businessStatusCode;
+
+    @Column(name = "business_status_text", length = 100)
+    private String businessStatusText;
+
+    @Column(name = "business_tax_type", length = 100)
+    private String businessTaxType;
+
+    @Column(name = "business_closed_at", length = 8)
+    private String businessClosedAt;
+
+    @Column(name = "business_verify_message", length = 255)
+    private String businessVerifyMessage;
 
     @Column(length = 100)
     private String managerName;

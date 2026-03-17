@@ -19,6 +19,13 @@ public class VendorResponse {
     private Long userId;
     private String vendorName;
     private String bizNo;
+    private Boolean businessVerified;
+    private Instant businessVerifiedAt;
+    private String businessStatusCode;
+    private String businessStatusText;
+    private String businessTaxType;
+    private String businessClosedAt;
+    private String businessVerifyMessage;
     private String managerName;
     private String address;
     private String addressDetail;

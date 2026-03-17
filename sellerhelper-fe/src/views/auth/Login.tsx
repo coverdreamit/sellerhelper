@@ -41,7 +41,9 @@ export default function Login() {
         clearLoginIdCookie();
       }
       setUser(res);
-      router.replace('/');
+      const companyRequiredPath = '/settings/basic/company';
+      const needsCompanyRegistration = res.companyUid == null;
+      router.replace(needsCompanyRegistration ? companyRequiredPath : '/');
     } catch (err) {
       setError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
     } finally {

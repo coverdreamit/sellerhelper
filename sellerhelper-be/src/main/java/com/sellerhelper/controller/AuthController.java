@@ -2,6 +2,7 @@ package com.sellerhelper.controller;
 
 import com.sellerhelper.dto.auth.LoginRequest;
 import com.sellerhelper.dto.auth.LoginResponse;
+import com.sellerhelper.dto.auth.CompanySearchResponse;
 import com.sellerhelper.dto.auth.RegisterRequest;
 import com.sellerhelper.dto.auth.RegisterResponse;
 import com.sellerhelper.service.AuthService;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
 
 /** 인증 API - JWT 발급 (portal 프로필, local 개발 시에도 활성화) */
 @Profile({"portal", "local"})
@@ -25,13 +27,20 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        log.info("POST /api/auth/login 요청 수신 loginId={}", request != null ? request.getLoginId() : null);
+        log.info("POST /api/auth/login 요청 수신 loginId={}", request.getLoginId());
         return ResponseEntity.ok(authService.login(request));
     }
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(201).body(authService.register(request));
+    }
+
+    @GetMapping("/companies/search")
+    public ResponseEntity<List<CompanySearchResponse>> searchCompanies(
+            @RequestParam("keyword") String keyword,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        return ResponseEntity.ok(authService.searchCompanies(keyword, size));
     }
 
     @GetMapping("/me")

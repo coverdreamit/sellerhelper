@@ -63,6 +63,16 @@ public class VendorController {
         return ResponseEntity.ok(vendorService.updateMyVendor(authUser.getUid(), vendorId, request));
     }
 
+    @PostMapping("/{vendorId}/verify")
+    public ResponseEntity<VendorResponse> verifyBusiness(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long vendorId) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(vendorService.verifyMyVendor(authUser.getUid(), vendorId));
+    }
+
     @PutMapping("/{vendorId}/policy")
     public ResponseEntity<VendorPolicyResponse> savePolicy(
             @AuthenticationPrincipal AuthUser authUser,

@@ -1,6 +1,7 @@
 package com.sellerhelper.repository;
 
 import com.sellerhelper.entity.Vendor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -11,4 +12,6 @@ public interface VendorRepository extends JpaRepository<Vendor, Long> {
     List<Vendor> findByUser_UidOrderByUidDesc(Long userUid);
 
     Optional<Vendor> findByUidAndUser_Uid(Long uid, Long userUid);
+
+    List<Vendor> findByActiveTrueAndBusinessNumberIsNotNullOrderByUidAsc(Pageable pageable);
 }

@@ -38,6 +38,22 @@ public class RegisterRequest {
     @Size(max = 20)
     private String phone;
 
+    /** EXISTING(기존 회사 가입) | NEW(신규 회사 등록) */
+    @Size(max = 20)
+    private String registerCompanyMode;
+
+    /** 기존 회사 가입 시 선택한 회사 UID */
+    private Long existingCompanyUid;
+
+    /** 신규 회사 등록 시 회사명 */
+    @Size(max = 100)
+    private String newCompanyName;
+
+    /** 신규 회사 등록 시 사업자등록번호 */
+    @Size(max = 20)
+    private String newBusinessNumber;
+
+    /** 하위 호환용 (기존 단일 회사명 입력 방식) */
     @Size(max = 100)
     private String companyName;
 }

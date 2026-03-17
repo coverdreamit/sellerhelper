@@ -34,6 +34,12 @@ cors:
 # 앱 설정 (프로필별로 오버라이드)
 app:
   dev-mode: ${APP_DEV_MODE:false}
+  business-verification:
+    enabled: ${BIZ_VERIFICATION_ENABLED:false}
+    service-key: ${NTS_API_SERVICE_KEY:}
+    status-api-url: ${NTS_STATUS_API_URL:https://api.odcloud.kr/api/nts-businessman/v1/status}
+    recheck-cron: ${BIZ_VERIFICATION_RECHECK_CRON:0 0 4 * * *}
+    recheck-batch-size: ${BIZ_VERIFICATION_RECHECK_BATCH_SIZE:100}
 
 logging:
   level:

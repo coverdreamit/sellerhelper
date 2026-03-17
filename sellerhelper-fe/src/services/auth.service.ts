@@ -56,6 +56,10 @@ export interface RegisterRequest {
   email: string;
   password: string;
   phone?: string;
+  registerCompanyMode?: 'EXISTING' | 'NEW';
+  existingCompanyUid?: number;
+  newCompanyName?: string;
+  newBusinessNumber?: string;
   companyName?: string;
 }
 
@@ -64,6 +68,12 @@ export interface RegisterResponse {
   loginId: string;
   name: string;
   approved: boolean;
+}
+
+export interface CompanySearchItem {
+  uid: number;
+  name: string;
+  businessNumber?: string | null;
 }
 
 export async function login(req: LoginRequest): Promise<LoginResponse> {
@@ -98,6 +108,24 @@ export async function register(req: RegisterRequest): Promise<RegisterResponse> 
     throw new Error(data?.message ?? data?.fieldErrors?.[0]?.message ?? '회원가입에 실패했습니다.');
   }
   return data;
+}
+
+export async function searchCompanies(keyword: string, size = 10): Promise<CompanySearchItem[]> {
+  const q = keyword.trim();
+  if (!q) return [];
+  const res = await fetch(
+    `${getApiBase()}/api/auth/companies/search?keyword=${encodeURIComponent(q)}&size=${size}`,
+    {
+      ...baseFetchOptions,
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+  const data = await parseJsonOrThrow<CompanySearchItem[] & { message?: string }>(res);
+  if (!res.ok) {
+    throw new Error((data as { message?: string })?.message ?? '회사 검색에 실패했습니다.');
+  }
+  return (Array.isArray(data) ? data : []) as CompanySearchItem[];
 }
 
 /** 현재 로그인 사용자 조회 (JWT 필요) */
