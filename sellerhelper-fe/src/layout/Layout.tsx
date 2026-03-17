@@ -111,7 +111,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     }
     if (!isAuthPage && pathname && user) {
       const companyRequiredPath = '/settings/basic/company';
-      const needsCompanyRegistration = user.companyUid == null;
+      const isAdmin = (user.roleCodes ?? []).includes('ADMIN');
+      const needsCompanyRegistration = !isAdmin && (user.companyUid == null || !user.businessDocumentUploaded);
       if (needsCompanyRegistration && pathname !== companyRequiredPath) {
         router.replace(companyRequiredPath);
         return;
@@ -123,6 +124,11 @@ export default function Layout({ children }: { children: ReactNode }) {
       initAppData();
     }
   }, [mounted, sessionChecked, isAuthPage, isLoggedIn, pathname, user, router]);
+
+  const companyRequiredPath = '/settings/basic/company';
+  const isAdmin = (user?.roleCodes ?? []).includes('ADMIN');
+  const needsCompanyRegistration =
+    !!user && !isAdmin && (user.companyUid == null || !user.businessDocumentUploaded);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -140,6 +146,10 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   if (!isLoggedIn()) {
     return null;
+  }
+
+  if (needsCompanyRegistration) {
+    return <main className="app-main">{children}</main>;
   }
 
   return (

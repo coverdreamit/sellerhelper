@@ -38,6 +38,11 @@ public class User extends BaseEntity {
     @Builder.Default
     private Boolean enabled = true;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 40)
+    @Builder.Default
+    private UserApprovalStatus approvalStatus = UserApprovalStatus.PENDING_INITIAL_APPROVAL;
+
     private Instant lastLoginAt;
 
     /** 소속 회사 (멀티테넌트, 스토어 연동 시 사용) */

@@ -7,6 +7,7 @@ import com.sellerhelper.dto.user.UserResponse;
 import com.sellerhelper.dto.user.UserUpdateRequest;
 import com.sellerhelper.entity.Role;
 import com.sellerhelper.entity.User;
+import com.sellerhelper.entity.UserApprovalStatus;
 import com.sellerhelper.entity.UserRole;
 import com.sellerhelper.exception.DuplicateLoginIdException;
 import com.sellerhelper.exception.ResourceNotFoundException;
@@ -16,11 +17,15 @@ import com.sellerhelper.repository.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -75,6 +80,9 @@ public class UserService {
                 .email(request.getEmail())
                 .phone(request.getPhone())
                 .enabled(request.getEnabled() != null ? request.getEnabled() : true)
+                .approvalStatus(Boolean.FALSE.equals(request.getEnabled())
+                        ? UserApprovalStatus.PENDING_INITIAL_APPROVAL
+                        : UserApprovalStatus.APPROVED)
                 .build();
         user = userRepository.save(user);
         final User savedUser = user;
@@ -106,6 +114,13 @@ public class UserService {
         }
         if (request.getEnabled() != null) {
             user.setEnabled(request.getEnabled());
+            if (Boolean.TRUE.equals(request.getEnabled()) && user.getApprovalStatus() != null) {
+                if (user.getApprovalStatus() == UserApprovalStatus.PENDING_INITIAL_APPROVAL) {
+                    user.setApprovalStatus(UserApprovalStatus.INITIAL_APPROVED);
+                } else if (user.getApprovalStatus() == UserApprovalStatus.PENDING_FINAL_APPROVAL) {
+                    user.setApprovalStatus(UserApprovalStatus.APPROVED);
+                }
+            }
         }
         if (StringUtils.hasText(request.getPassword())) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -132,6 +147,32 @@ public class UserService {
         userRepository.deleteById(uid);
     }
 
+    @Transactional(readOnly = true)
+    public BusinessDocumentData getBusinessDocument(Long uid) {
+        User user = userRepository.findById(uid)
+                .orElseThrow(() -> new ResourceNotFoundException("User", uid));
+        if (user.getCompany() == null || !StringUtils.hasText(user.getCompany().getBusinessDocumentPath())) {
+            throw new IllegalArgumentException("해당 사용자의 사업자등록증명서가 등록되어 있지 않습니다.");
+        }
+        Path path = Paths.get(user.getCompany().getBusinessDocumentPath()).normalize();
+        if (!Files.exists(path)) {
+            throw new IllegalArgumentException("사업자등록증명서 파일을 찾을 수 없습니다.");
+        }
+        String filename = StringUtils.hasText(user.getCompany().getBusinessDocumentName())
+                ? user.getCompany().getBusinessDocumentName()
+                : path.getFileName().toString();
+        String contentType;
+        try {
+            contentType = Files.probeContentType(path);
+        } catch (Exception e) {
+            contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        }
+        if (!StringUtils.hasText(contentType)) {
+            contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        }
+        return new BusinessDocumentData(path, filename, contentType);
+    }
+
     private UserResponse toResponse(User user) {
         List<UserRole> userRoles = userRoleRepository.findByUser_Uid(user.getUid());
         List<String> roleCodes = userRoles.stream()
@@ -152,6 +193,12 @@ public class UserService {
                 .createdAt(user.getCreatedAt())
                 .roleCodes(roleCodes)
                 .roleNames(roleNames)
+                .companyName(user.getCompany() != null ? user.getCompany().getName() : null)
+                .businessNumber(user.getCompany() != null ? user.getCompany().getBusinessNumber() : null)
+                .businessDocumentUploaded(user.getCompany() != null &&
+                        StringUtils.hasText(user.getCompany().getBusinessDocumentPath()))
+                .businessDocumentName(user.getCompany() != null ? user.getCompany().getBusinessDocumentName() : null)
+                .approvalStatus(user.getApprovalStatus() != null ? user.getApprovalStatus().name() : null)
                 .build();
     }
 
@@ -170,6 +217,34 @@ public class UserService {
                 .enabled(user.getEnabled())
                 .lastLoginAt(user.getLastLoginAt())
                 .createdAt(user.getCreatedAt())
+                .companyName(user.getCompany() != null ? user.getCompany().getName() : null)
+                .businessDocumentUploaded(user.getCompany() != null &&
+                        StringUtils.hasText(user.getCompany().getBusinessDocumentPath()))
+                .approvalStatus(user.getApprovalStatus() != null ? user.getApprovalStatus().name() : null)
                 .build();
+    }
+
+    public static class BusinessDocumentData {
+        private final Path path;
+        private final String filename;
+        private final String contentType;
+
+        public BusinessDocumentData(Path path, String filename, String contentType) {
+            this.path = path;
+            this.filename = filename;
+            this.contentType = contentType;
+        }
+
+        public Path getPath() {
+            return path;
+        }
+
+        public String getFilename() {
+            return filename;
+        }
+
+        public String getContentType() {
+            return contentType;
+        }
     }
 }

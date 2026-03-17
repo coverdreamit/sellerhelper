@@ -9,6 +9,8 @@ export interface CompanyItem {
   phone?: string;
   email?: string;
   ceoName?: string;
+  businessDocumentName?: string;
+  businessDocumentUploaded?: boolean;
 }
 
 export async function fetchCompanies(): Promise<CompanyItem[]> {
@@ -36,10 +38,19 @@ export interface CompanyCreateRequest {
 }
 
 /** 내 회사 등록 (회사 미등록 시 1회만) */
-export async function createMyCompany(req: CompanyCreateRequest): Promise<CompanyItem> {
+export async function createMyCompany(req: CompanyCreateRequest, businessDocument: File): Promise<CompanyItem> {
+  const formData = new FormData();
+  formData.append('name', req.name);
+  if (req.businessNumber) formData.append('businessNumber', req.businessNumber);
+  if (req.address) formData.append('address', req.address);
+  if (req.phone) formData.append('phone', req.phone);
+  if (req.email) formData.append('email', req.email);
+  if (req.ceoName) formData.append('ceoName', req.ceoName);
+  formData.append('businessDocument', businessDocument);
+
   const res = await apiFetch('/api/my-company', {
     method: 'POST',
-    body: JSON.stringify(req),
+    body: formData,
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

@@ -29,4 +29,10 @@ public class UserResponse {
     private List<String> roleCodes;
     /** 권한 이름 목록 (예: 관리자, 셀러, 주문담당) */
     private List<String> roleNames;
+    /** 회사 정보 */
+    private String companyName;
+    private String businessNumber;
+    private Boolean businessDocumentUploaded;
+    private String businessDocumentName;
+    private String approvalStatus;
 }

@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 
 import java.time.Instant;
 import java.util.List;
@@ -125,6 +126,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMediaTypeNotSupported(
+            HttpMediaTypeNotSupportedException ex, WebRequest request) {
+        log.warn("Unsupported media type: {}", ex.getMessage());
+        ApiError error = ApiError.builder()
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value())
+                .error("Unsupported Media Type")
+                .message("요청 형식이 올바르지 않습니다. 파일 업로드는 multipart/form-data 형식으로 전송해 주세요.")
+                .timestamp(Instant.now())
+                .path(getPath(request))
+                .build();
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(Exception ex, WebRequest request) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);
@@ -149,6 +164,13 @@ public class GlobalExceptionHandler {
     /** 인코딩 깨진 메시지는 사용자에게 보내지 않음 */
     private static String sanitizeMessage(String message) {
         if (message == null || message.isEmpty()) return "요청을 처리하지 못했습니다.";
+        String lower = message.toLowerCase();
+        if (lower.contains("multipart/form-data") && lower.contains("not supported")) {
+            return "요청 형식이 올바르지 않습니다. 파일 업로드는 multipart/form-data 형식으로 전송해 주세요.";
+        }
+        if (lower.contains("not a multipart request")) {
+            return "파일 업로드 요청이 아닙니다. 파일을 포함해 다시 시도해 주세요.";
+        }
         if (message.indexOf('\uFFFD') >= 0 || message.contains("?�")) return "요청을 처리하지 못했습니다. (API 응답 인코딩 오류 - 키·IP·권한을 확인하세요.)";
         return message;
     }

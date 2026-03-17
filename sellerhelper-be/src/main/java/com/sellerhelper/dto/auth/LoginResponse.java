@@ -20,10 +20,15 @@ public class LoginResponse {
     private List<String> menuKeys;
     /** 소속 회사 UID (null이면 회사 정보 미등록) */
     private Long companyUid;
+    /** 사업자등록증명서 업로드 여부 */
+    private Boolean businessDocumentUploaded;
+    /** 승인 상태 */
+    private String approvalStatus;
 
     /** 로그인 시 - token 포함 */
     public static LoginResponse of(String token, Long uid, String loginId, String name,
-                                   List<String> roleCodes, List<String> menuKeys, Long companyUid) {
+                                   List<String> roleCodes, List<String> menuKeys, Long companyUid,
+                                   Boolean businessDocumentUploaded, String approvalStatus) {
         return LoginResponse.builder()
                 .token(token)
                 .uid(uid)
@@ -32,15 +37,18 @@ public class LoginResponse {
                 .roleCodes(roleCodes != null ? roleCodes : List.of())
                 .menuKeys(menuKeys != null ? menuKeys : List.of())
                 .companyUid(companyUid)
+                .businessDocumentUploaded(Boolean.TRUE.equals(businessDocumentUploaded))
+                .approvalStatus(approvalStatus)
                 .build();
     }
 
     /** /me 조회 시 - token 없음 */
-    public static LoginResponse of(Long uid, String loginId, String name, List<String> roleCodes, List<String> menuKeys, Long companyUid) {
-        return of(null, uid, loginId, name, roleCodes, menuKeys, companyUid);
+    public static LoginResponse of(Long uid, String loginId, String name, List<String> roleCodes, List<String> menuKeys,
+                                   Long companyUid, Boolean businessDocumentUploaded) {
+        return of(null, uid, loginId, name, roleCodes, menuKeys, companyUid, businessDocumentUploaded, null);
     }
 
     public static LoginResponse of(Long uid, String loginId, String name, List<String> roleCodes, List<String> menuKeys) {
-        return of(null, uid, loginId, name, roleCodes, menuKeys, null);
+        return of(null, uid, loginId, name, roleCodes, menuKeys, null, false, null);
     }
 }

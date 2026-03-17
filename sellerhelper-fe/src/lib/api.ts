@@ -25,10 +25,11 @@ export async function apiFetch(
   init: RequestInit = {}
 ): Promise<Response> {
   const token = useAuthStore.getState().user?.token;
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(init.headers as Record<string, string>),
-  };
+  const headers: Record<string, string> = { ...(init.headers as Record<string, string>) };
+  const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
+  if (!isFormData && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   return fetch(resolveApiUrl(url), {

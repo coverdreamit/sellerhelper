@@ -44,6 +44,21 @@ function formatCreatedAt(iso: string | null | undefined): string {
   }
 }
 
+function formatApprovalStatus(status?: string | null): string {
+  switch (status) {
+    case 'PENDING_INITIAL_APPROVAL':
+      return '승인 대기(레거시)';
+    case 'INITIAL_APPROVED':
+      return '회사/증빙 등록 필요';
+    case 'PENDING_FINAL_APPROVAL':
+      return '관리자 승인 대기';
+    case 'APPROVED':
+      return '승인 완료';
+    default:
+      return '-';
+  }
+}
+
 export default function UserList() {
   const { user: authUser } = useAuthStore();
   const [pendingList, setPendingList] = useState<UserListItem[]>([]);
@@ -204,15 +219,15 @@ export default function UserList() {
       <h1>사용자 목록</h1>
       <p className="page-desc">시스템 사용자 계정을 조회·관리합니다.</p>
 
-      {/* 회원 가입 승인 대기 */}
+      {/* 승인 대기 목록 */}
       {pendingList.length > 0 && (
         <section className="settings-section" style={{ marginBottom: 24 }}>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            회원 가입 승인 대기
+            승인 대기 목록
             <span className="badge badge-warning">{pendingList.length}건</span>
           </h2>
           <p className="page-desc" style={{ margin: '0 0 16px 0', fontSize: '0.85rem' }}>
-            회원가입을 신청한 사용자의 승인 또는 거절을 처리합니다.
+            회사/증빙 등록 완료 후 관리자 승인 대기 상태인 사용자의 승인/거절을 처리합니다.
           </p>
           <div className="settings-table-wrap">
             <table className="settings-table">
@@ -221,7 +236,10 @@ export default function UserList() {
                   <th>이름</th>
                   <th>로그인 ID</th>
                   <th>이메일</th>
+                  <th>회사</th>
+                  <th>증빙</th>
                   <th>권한</th>
+                  <th>승인 단계</th>
                   <th>신청일시</th>
                   <th>관리</th>
                 </tr>
@@ -232,16 +250,22 @@ export default function UserList() {
                     <td>{u.name}</td>
                     <td>{u.loginId}</td>
                     <td>{u.email ?? '-'}</td>
+                    <td>{u.companyName ?? '-'}</td>
+                    <td>{u.businessDocumentUploaded ? '업로드' : '미등록'}</td>
                     <td>{u.roleNames ?? '-'}</td>
+                    <td>{formatApprovalStatus(u.approvalStatus)}</td>
                     <td>{formatCreatedAt(u.createdAt)}</td>
                     <td className="cell-actions">
                       <div style={{ display: 'flex', gap: 8 }}>
+                        <Link to={`/system/user/${u.uid}/edit`} className="btn btn-sm">
+                          검토
+                        </Link>
                         <button
                           type="button"
                           className="btn btn-sm btn-primary"
                           onClick={() => handleApprove(u)}
                         >
-                          승인
+                          단계 승인
                         </button>
                         <button
                           type="button"

@@ -1,5 +1,6 @@
 package com.sellerhelper.controller;
 
+import com.sellerhelper.core.security.AuthUser;
 import com.sellerhelper.dto.common.PageResponse;
 import com.sellerhelper.dto.user.UserCreateRequest;
 import com.sellerhelper.dto.user.UserListResponse;
@@ -8,14 +9,19 @@ import com.sellerhelper.dto.user.UserUpdateRequest;
 import com.sellerhelper.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.net.MalformedURLException;
 
 /** 사용자 관리 REST API */
 @Profile({"portal", "local"})
@@ -44,6 +50,26 @@ public class UserController {
     @GetMapping("/{uid}")
     public ResponseEntity<UserResponse> get(@PathVariable Long uid) {
         return ResponseEntity.ok(userService.findById(uid));
+    }
+
+    /** 관리자용 사업자등록증명서 다운로드 */
+    @GetMapping("/{uid}/business-document")
+    public ResponseEntity<UrlResource> downloadBusinessDocument(
+            @PathVariable Long uid,
+            @AuthenticationPrincipal AuthUser authUser) throws MalformedURLException {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (authUser.getRoleCodes() == null || !authUser.getRoleCodes().contains("ADMIN")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        UserService.BusinessDocumentData data = userService.getBusinessDocument(uid);
+        UrlResource resource = new UrlResource(data.getPath().toUri());
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(data.getContentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + data.getFilename() + "\"")
+                .body(resource);
     }
 
     /** 사용자 생성 */

@@ -48,6 +48,10 @@ export interface LoginResponse {
   menuKeys?: string[];
   /** 소속 회사 UID (null이면 회사 정보 미등록 → 회사 등록 페이지로 리다이렉트) */
   companyUid?: number | null;
+  /** 사업자등록증명서 업로드 여부 */
+  businessDocumentUploaded?: boolean;
+  /** 승인 상태 */
+  approvalStatus?: string;
 }
 
 export interface RegisterRequest {

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchMyCompany, createMyCompany, type CompanyItem, type CompanyCreateRequest } from '@/services';
-import { getMe } from '@/services/auth.service';
 import { useAuthStore } from '@/stores';
 import '../../../styles/Settings.css';
 
@@ -13,12 +12,13 @@ function copyToClipboard(text: string) {
 
 export default function CompanyInfo() {
   const router = useRouter();
-  const { setUser } = useAuthStore();
+  const { logout: logoutStore } = useAuthStore();
   const [company, setCompany] = useState<CompanyItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [businessDocument, setBusinessDocument] = useState<File | null>(null);
   const [form, setForm] = useState<CompanyCreateRequest>({
     name: '',
     businessNumber: '',
@@ -47,6 +47,8 @@ export default function CompanyInfo() {
       .finally(() => setLoading(false));
   }, []);
 
+  const needsRegistration = !company || !company.businessDocumentUploaded;
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -56,6 +58,10 @@ export default function CompanyInfo() {
     e.preventDefault();
     if (!form.name.trim()) {
       setError('회사명은 필수입니다.');
+      return;
+    }
+    if (!businessDocument) {
+      setError('사업자등록증명서 파일을 업로드해 주세요.');
       return;
     }
     setError('');
@@ -68,10 +74,10 @@ export default function CompanyInfo() {
         phone: form.phone.trim() || undefined,
         email: form.email.trim() || undefined,
         ceoName: form.ceoName.trim() || undefined,
-      });
-      const me = await getMe();
-      if (me) setUser(me);
-      router.replace('/');
+      }, businessDocument);
+      logoutStore();
+      alert('사업자등록이 완료되었습니다. 관리자 승인 후 로그인하여 이용할 수 있습니다.');
+      router.replace('/login');
     } catch (err) {
       setError(err instanceof Error ? err.message : '회사 등록에 실패했습니다.');
     } finally {
@@ -96,13 +102,13 @@ export default function CompanyInfo() {
     );
   }
 
-  // 회사 미등록: 등록 폼 표시
-  if (!company) {
+  // 회사/문서 미등록: 등록(또는 보완 등록) 폼 표시
+  if (needsRegistration) {
     return (
       <div className="settings-page">
         <h1>회사 / 셀러 정보</h1>
         <p className="page-desc">
-          서비스 이용을 위해 회사 정보를 먼저 등록해 주세요. 등록 전에는 다른 메뉴를 이용할 수 없습니다.
+          서비스 이용을 위해 회사 정보와 사업자등록증명서를 등록해 주세요. 등록 전에는 다른 메뉴를 이용할 수 없습니다.
         </p>
 
         {error && (
@@ -187,9 +193,21 @@ export default function CompanyInfo() {
                 />
               </div>
             </div>
+            <div className="form-row">
+              <label className="required">사업자등록증명서</label>
+              <div>
+                <input
+                  type="file"
+                  accept=".pdf,image/png,image/jpeg"
+                  onChange={(e) => setBusinessDocument(e.target.files?.[0] ?? null)}
+                  required
+                />
+                <p className="form-hint">PDF, JPG, PNG 파일만 업로드할 수 있습니다.</p>
+              </div>
+            </div>
             <div className="form-actions">
               <button type="submit" className="btn btn-primary" disabled={saving}>
-                {saving ? '등록 중...' : '회사 정보 등록'}
+                {saving ? '등록 중...' : '회사 정보/증빙 등록'}
               </button>
             </div>
           </form>
@@ -289,6 +307,12 @@ export default function CompanyInfo() {
                 disabled
                 className="form-input-readonly"
               />
+            </div>
+          </div>
+          <div className="form-row">
+            <label>사업자등록증명서</label>
+            <div style={{ padding: '8px 0', color: '#475569' }}>
+              {company.businessDocumentName ?? '업로드된 문서 없음'}
             </div>
           </div>
         </form>

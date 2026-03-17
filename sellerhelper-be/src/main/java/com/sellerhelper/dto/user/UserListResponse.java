@@ -27,4 +27,7 @@ public class UserListResponse {
     private Instant lastLoginAt;
     /** 가입일시 (승인 대기 목록용) */
     private Instant createdAt;
+    private String companyName;
+    private Boolean businessDocumentUploaded;
+    private String approvalStatus;
 }

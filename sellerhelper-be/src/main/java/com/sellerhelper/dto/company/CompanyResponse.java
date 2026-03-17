@@ -21,4 +21,6 @@ public class CompanyResponse {
     private String phone;
     private String email;
     private String ceoName;
+    private String businessDocumentName;
+    private Boolean businessDocumentUploaded;
 }

@@ -77,7 +77,7 @@ export default function Register() {
         phone: form.phone || undefined,
         companyName: form.companyName || undefined,
       });
-      alert('회원가입이 완료되었습니다. 관리자 승인 후 이용 가능합니다. 승인 여부 검토 중입니다.');
+      alert('회원가입이 완료되었습니다. 로그인 후 회사/셀러 정보와 사업자등록증명서를 등록해 주세요. 등록 후에는 관리자 승인 완료 시까지 로그인할 수 없습니다.');
       router.replace('/login');
     } catch (err) {
       setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.');

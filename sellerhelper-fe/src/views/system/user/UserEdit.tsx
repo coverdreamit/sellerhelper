@@ -7,10 +7,26 @@ import {
   fetchUser,
   fetchRoles,
   updateUser,
+  downloadUserBusinessDocument,
   type UserResponse,
   type RoleItem,
 } from '@/services/user.service';
 import '../../../styles/Settings.css';
+
+function formatApprovalStatus(status?: string | null): string {
+  switch (status) {
+    case 'PENDING_INITIAL_APPROVAL':
+      return '승인 대기(레거시)';
+    case 'INITIAL_APPROVED':
+      return '회사/증빙 등록 필요';
+    case 'PENDING_FINAL_APPROVAL':
+      return '관리자 승인 대기';
+    case 'APPROVED':
+      return '승인 완료';
+    default:
+      return '-';
+  }
+}
 
 export default function UserEdit({ uid }: { uid: number }) {
   const router = useRouter();
@@ -147,6 +163,41 @@ export default function UserEdit({ uid }: { uid: number }) {
           <div className="form-row">
             <label>로그인 ID</label>
             <div style={{ padding: '8px 0', color: '#64748b' }}>{user?.loginId}</div>
+          </div>
+          <div className="form-row">
+            <label>회사명</label>
+            <div style={{ padding: '8px 0', color: '#334155' }}>{user?.companyName ?? '-'}</div>
+          </div>
+          <div className="form-row">
+            <label>사업자등록번호</label>
+            <div style={{ padding: '8px 0', color: '#334155' }}>{user?.businessNumber ?? '-'}</div>
+          </div>
+          <div className="form-row">
+            <label>사업자등록증명서</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: '#334155' }}>{user?.businessDocumentName ?? '미등록'}</span>
+              {user?.businessDocumentUploaded && (
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={async () => {
+                    try {
+                      await downloadUserBusinessDocument(uid);
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : '사업자등록증명서 다운로드 실패');
+                    }
+                  }}
+                >
+                  문서 보기
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="form-row">
+            <label>승인 단계</label>
+            <div style={{ padding: '8px 0', color: '#334155' }}>
+              {formatApprovalStatus(user?.approvalStatus)}
+            </div>
           </div>
           <div className="form-row">
             <label className="required">이름</label>

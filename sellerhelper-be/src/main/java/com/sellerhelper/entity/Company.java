@@ -32,4 +32,10 @@ public class Company extends BaseEntity {
 
     @Column(length = 100)
     private String ceoName;
+
+    @Column(name = "business_document_name", length = 255)
+    private String businessDocumentName;
+
+    @Column(name = "business_document_path", length = 500)
+    private String businessDocumentPath;
 }

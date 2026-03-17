@@ -12,6 +12,9 @@ export interface UserListItem {
   enabled: boolean;
   lastLoginAt: string | null;
   createdAt?: string | null;
+  companyName?: string | null;
+  businessDocumentUploaded?: boolean;
+  approvalStatus?: string | null;
 }
 
 export interface UserListParams {
@@ -35,6 +38,11 @@ export interface UserResponse {
   createdAt: string | null;
   roleCodes: string[];
   roleNames: string[];
+  companyName?: string | null;
+  businessNumber?: string | null;
+  businessDocumentUploaded?: boolean;
+  businessDocumentName?: string | null;
+  approvalStatus?: string | null;
 }
 
 export interface RoleItem {
@@ -222,4 +230,25 @@ export async function deleteUser(uid: number): Promise<void> {
     const err = await res.json().catch(() => ({}));
     throw new Error(err?.message ?? '사용자 삭제에 실패했습니다.');
   }
+}
+
+/** 관리자용 사업자등록증명서 다운로드 */
+export async function downloadUserBusinessDocument(uid: number): Promise<void> {
+  const res = await apiFetch(`/api/users/${uid}/business-document`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '사업자등록증명서 다운로드에 실패했습니다.');
+  }
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const disposition = res.headers.get('Content-Disposition') ?? '';
+  const filenameMatch = disposition.match(/filename="([^"]+)"/);
+  const filename = filenameMatch?.[1] ?? `business-document-${uid}`;
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 }
