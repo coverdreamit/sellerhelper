@@ -3,7 +3,7 @@ export { default as Login } from './auth/Login';
 export { default as Register } from './auth/Register';
 
 export { default as ProductList } from './product/ProductList';
-export { default as ProductRegister } from './product/ProductRegister';
+export { default as ProductListRaw } from './product/ProductListRaw';
 
 export { default as OrderList } from './order/OrderList';
 export { default as OrderNew } from './order/OrderNew';

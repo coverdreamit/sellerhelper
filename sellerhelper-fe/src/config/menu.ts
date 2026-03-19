@@ -46,7 +46,10 @@ export const MENU: MenuItem[] = [
     key: 'product',
     label: '상품관리',
     path: '/product',
-    children: [{ key: 'product-list', label: '상품 목록', path: '/product/list' }],
+    children: [
+      { key: 'product-list', label: '상품 목록', path: '/product/list' },
+      { key: 'product-list-raw', label: '상품목록 원본', path: '/product/list/raw' },
+    ],
   },
   {
     key: 'order',

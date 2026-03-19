@@ -1,5 +1,7 @@
 package com.sellerhelper.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sellerhelper.dto.naver.NaverProductItem;
 import com.sellerhelper.dto.naver.NaverProductSearchResult;
 import com.sellerhelper.entity.Company;
@@ -20,27 +22,25 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /** 스토어별 상품목록 조회. 모든 플랫폼(네이버/쿠팡 등) 공통으로 DB 저장분 조회. */
 @Service
 @RequiredArgsConstructor
 public class StoreProductService {
-
-    private static final String[] SYNC_SUPPORTED_MALLS = { "NAVER", "COUPANG" };
-
     private final UserRepository userRepository;
     private final StoreRepository storeRepository;
     private final StoreProductRepository storeProductRepository;
     private final NaverCommerceProductService naverProductService;
     private final CoupangProductSyncService coupangProductSyncService;
     private final CoupangProductQueryService coupangProductQueryService;
+    private final ObjectMapper objectMapper;
 
     /**
      * 내 스토어 상품목록 조회 (본인 회사 스토어만).
@@ -81,9 +81,9 @@ public class StoreProductService {
                     .build();
         }
         Pageable pageable = PageRequest.of(Math.max(0, page - 1), Math.max(1, Math.min(100, size)),
-                Sort.by("productName", "vendorItemId"));
+                Sort.by("sellerProductId", "vendorItemId"));
         List<NaverProductItem> contents = storeProductRepository
-                .findByStore_UidOrderByProductNameAscVendorItemIdAsc(storeUid, pageable)
+                .findByStore_UidOrderBySellerProductIdAscVendorItemIdAsc(storeUid, pageable)
                 .stream()
                 .map(this::toNaverProductItem)
                 .collect(Collectors.toList());
@@ -97,17 +97,33 @@ public class StoreProductService {
     }
 
     private NaverProductItem toNaverProductItem(StoreProduct p) {
+        JsonNode raw = readRawPayload(p.getRawPayload());
+        JsonNode productNode = extractProductNode(raw);
         return NaverProductItem.builder()
-                .channelProductNo(p.getSellerProductId())
-                .vendorItemId(p.getVendorItemId().isEmpty() ? null : p.getVendorItemId())
-                .productName(p.getProductName())
-                .optionName(p.getOptionName())
-                .salePrice(p.getSalePrice() != null ? p.getSalePrice().longValue() : null)
-                .originalPrice(p.getOriginalPrice() != null ? p.getOriginalPrice().longValue() : null)
-                .stockQuantity(p.getStockQuantity())
-                .statusType(p.getStatusType())
-                .representativeImageUrl(p.getImageUrl())
-                .leafCategoryId(p.getCategoryId())
+                .channelProductNo(firstNonBlank(
+                        readString(raw, "sellerProductId", null),
+                        readString(productNode, "channelProductNo", null),
+                        p.getSellerProductId()))
+                .vendorItemId(readNullableString(raw, "vendorItemId", p.getVendorItemId()))
+                .productName(firstNonBlank(
+                        readString(raw, "productName", null),
+                        readString(productNode, "name", null),
+                        readString(productNode, "sellerProductName", null)))
+                .optionName(readString(raw, "optionName", null))
+                .salePrice(firstNonNull(readLong(raw, "salePrice", null), readLong(productNode, "salePrice", null)))
+                .originalPrice(readLong(raw, "originalPrice", null))
+                .stockQuantity(firstNonNull(readInteger(raw, "stockQuantity", null), readInteger(productNode, "stockQuantity", null)))
+                .statusType(firstNonBlank(
+                        readString(raw, "statusType", null),
+                        readString(productNode, "statusType", null),
+                        p.getStatusType()))
+                .representativeImageUrl(firstNonBlank(
+                        readString(raw, "imageUrl", null),
+                        readString(childNode(productNode, "representativeImage"), "url", null)))
+                .leafCategoryId(firstNonBlank(
+                        readString(raw, "categoryId", null),
+                        readString(productNode, "categoryId", null)))
+                .rawPayload(p.getRawPayload())
                 .build();
     }
 
@@ -179,37 +195,13 @@ public class StoreProductService {
     }
 
     private boolean hasChange(StoreProduct existing, StoreProduct incoming) {
-        return !equalsNullable(existing.getProductName(), incoming.getProductName())
-                || !equalsNullable(existing.getOptionName(), incoming.getOptionName())
-                || !equalsBigDecimal(existing.getSalePrice(), incoming.getSalePrice())
-                || !equalsBigDecimal(existing.getOriginalPrice(), incoming.getOriginalPrice())
-                || !java.util.Objects.equals(existing.getStockQuantity(), incoming.getStockQuantity())
-                || !equalsNullable(existing.getStatusType(), incoming.getStatusType())
-                || !equalsNullable(existing.getImageUrl(), incoming.getImageUrl())
-                || !equalsNullable(existing.getCategoryId(), incoming.getCategoryId());
-    }
-
-    private static boolean equalsNullable(String a, String b) {
-        if (a == null && b == null) return true;
-        if (a == null || b == null) return false;
-        return a.equals(b);
-    }
-
-    private static boolean equalsBigDecimal(java.math.BigDecimal a, java.math.BigDecimal b) {
-        if (a == null && b == null) return true;
-        if (a == null || b == null) return false;
-        return a.compareTo(b) == 0;
+        return !Objects.equals(existing.getStatusType(), incoming.getStatusType())
+                || !Objects.equals(nullToEmpty(existing.getRawPayload()), nullToEmpty(incoming.getRawPayload()));
     }
 
     private void applyChange(StoreProduct existing, StoreProduct incoming, Instant syncedAt) {
-        existing.setProductName(incoming.getProductName());
-        existing.setOptionName(incoming.getOptionName());
-        existing.setSalePrice(incoming.getSalePrice());
-        existing.setOriginalPrice(incoming.getOriginalPrice());
-        existing.setStockQuantity(incoming.getStockQuantity());
         existing.setStatusType(incoming.getStatusType());
-        existing.setImageUrl(incoming.getImageUrl());
-        existing.setCategoryId(incoming.getCategoryId());
+        existing.setRawPayload(incoming.getRawPayload());
         existing.setSyncedAt(syncedAt);
     }
 
@@ -237,16 +229,104 @@ public class StoreProductService {
                 .store(store)
                 .sellerProductId(sellerProductId)
                 .vendorItemId(vendorItemId)
-                .productName(item.getProductName())
-                .optionName(item.getOptionName())
-                .salePrice(item.getSalePrice() != null ? BigDecimal.valueOf(item.getSalePrice()) : null)
-                .originalPrice(item.getOriginalPrice() != null ? BigDecimal.valueOf(item.getOriginalPrice()) : null)
-                .stockQuantity(item.getStockQuantity())
                 .statusType(item.getStatusType())
-                .imageUrl(item.getRepresentativeImageUrl())
-                .categoryId(item.getLeafCategoryId())
+                .rawPayload(item.getRawPayload() != null ? item.getRawPayload() : "{}")
                 .syncedAt(syncedAt)
                 .build();
+    }
+
+    private JsonNode readRawPayload(String rawPayload) {
+        if (rawPayload == null || rawPayload.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readTree(rawPayload);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String readString(JsonNode root, String field, String fallback) {
+        if (root == null) {
+            return fallback;
+        }
+        JsonNode node = root.get(field);
+        if (node == null || node.isNull()) {
+            return fallback;
+        }
+        String value = node.asText();
+        return value != null ? value : fallback;
+    }
+
+    private static String readNullableString(JsonNode root, String field, String fallback) {
+        String value = readString(root, field, fallback);
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value;
+    }
+
+    private static Long readLong(JsonNode root, String field, Long fallback) {
+        if (root == null) {
+            return fallback;
+        }
+        JsonNode node = root.get(field);
+        if (node == null || node.isNull()) {
+            return fallback;
+        }
+        if (node.isNumber()) {
+            return node.longValue();
+        }
+        String text = node.asText(null);
+        if (text == null || text.isBlank()) {
+            return fallback;
+        }
+        try {
+            return Long.parseLong(text);
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
+    private static Integer readInteger(JsonNode root, String field, Integer fallback) {
+        Long longVal = readLong(root, field, null);
+        if (longVal != null) {
+            return longVal.intValue();
+        }
+        return fallback;
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
+    private static JsonNode extractProductNode(JsonNode raw) {
+        if (raw == null) {
+            return null;
+        }
+        JsonNode channelProduct = raw.get("channelProduct");
+        return (channelProduct != null && !channelProduct.isNull()) ? channelProduct : raw;
+    }
+
+    private static JsonNode childNode(JsonNode parent, String field) {
+        if (parent == null) {
+            return null;
+        }
+        JsonNode child = parent.get(field);
+        return child != null && !child.isNull() ? child : null;
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static <T> T firstNonNull(T a, T b) {
+        return a != null ? a : b;
     }
 
     /**

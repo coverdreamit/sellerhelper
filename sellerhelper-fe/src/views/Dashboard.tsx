@@ -60,7 +60,6 @@ const quickMenus = [
   { label: '신규 주문 처리', to: '/order/new' },
   { label: '발송처리 필요', to: '/shipping/pending' },
   { label: '취소·반품·교환', to: '/order/claim' },
-  { label: '상품 등록', to: '/product/register' },
   { label: '문의 답변', to: '/customer/inquiry' },
   { label: '정산 내역', to: '/sales/settlement' },
   { label: '매출 현황', to: '/sales/status' },

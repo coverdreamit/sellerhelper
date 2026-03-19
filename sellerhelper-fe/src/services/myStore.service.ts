@@ -36,7 +36,7 @@ export async function fetchMyStores(): Promise<MyStoreItem[]> {
   const res = await apiFetch('/api/my-stores');
   if (!res.ok) throw new Error('내 스토어 목록 조회 실패');
   const data = await res.json();
-  return Array.isArray(data) ? data : data.stores ?? [];
+  return Array.isArray(data) ? data : (data.stores ?? []);
 }
 
 export async function reorderMyStores(storeUids: number[]): Promise<void> {
@@ -58,7 +58,10 @@ export async function disconnectMyStore(storeUid: number): Promise<void> {
   }
 }
 
-export async function updateMyStore(storeUid: number, params: StoreMyUpdateParams): Promise<MyStoreItem> {
+export async function updateMyStore(
+  storeUid: number,
+  params: StoreMyUpdateParams
+): Promise<MyStoreItem> {
   const res = await apiFetch(`/api/my-stores/${storeUid}`, {
     method: 'PUT',
     body: JSON.stringify(params),

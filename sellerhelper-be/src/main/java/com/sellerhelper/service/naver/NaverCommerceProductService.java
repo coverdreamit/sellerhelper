@@ -3,6 +3,9 @@ package com.sellerhelper.service.naver;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sellerhelper.dto.naver.NaverProductItem;
 import com.sellerhelper.dto.naver.NaverProductSearchResult;
 import com.sellerhelper.entity.Store;
@@ -37,6 +40,7 @@ public class NaverCommerceProductService {
     private final StoreAuthRepository storeAuthRepository;
     private final NaverCommerceTokenService tokenService;
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     /**
      * 네이버 스토어의 상품목록 조회 (페이징)
@@ -80,7 +84,7 @@ public class NaverCommerceProductService {
             }
 
             ProductSearchApiResponse body = response.getBody();
-            List<NaverProductItem> items = flattenToProductItems(body);
+            List<NaverProductItem> items = flattenToProductItems(body, response.getBody());
 
             return NaverProductSearchResult.builder()
                     .contents(items)
@@ -136,7 +140,7 @@ public class NaverCommerceProductService {
                     break;
                 }
                 ProductSearchApiResponse body = response.getBody();
-                List<NaverProductItem> items = flattenToProductItems(body);
+                List<NaverProductItem> items = flattenToProductItems(body, response.getBody());
                 if (items.isEmpty()) {
                     break;
                 }
@@ -165,21 +169,25 @@ public class NaverCommerceProductService {
      * API 응답 구조: contents[] 안에 channelProducts[] 가 있음.
      * contents[].channelProducts[] 를 평탄화하여 NaverProductItem 리스트로 변환.
      */
-    private List<NaverProductItem> flattenToProductItems(ProductSearchApiResponse body) {
+    private List<NaverProductItem> flattenToProductItems(ProductSearchApiResponse body, Object rawBodyObject) {
         if (body == null || body.getContents() == null) {
             return Collections.emptyList();
         }
+        JsonNode rawRoot = objectMapper.valueToTree(rawBodyObject);
         List<NaverProductItem> result = new ArrayList<>();
-        for (ProductSearchContentRow row : body.getContents()) {
+        for (int rowIndex = 0; rowIndex < body.getContents().size(); rowIndex++) {
+            ProductSearchContentRow row = body.getContents().get(rowIndex);
             if (row.getChannelProducts() == null) continue;
-            for (ChannelProduct cp : row.getChannelProducts()) {
-                result.add(toProductItem(cp));
+            for (int cpIndex = 0; cpIndex < row.getChannelProducts().size(); cpIndex++) {
+                ChannelProduct cp = row.getChannelProducts().get(cpIndex);
+                JsonNode rawChannelProductNode = rawRoot.path("contents").path(rowIndex).path("channelProducts").path(cpIndex);
+                result.add(toProductItem(row, cp, rawChannelProductNode));
             }
         }
         return result;
     }
 
-    private NaverProductItem toProductItem(ChannelProduct cp) {
+    private NaverProductItem toProductItem(ProductSearchContentRow row, ChannelProduct cp, JsonNode rawChannelProductNode) {
         if (cp == null) return NaverProductItem.empty();
         String imageUrl = cp.getRepresentativeImage() != null ? cp.getRepresentativeImage().getUrl() : null;
         String channelProductNo = cp.getChannelProductNo() != null ? String.valueOf(cp.getChannelProductNo()) : null;
@@ -191,7 +199,27 @@ public class NaverCommerceProductService {
                 .statusType(cp.getStatusType())
                 .representativeImageUrl(imageUrl)
                 .leafCategoryId(cp.getCategoryId())
+                .rawPayload(toRawPayload(row, rawChannelProductNode))
                 .build();
+    }
+
+    private String toRawPayload(ProductSearchContentRow row, JsonNode rawChannelProductNode) {
+        ObjectNode payload = objectMapper.createObjectNode();
+        if (row.getGroupProductNo() != null) {
+            payload.put("groupProductNo", row.getGroupProductNo());
+        } else {
+            payload.putNull("groupProductNo");
+        }
+        if (row.getOriginProductNo() != null) {
+            payload.put("originProductNo", row.getOriginProductNo());
+        } else {
+            payload.putNull("originProductNo");
+        }
+        payload.set("channelProduct",
+                rawChannelProductNode != null && !rawChannelProductNode.isMissingNode()
+                        ? rawChannelProductNode
+                        : objectMapper.createObjectNode());
+        return payload.toString();
     }
 
     @Data

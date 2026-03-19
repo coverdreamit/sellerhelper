@@ -5,6 +5,7 @@ import {
   fetchMyCompany,
   createMyCompany,
   updateMyCompany,
+  fetchMyBusinessLicensePreview,
   type CompanyItem,
   type CompanyCreateRequest,
 } from '@/services';
@@ -26,6 +27,7 @@ export default function CompanyInfo() {
   const [success, setSuccess] = useState('');
   const [copied, setCopied] = useState(false);
   const [businessLicenseFile, setBusinessLicenseFile] = useState<File | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [form, setForm] = useState<CompanyCreateRequest>({
     name: '',
     businessNumber: '',
@@ -121,6 +123,25 @@ export default function CompanyInfo() {
       copyToClipboard(form.address.trim());
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
+  const handlePreviewBusinessLicense = async () => {
+    setError('');
+    setPreviewLoading(true);
+    try {
+      const { blob } = await fetchMyBusinessLicensePreview();
+      const previewUrl = URL.createObjectURL(blob);
+      const opened = window.open(previewUrl, '_blank', 'noopener,noreferrer');
+      if (!opened) {
+        URL.revokeObjectURL(previewUrl);
+        throw new Error('브라우저 팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.');
+      }
+      setTimeout(() => URL.revokeObjectURL(previewUrl), 60_000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '사업자등록증 미리보기에 실패했습니다.');
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -258,6 +279,17 @@ export default function CompanyInfo() {
                 <p className="company-info-license-name">
                   저장된 파일: {company.businessLicenseFileName}
                 </p>
+              )}
+              {!businessLicenseFile && company?.hasBusinessLicenseFile && (
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={handlePreviewBusinessLicense}
+                  disabled={previewLoading}
+                  style={{ marginTop: 8 }}
+                >
+                  {previewLoading ? '미리보기 여는 중...' : '등록증 미리보기'}
+                </button>
               )}
             </div>
           </div>

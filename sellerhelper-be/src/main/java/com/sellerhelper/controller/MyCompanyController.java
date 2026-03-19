@@ -6,6 +6,8 @@ import com.sellerhelper.dto.company.CompanyResponse;
 import com.sellerhelper.service.CompanyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import java.nio.charset.StandardCharsets;
 
 /** 셀러용 내 회사 API (회사 정보 등록) */
 @Profile({"portal", "local"})
@@ -60,5 +63,24 @@ public class MyCompanyController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return ResponseEntity.ok(companyService.updateMyCompany(authUser.getUid(), request, businessLicenseFile));
+    }
+
+    /** 내 사업자등록증 미리보기 */
+    @GetMapping("/business-license")
+    public ResponseEntity<byte[]> getMyBusinessLicense(@AuthenticationPrincipal AuthUser authUser) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        CompanyService.BusinessLicenseFileResult file = companyService.findMyBusinessLicense(authUser.getUid());
+
+        String contentType = file.getContentType() != null ? file.getContentType() : MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        String fileName = file.getFileName() != null ? file.getFileName() : "business-license";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(contentType));
+        headers.setContentDisposition(ContentDisposition.inline().filename(fileName, StandardCharsets.UTF_8).build());
+        headers.setContentLength(file.getFile().length);
+
+        return new ResponseEntity<>(file.getFile(), headers, HttpStatus.OK);
     }
 }

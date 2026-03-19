@@ -1,0 +1,31 @@
+.product-list-raw-wrap {
+  margin-top: 4px;
+}
+
+.product-list-raw-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.product-list-raw-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.product-list-raw-head span {
+  color: #666;
+  font-size: 0.82rem;
+}
+
+.product-list-raw-table {
+  table-layout: auto;
+}
+
+.product-list-raw-table th,
+.product-list-raw-table td {
+  white-space: nowrap;
+  vertical-align: top;
+}

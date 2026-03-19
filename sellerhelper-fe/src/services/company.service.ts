@@ -72,6 +72,25 @@ export async function updateMyCompany(
   return res.json();
 }
 
+export interface BusinessLicensePreviewData {
+  blob: Blob;
+  contentType: string;
+  fileName?: string;
+}
+
+/** 내 사업자등록증 미리보기 파일 조회 */
+export async function fetchMyBusinessLicensePreview(): Promise<BusinessLicensePreviewData> {
+  const res = await apiFetch('/api/my-company/business-license');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '사업자등록증 파일 조회에 실패했습니다.');
+  }
+  const blob = await res.blob();
+  const contentType = res.headers.get('content-type') ?? 'application/octet-stream';
+  const fileName = extractFileNameFromDisposition(res.headers.get('content-disposition'));
+  return { blob, contentType, fileName };
+}
+
 function toCompanyFormData(req: CompanyCreateRequest, businessLicenseFile?: File | null): FormData {
   const formData = new FormData();
   formData.append('name', req.name ?? '');
@@ -84,4 +103,18 @@ function toCompanyFormData(req: CompanyCreateRequest, businessLicenseFile?: File
     formData.append('businessLicenseFile', businessLicenseFile);
   }
   return formData;
+}
+
+function extractFileNameFromDisposition(disposition: string | null): string | undefined {
+  if (!disposition) return undefined;
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return utf8Match[1];
+    }
+  }
+  const plainMatch = disposition.match(/filename="?([^"]+)"?/i);
+  return plainMatch?.[1];
 }

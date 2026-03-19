@@ -26,6 +26,7 @@ export {
   fetchMyCompany,
   createMyCompany,
   updateMyCompany,
+  fetchMyBusinessLicensePreview,
   type CompanyItem,
   type CompanyCreateRequest,
 } from './company.service';
@@ -80,6 +81,7 @@ export {
   fetchUser,
   fetchRoles,
   fetchRole,
+  fetchUserBusinessLicensePreview,
   createUser,
   createRole,
   updateRole,

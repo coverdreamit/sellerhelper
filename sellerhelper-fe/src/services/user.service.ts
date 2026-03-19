@@ -117,6 +117,25 @@ export async function fetchUser(uid: number): Promise<UserResponse> {
   return res.json();
 }
 
+export interface BusinessLicensePreviewData {
+  blob: Blob;
+  contentType: string;
+  fileName?: string;
+}
+
+/** 사용자 사업자등록증 미리보기 파일 조회 */
+export async function fetchUserBusinessLicensePreview(uid: number): Promise<BusinessLicensePreviewData> {
+  const res = await apiFetch(`/api/users/${uid}/business-license`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '사업자등록증 파일 조회에 실패했습니다.');
+  }
+  const blob = await res.blob();
+  const contentType = res.headers.get('content-type') ?? 'application/octet-stream';
+  const fileName = extractFileNameFromDisposition(res.headers.get('content-disposition'));
+  return { blob, contentType, fileName };
+}
+
 /** 권한 목록 조회 */
 export async function fetchRoles(): Promise<RoleItem[]> {
   const res = await apiFetch('/api/roles');
@@ -222,4 +241,18 @@ export async function deleteUser(uid: number): Promise<void> {
     const err = await res.json().catch(() => ({}));
     throw new Error(err?.message ?? '사용자 삭제에 실패했습니다.');
   }
+}
+
+function extractFileNameFromDisposition(disposition: string | null): string | undefined {
+  if (!disposition) return undefined;
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return utf8Match[1];
+    }
+  }
+  const plainMatch = disposition.match(/filename="?([^"]+)"?/i);
+  return plainMatch?.[1];
 }

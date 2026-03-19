@@ -14,15 +14,15 @@ import org.springframework.data.repository.query.Param;
 
 public interface StoreProductRepository extends JpaRepository<StoreProduct, Long> {
 
-    Page<StoreProduct> findByStore_UidOrderByProductNameAscVendorItemIdAsc(Long storeUid, Pageable pageable);
+    Page<StoreProduct> findByStore_UidOrderBySellerProductIdAscVendorItemIdAsc(Long storeUid, Pageable pageable);
 
     /** 스토어별 전체 상품 목록 (동기화 시 기존 데이터와 비교용) */
     @Query("SELECT sp FROM StoreProduct sp WHERE sp.store.uid = :storeUid")
     List<StoreProduct> findAllByStore_Uid(@Param("storeUid") Long storeUid);
 
     /** 스토어별 전체 상품 목록 정렬 (조회용) */
-    @Query("SELECT sp FROM StoreProduct sp WHERE sp.store.uid = :storeUid ORDER BY sp.productName ASC, sp.vendorItemId ASC")
-    List<StoreProduct> findAllByStore_UidOrderByProductNameAscVendorItemIdAsc(@Param("storeUid") Long storeUid);
+    @Query("SELECT sp FROM StoreProduct sp WHERE sp.store.uid = :storeUid ORDER BY sp.sellerProductId ASC, sp.vendorItemId ASC")
+    List<StoreProduct> findAllByStore_UidOrderBySellerProductIdAscVendorItemIdAsc(@Param("storeUid") Long storeUid);
 
     Optional<StoreProduct> findByStore_UidAndVendorItemId(Long storeUid, String vendorItemId);
 

@@ -253,9 +253,6 @@ export default function ProductList() {
                 {syncing ? '동기화 중…' : '상품 목록 동기화'}
               </button>
             )}
-            <Link to="/product/register" className="btn btn-primary">
-              상품 등록
-            </Link>
           </div>
         </div>
         {error && (

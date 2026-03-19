@@ -3,7 +3,6 @@ package com.sellerhelper.entity;
 import lombok.*;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
@@ -45,29 +44,12 @@ public class StoreProduct {
     @Column(name = "vendor_item_id", nullable = false, length = 50)
     private String vendorItemId;
 
-    @Column(name = "product_name", length = 500)
-    private String productName;
-
-    @Column(name = "option_name", length = 300)
-    private String optionName;
-
-    @Column(name = "sale_price", precision = 15, scale = 0)
-    private BigDecimal salePrice;
-
-    @Column(name = "original_price", precision = 15, scale = 0)
-    private BigDecimal originalPrice;
-
-    @Column(name = "stock_quantity")
-    private Integer stockQuantity;
-
     @Column(name = "status_type", length = 50)
     private String statusType;
 
-    @Column(name = "image_url", length = 1000)
-    private String imageUrl;
-
-    @Column(name = "category_id", length = 50)
-    private String categoryId;
+    /** 플랫폼 API 원문 JSON */
+    @Column(name = "raw_payload", columnDefinition = "TEXT")
+    private String rawPayload;
 
     /** 동기화 시각 (해당 스토어 전체 동기화 시 동일 값) */
     @Column(name = "synced_at", nullable = false)

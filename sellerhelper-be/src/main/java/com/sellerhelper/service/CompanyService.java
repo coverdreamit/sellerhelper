@@ -4,8 +4,10 @@ import com.sellerhelper.dto.company.CompanyCreateRequest;
 import com.sellerhelper.dto.company.CompanyResponse;
 import com.sellerhelper.entity.Company;
 import com.sellerhelper.entity.User;
+import com.sellerhelper.exception.ResourceNotFoundException;
 import com.sellerhelper.repository.CompanyRepository;
 import com.sellerhelper.repository.UserRepository;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,14 @@ public class CompanyService {
 
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
+
+    @Getter
+    @RequiredArgsConstructor
+    public static class BusinessLicenseFileResult {
+        private final byte[] file;
+        private final String fileName;
+        private final String contentType;
+    }
 
     @Transactional(readOnly = true)
     public List<CompanyResponse> findAll() {
@@ -81,6 +91,20 @@ public class CompanyService {
         return toResponse(companyRepository.save(company));
     }
 
+    @Transactional(readOnly = true)
+    public BusinessLicenseFileResult findMyBusinessLicense(Long userUid) {
+        User user = userRepository.findById(userUid)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        return buildBusinessLicenseResult(user.getCompany());
+    }
+
+    @Transactional(readOnly = true)
+    public BusinessLicenseFileResult findBusinessLicenseByUserUid(Long userUid) {
+        User user = userRepository.findById(userUid)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userUid));
+        return buildBusinessLicenseResult(user.getCompany());
+    }
+
     private CompanyResponse toResponse(Company c) {
         return CompanyResponse.builder()
                 .uid(c.getUid())
@@ -108,6 +132,21 @@ public class CompanyService {
         } catch (IOException e) {
             throw new IllegalStateException("사업자등록증 파일을 처리하지 못했습니다.");
         }
+    }
+
+    private BusinessLicenseFileResult buildBusinessLicenseResult(Company company) {
+        if (company == null) {
+            throw new IllegalArgumentException("등록된 회사 정보가 없습니다.");
+        }
+        byte[] file = company.getBusinessLicenseFile();
+        if (file == null || file.length == 0) {
+            throw new IllegalArgumentException("사업자등록증 파일이 등록되어 있지 않습니다.");
+        }
+        return new BusinessLicenseFileResult(
+                file,
+                trimToNull(company.getBusinessLicenseFileName()),
+                trimToNull(company.getBusinessLicenseContentType())
+        );
     }
 
     private void validateBusinessLicenseFile(MultipartFile file) {

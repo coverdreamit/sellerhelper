@@ -6,6 +6,7 @@ import Link from '@/components/Link';
 import {
   fetchUser,
   fetchRoles,
+  fetchUserBusinessLicensePreview,
   updateUser,
   type UserResponse,
   type RoleItem,
@@ -27,6 +28,7 @@ export default function UserEdit({ uid }: { uid: number }) {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -105,6 +107,25 @@ export default function UserEdit({ uid }: { uid: number }) {
     }
   };
 
+  const handlePreviewBusinessLicense = async () => {
+    setError(null);
+    setPreviewLoading(true);
+    try {
+      const { blob } = await fetchUserBusinessLicensePreview(uid);
+      const previewUrl = URL.createObjectURL(blob);
+      const opened = window.open(previewUrl, '_blank', 'noopener,noreferrer');
+      if (!opened) {
+        URL.revokeObjectURL(previewUrl);
+        throw new Error('브라우저 팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.');
+      }
+      setTimeout(() => URL.revokeObjectURL(previewUrl), 60_000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '사업자등록증 미리보기에 실패했습니다.');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="settings-page">
@@ -149,6 +170,20 @@ export default function UserEdit({ uid }: { uid: number }) {
           <div className="form-row">
             <label>로그인 ID</label>
             <div style={{ padding: '8px 0', color: '#64748b' }}>{user?.loginId}</div>
+          </div>
+          <div className="form-row">
+            <label>사업자등록증</label>
+            <div>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={handlePreviewBusinessLicense}
+                disabled={previewLoading}
+              >
+                {previewLoading ? '미리보기 여는 중...' : '등록증 미리보기'}
+              </button>
+              <p className="form-hint">등록된 파일이 없으면 안내 메시지가 표시됩니다.</p>
+            </div>
           </div>
           <div className="form-row">
             <label className="required">이름</label>

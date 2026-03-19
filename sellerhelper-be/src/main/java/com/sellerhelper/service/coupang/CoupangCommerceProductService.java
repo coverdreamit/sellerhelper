@@ -1,6 +1,8 @@
 package com.sellerhelper.service.coupang;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sellerhelper.entity.Store;
 import com.sellerhelper.entity.StoreAuth;
 import com.sellerhelper.exception.ResourceNotFoundException;
@@ -18,7 +20,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 쿠팡 오픈 API 전담.
@@ -35,6 +39,7 @@ public class CoupangCommerceProductService {
     private final StoreRepository storeRepository;
     private final StoreAuthRepository storeAuthRepository;
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     /**
      * 쿠팡 전체 상품 조회 (동기화용).
@@ -151,7 +156,19 @@ public class CoupangCommerceProductService {
         CoupangProductDetailResponse detail = requestProductDetail(auth, sellerProductId);
 
         if (detail == null || detail.getItems() == null || detail.getItems().isEmpty()) {
-            return Collections.singletonList(CoupangSyncItem.fromListOnly(listItem));
+            return Collections.singletonList(CoupangSyncItem.builder()
+                    .sellerProductId(sellerProductId)
+                    .vendorItemId(null)
+                    .productName(listItem.getSellerProductName())
+                    .optionName(null)
+                    .salePrice(null)
+                    .originalPrice(null)
+                    .stockQuantity(null)
+                    .statusType(listItem.getStatusName())
+                    .imageUrl(null)
+                    .categoryId(listItem.getDisplayCategoryCode() != null ? String.valueOf(listItem.getDisplayCategoryCode()) : null)
+                    .rawPayload(toRawPayloadForListOnly(listItem, sellerProductId))
+                    .build());
         }
 
         String productName = nvl(detail.getDisplayProductName(), detail.getSellerProductName(), listItem.getSellerProductName());
@@ -180,9 +197,63 @@ public class CoupangCommerceProductService {
                     .statusType(statusName)
                     .imageUrl(imageUrl)
                     .categoryId(categoryId)
+                    .rawPayload(toRawPayload(listItem, detail, opt, sellerProductId, productName, imageUrl, categoryId, statusName))
                     .build());
         }
         return items;
+    }
+
+    private String toRawPayload(CoupangProductListItem listItem,
+                                CoupangProductDetailResponse detail,
+                                CoupangProductItemOption option,
+                                String sellerProductId,
+                                String productName,
+                                String imageUrl,
+                                String categoryId,
+                                String statusName) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("sellerProductId", sellerProductId);
+        payload.put("vendorItemId", option.getVendorItemId() != null ? String.valueOf(option.getVendorItemId()) : null);
+        payload.put("productName", productName);
+        payload.put("optionName", option.getItemName());
+        payload.put("salePrice", option.getSalePrice());
+        payload.put("originalPrice", option.getOriginalPrice());
+        payload.put("stockQuantity", option.getSellableQuantity());
+        payload.put("statusType", statusName);
+        payload.put("imageUrl", imageUrl);
+        payload.put("categoryId", categoryId);
+        payload.put("raw", Map.of(
+                "listItem", listItem,
+                "detail", detail,
+                "option", option
+        ));
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            log.warn("쿠팡 상품 raw payload 직렬화 실패: {}", e.getMessage());
+            return "{}";
+        }
+    }
+
+    private String toRawPayloadForListOnly(CoupangProductListItem listItem, String sellerProductId) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("sellerProductId", sellerProductId);
+        payload.put("vendorItemId", null);
+        payload.put("productName", listItem.getSellerProductName());
+        payload.put("optionName", null);
+        payload.put("salePrice", null);
+        payload.put("originalPrice", null);
+        payload.put("stockQuantity", null);
+        payload.put("statusType", listItem.getStatusName());
+        payload.put("imageUrl", null);
+        payload.put("categoryId", listItem.getDisplayCategoryCode() != null ? String.valueOf(listItem.getDisplayCategoryCode()) : null);
+        payload.put("raw", Map.of("listItem", listItem));
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            log.warn("쿠팡 상품 raw payload(목록 전용) 직렬화 실패: {}", e.getMessage());
+            return "{}";
+        }
     }
 
     private CoupangProductListResponse requestProductList(StoreAuth auth, String vendorId, int maxPerPage, String nextToken) {
@@ -383,6 +454,7 @@ public class CoupangCommerceProductService {
         private String statusType;
         private String imageUrl;
         private String categoryId;
+        private String rawPayload;
 
         public static CoupangSyncItem fromListOnly(CoupangProductListItem item) {
             return CoupangSyncItem.builder()
@@ -396,6 +468,7 @@ public class CoupangCommerceProductService {
                     .statusType(item.getStatusName())
                     .imageUrl(null)
                     .categoryId(item.getDisplayCategoryCode() != null ? String.valueOf(item.getDisplayCategoryCode()) : null)
+                    .rawPayload("{}")
                     .build();
         }
     }

@@ -1,5 +1,7 @@
 package com.sellerhelper.service.coupang;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sellerhelper.dto.naver.NaverProductItem;
 import com.sellerhelper.dto.naver.NaverProductSearchResult;
 import com.sellerhelper.entity.StoreProduct;
@@ -19,10 +21,11 @@ import java.util.List;
 public class CoupangProductQueryService {
 
     private final StoreProductRepository storeProductRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public NaverProductSearchResult getStoredProducts(Long storeUid, int page, int size) {
-        List<StoreProduct> all = storeProductRepository.findAllByStore_UidOrderByProductNameAscVendorItemIdAsc(storeUid);
+        List<StoreProduct> all = storeProductRepository.findAllByStore_UidOrderBySellerProductIdAscVendorItemIdAsc(storeUid);
         int totalCount = all.size();
         Instant lastSyncedAt = null;
         StoreProduct lastSync = storeProductRepository.findTop1ByStore_UidOrderBySyncedAtDesc(storeUid);
@@ -66,17 +69,122 @@ public class CoupangProductQueryService {
     }
 
     private NaverProductItem toDto(StoreProduct row) {
+        JsonNode raw = readRawPayload(row.getRawPayload());
+        JsonNode productNode = extractProductNode(raw);
         return NaverProductItem.builder()
-                .channelProductNo(row.getSellerProductId())
-                .vendorItemId(row.getVendorItemId() != null && !row.getVendorItemId().isEmpty() ? row.getVendorItemId() : null)
-                .productName(row.getProductName())
-                .optionName(row.getOptionName())
-                .salePrice(row.getSalePrice() != null ? row.getSalePrice().longValue() : null)
-                .originalPrice(row.getOriginalPrice() != null ? row.getOriginalPrice().longValue() : null)
-                .stockQuantity(row.getStockQuantity())
-                .statusType(row.getStatusType())
-                .representativeImageUrl(row.getImageUrl())
-                .leafCategoryId(row.getCategoryId())
+                .channelProductNo(firstNonBlank(
+                        readString(raw, "sellerProductId", null),
+                        readString(productNode, "channelProductNo", null),
+                        row.getSellerProductId()))
+                .vendorItemId(readNullableString(raw, "vendorItemId", row.getVendorItemId()))
+                .productName(firstNonBlank(
+                        readString(raw, "productName", null),
+                        readString(productNode, "name", null),
+                        readString(productNode, "sellerProductName", null)))
+                .optionName(readString(raw, "optionName", null))
+                .salePrice(firstNonNull(readLong(raw, "salePrice", null), readLong(productNode, "salePrice", null)))
+                .originalPrice(readLong(raw, "originalPrice", null))
+                .stockQuantity(firstNonNull(readInteger(raw, "stockQuantity", null), readInteger(productNode, "stockQuantity", null)))
+                .statusType(firstNonBlank(
+                        readString(raw, "statusType", null),
+                        readString(productNode, "statusType", null),
+                        row.getStatusType()))
+                .representativeImageUrl(firstNonBlank(
+                        readString(raw, "imageUrl", null),
+                        readString(childNode(productNode, "representativeImage"), "url", null)))
+                .leafCategoryId(firstNonBlank(
+                        readString(raw, "categoryId", null),
+                        readString(productNode, "categoryId", null)))
+                .rawPayload(row.getRawPayload())
                 .build();
+    }
+
+    private JsonNode readRawPayload(String rawPayload) {
+        if (rawPayload == null || rawPayload.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readTree(rawPayload);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String readString(JsonNode root, String field, String fallback) {
+        if (root == null) {
+            return fallback;
+        }
+        JsonNode node = root.get(field);
+        if (node == null || node.isNull()) {
+            return fallback;
+        }
+        return node.asText(fallback);
+    }
+
+    private static String readNullableString(JsonNode root, String field, String fallback) {
+        String value = readString(root, field, fallback);
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value;
+    }
+
+    private static Long readLong(JsonNode root, String field, Long fallback) {
+        if (root == null) {
+            return fallback;
+        }
+        JsonNode node = root.get(field);
+        if (node == null || node.isNull()) {
+            return fallback;
+        }
+        if (node.isNumber()) {
+            return node.longValue();
+        }
+        String text = node.asText(null);
+        if (text == null || text.isBlank()) {
+            return fallback;
+        }
+        try {
+            return Long.parseLong(text);
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
+    private static Integer readInteger(JsonNode root, String field, Integer fallback) {
+        Long longVal = readLong(root, field, null);
+        if (longVal != null) {
+            return longVal.intValue();
+        }
+        return fallback;
+    }
+
+    private static JsonNode extractProductNode(JsonNode raw) {
+        if (raw == null) {
+            return null;
+        }
+        JsonNode channelProduct = raw.get("channelProduct");
+        return (channelProduct != null && !channelProduct.isNull()) ? channelProduct : raw;
+    }
+
+    private static JsonNode childNode(JsonNode parent, String field) {
+        if (parent == null) {
+            return null;
+        }
+        JsonNode child = parent.get(field);
+        return child != null && !child.isNull() ? child : null;
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static <T> T firstNonNull(T a, T b) {
+        return a != null ? a : b;
     }
 }

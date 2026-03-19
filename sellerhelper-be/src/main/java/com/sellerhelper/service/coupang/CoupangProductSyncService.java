@@ -5,12 +5,13 @@ import com.sellerhelper.entity.StoreProduct;
 import com.sellerhelper.exception.ResourceNotFoundException;
 import com.sellerhelper.repository.StoreProductRepository;
 import com.sellerhelper.repository.StoreRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
@@ -28,6 +29,7 @@ public class CoupangProductSyncService {
     private final CoupangCommerceProductService coupangCommerceProductService;
     private final StoreProductRepository storeProductRepository;
     private final StoreRepository storeRepository;
+    private final ObjectMapper objectMapper;
 
     /**
      * 변경분만 반영: 신규 insert, 변경 update, API에서 빠진 항목은 status_type = DELETED (soft delete).
@@ -107,34 +109,16 @@ public class CoupangProductSyncService {
     private void apply(StoreProduct target, CoupangCommerceProductService.CoupangSyncItem src, Instant now) {
         target.setSellerProductId(src.getSellerProductId() != null ? src.getSellerProductId().trim() : "");
         target.setVendorItemId(src.getVendorItemId() != null && !src.getVendorItemId().isBlank() ? src.getVendorItemId().trim() : "");
-        target.setProductName(src.getProductName());
-        target.setOptionName(src.getOptionName());
-        target.setSalePrice(src.getSalePrice() != null ? BigDecimal.valueOf(src.getSalePrice()) : null);
-        target.setOriginalPrice(src.getOriginalPrice() != null ? BigDecimal.valueOf(src.getOriginalPrice()) : null);
-        target.setStockQuantity(src.getStockQuantity());
         target.setStatusType(src.getStatusType());
-        target.setImageUrl(src.getImageUrl());
-        target.setCategoryId(src.getCategoryId());
+        target.setRawPayload(src.getRawPayload() != null ? src.getRawPayload() : "{}");
         target.setSyncedAt(now);
     }
 
     private boolean isChanged(StoreProduct old, CoupangCommerceProductService.CoupangSyncItem src) {
         return !Objects.equals(old.getSellerProductId(), nvl(src.getSellerProductId()))
                 || !Objects.equals(old.getVendorItemId(), nvl(src.getVendorItemId()))
-                || !Objects.equals(old.getProductName(), src.getProductName())
-                || !Objects.equals(old.getOptionName(), src.getOptionName())
-                || !equalsBigDecimal(old.getSalePrice(), src.getSalePrice())
-                || !equalsBigDecimal(old.getOriginalPrice(), src.getOriginalPrice())
-                || !Objects.equals(old.getStockQuantity(), src.getStockQuantity())
                 || !Objects.equals(old.getStatusType(), src.getStatusType())
-                || !Objects.equals(old.getImageUrl(), src.getImageUrl())
-                || !Objects.equals(old.getCategoryId(), src.getCategoryId());
-    }
-
-    private static boolean equalsBigDecimal(BigDecimal a, Long b) {
-        if (a == null && b == null) return true;
-        if (a == null || b == null) return false;
-        return a.compareTo(BigDecimal.valueOf(b)) == 0;
+                || !Objects.equals(nvl(old.getRawPayload()), nvl(src.getRawPayload()));
     }
 
     private String makeKey(CoupangCommerceProductService.CoupangSyncItem item) {
@@ -148,7 +132,20 @@ public class CoupangProductSyncService {
         if (item.getVendorItemId() != null && !item.getVendorItemId().isBlank()) {
             return "V:" + item.getVendorItemId().trim();
         }
-        return "S:" + nvl(item.getSellerProductId()) + "|O:" + nvl(item.getOptionName());
+        return "S:" + nvl(item.getSellerProductId()) + "|O:" + nvl(extractOptionName(item.getRawPayload()));
+    }
+
+    private String extractOptionName(String rawPayload) {
+        if (rawPayload == null || rawPayload.isBlank()) {
+            return "";
+        }
+        try {
+            JsonNode root = objectMapper.readTree(rawPayload);
+            JsonNode optionNode = root.get("optionName");
+            return optionNode != null && !optionNode.isNull() ? optionNode.asText("") : "";
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private static String nvl(String value) {

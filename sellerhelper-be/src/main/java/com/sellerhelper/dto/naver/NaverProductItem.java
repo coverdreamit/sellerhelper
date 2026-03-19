@@ -26,6 +26,8 @@ public class NaverProductItem {
     private String vendorItemId;
     /** 쿠팡 옵션 단위 목록용: 옵션 정보 (예: 250ml 12개입) */
     private String optionName;
+    /** API 원문(가공 전) JSON 문자열. 동기화 저장용 내부 필드 */
+    private String rawPayload;
 
     public static NaverProductItem empty() {
         return new NaverProductItem();
