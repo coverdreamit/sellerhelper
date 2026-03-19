@@ -35,6 +35,7 @@ import java.util.List;
 public class NaverCommerceProductService {
 
     private static final String PRODUCT_SEARCH_URL = "https://api.commerce.naver.com/external/v1/products/search";
+    private static final String PRODUCT_DETAIL_URL = "https://api.commerce.naver.com/external/v2/products/channel-products/{channelProductNo}";
 
     private final StoreRepository storeRepository;
     private final StoreAuthRepository storeAuthRepository;
@@ -144,7 +145,8 @@ public class NaverCommerceProductService {
                 if (items.isEmpty()) {
                     break;
                 }
-                allItems.addAll(items);
+                List<NaverProductItem> enriched = enrichWithDetail(storeUid, token, items);
+                allItems.addAll(enriched);
                 int totalCount = body.getTotalCount() != null ? body.getTotalCount() : 0;
                 if (totalCount <= 0 || allItems.size() >= totalCount || items.size() < size) {
                     break;
@@ -162,6 +164,84 @@ public class NaverCommerceProductService {
         } catch (Exception e) {
             log.warn("네이버 상품 동기화 실패 storeUid={}: {}", storeUid, e.getMessage());
             throw new IllegalStateException("상품 목록 동기화에 실패했습니다. 잠시 후 다시 시도하세요.");
+        }
+    }
+
+    private List<NaverProductItem> enrichWithDetail(Long storeUid, String token, List<NaverProductItem> items) {
+        if (items == null || items.isEmpty()) {
+            return List.of();
+        }
+        List<NaverProductItem> result = new ArrayList<>(items.size());
+        for (NaverProductItem item : items) {
+            if (item == null || item.getChannelProductNo() == null || item.getChannelProductNo().isBlank()) {
+                result.add(item);
+                continue;
+            }
+            String detailRaw = fetchProductDetailRaw(storeUid, token, item.getChannelProductNo());
+            if (detailRaw == null || detailRaw.isBlank()) {
+                result.add(item);
+                continue;
+            }
+            NaverProductItem merged = NaverProductItem.builder()
+                    .channelProductNo(item.getChannelProductNo())
+                    .vendorItemId(item.getVendorItemId())
+                    .productName(item.getProductName())
+                    .optionName(item.getOptionName())
+                    .salePrice(item.getSalePrice())
+                    .originalPrice(item.getOriginalPrice())
+                    .stockQuantity(item.getStockQuantity())
+                    .statusType(item.getStatusType())
+                    .representativeImageUrl(item.getRepresentativeImageUrl())
+                    .leafCategoryId(item.getLeafCategoryId())
+                    .rawPayload(mergeRawPayload(item.getRawPayload(), detailRaw))
+                    .build();
+            result.add(merged);
+        }
+        return result;
+    }
+
+    private String fetchProductDetailRaw(Long storeUid, String token, String channelProductNo) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + token);
+            headers.set("Accept", "application/json;charset=UTF-8");
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+            ResponseEntity<JsonNode> response = restTemplate.exchange(
+                    PRODUCT_DETAIL_URL,
+                    HttpMethod.GET,
+                    request,
+                    JsonNode.class,
+                    channelProductNo
+            );
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                return null;
+            }
+            return response.getBody().toString();
+        } catch (Exception e) {
+            log.warn("네이버 상품 상세 조회 실패 storeUid={}, channelProductNo={}, reason={}",
+                    storeUid, channelProductNo, e.getMessage());
+            return null;
+        }
+    }
+
+    private String mergeRawPayload(String listRawPayload, String detailRawPayload) {
+        try {
+            JsonNode listNode = listRawPayload != null && !listRawPayload.isBlank()
+                    ? objectMapper.readTree(listRawPayload)
+                    : objectMapper.createObjectNode();
+            JsonNode detailNode = detailRawPayload != null && !detailRawPayload.isBlank()
+                    ? objectMapper.readTree(detailRawPayload)
+                    : objectMapper.createObjectNode();
+            ObjectNode merged = objectMapper.createObjectNode();
+            if (listNode != null && listNode.isObject()) {
+                merged.setAll((ObjectNode) listNode);
+            } else {
+                merged.set("listPayload", listNode);
+            }
+            merged.set("detailPayload", detailNode);
+            return merged.toString();
+        } catch (Exception e) {
+            return listRawPayload;
         }
     }
 

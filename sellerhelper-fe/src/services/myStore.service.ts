@@ -128,6 +128,29 @@ export async function syncStoreProducts(storeUid: number): Promise<void> {
   }
 }
 
+export async function downloadStoreProductsExcel(storeUid: number): Promise<void> {
+  const res = await apiFetch(`/api/my-stores/${storeUid}/products/export`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '상품목록 엑셀 다운로드 실패');
+  }
+  const disposition = res.headers.get('content-disposition') ?? '';
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  const plainMatch = disposition.match(/filename="?([^"]+)"?/i);
+  const decodedName = utf8Match?.[1]
+    ? decodeURIComponent(utf8Match[1])
+    : plainMatch?.[1] || `products-${storeUid}.xlsx`;
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = decodedName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 /** 연동 테스트 (실제 API 호출로 검증, 성공 시 연동됨으로 표시) */
 export async function verifyMyStore(storeUid: number): Promise<MyStoreItem> {
   const res = await apiFetch(`/api/my-stores/${storeUid}/verify`, { method: 'POST' });

@@ -3,7 +3,7 @@
 import Link from '@/components/Link';
 import '@/styles/Settings.css';
 
-export function VendorCard({ vendor, onEdit, onPolicy, onTemplate }) {
+export function VendorCard({ vendor, onEdit }) {
   const orderMethodLabel = vendor.orderMethod === 'EMAIL' ? '이메일' : vendor.orderMethod === 'EXCEL' ? '엑셀' : vendor.orderMethod ?? '-';
   const shippingLabel = vendor.shippingType === 'DIRECT' ? '직배송' : vendor.shippingType === 'CONSIGNMENT' ? '위탁' : vendor.shippingType ?? '-';
 
@@ -42,9 +42,6 @@ export function VendorCard({ vendor, onEdit, onPolicy, onTemplate }) {
               기본정보 수정
             </Link>
           )}
-          <button type="button" className="btn" onClick={() => onPolicy?.(vendor)}>
-            ⚙ 발주정책
-          </button>
         </div>
       </div>
     </div>

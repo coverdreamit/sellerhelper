@@ -4,13 +4,11 @@ import { useState } from 'react';
 import { useVendorStore } from '@/stores';
 import Link from '@/components/Link';
 import { VendorCard } from '@/components/vendor/VendorCard';
-import { SupplierPolicyModal } from '@/components/vendor/SupplierPolicyModal';
 import { SupplierEditModal } from '@/components/vendor/SupplierEditModal';
 import '../../../styles/Settings.css';
 
 export default function SupplierList() {
-  const { vendors, loading, error, saveVendor, savePolicy } = useVendorStore();
-  const [policyVendor, setPolicyVendor] = useState(null);
+  const { vendors, loading, error, saveVendor } = useVendorStore();
   const [showEditModal, setShowEditModal] = useState(false);
   const [editVendor, setEditVendor] = useState(null);
 
@@ -51,7 +49,7 @@ export default function SupplierList() {
   return (
     <div className="settings-page">
       <h1>발주업체 목록</h1>
-      <p className="page-desc">발주업체 등록, 수정, 삭제, 발주정책 설정을 관리합니다.</p>
+      <p className="page-desc">발주업체 등록, 수정, 삭제를 관리합니다.</p>
 
       <section className="settings-section">
         <div className="settings-toolbar">
@@ -68,8 +66,6 @@ export default function SupplierList() {
               key={vendor.vendorId}
               vendor={vendor}
               onEdit={openEditModal}
-              onPolicy={() => setPolicyVendor(vendor)}
-              onTemplate={() => {}}
             />
           ))}
         </div>
@@ -85,22 +81,6 @@ export default function SupplierList() {
               closeEditModal();
             } catch (e) {
               const message = e instanceof Error ? e.message : '발주업체 저장에 실패했습니다.';
-              alert(message);
-            }
-          }}
-        />
-      )}
-
-      {policyVendor && (
-        <SupplierPolicyModal
-          vendor={policyVendor}
-          onClose={() => setPolicyVendor(null)}
-          onSave={async (vendorId, policy) => {
-            try {
-              await savePolicy(vendorId, policy);
-              setPolicyVendor(null);
-            } catch (e) {
-              const message = e instanceof Error ? e.message : '발주정책 저장에 실패했습니다.';
               alert(message);
             }
           }}
