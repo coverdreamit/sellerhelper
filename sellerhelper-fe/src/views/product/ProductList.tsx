@@ -67,20 +67,33 @@ export default function ProductList() {
     filterValue: string
   ) => {
     const baseName = String(p.productName ?? p.channelProductName ?? '').trim() || '-';
-    const optionName = String((p as Record<string, unknown>).optionName ?? p.optionName ?? '').trim();
+    const optionName = String(
+      (p as Record<string, unknown>).optionName ?? p.optionName ?? ''
+    ).trim();
     const name = optionName ? `${baseName} (${optionName})` : baseName;
-    const statusType = String(p.statusType ?? (p as Record<string, unknown>).channelProductStatusType ?? '');
+    const statusType = String(
+      p.statusType ?? (p as Record<string, unknown>).channelProductStatusType ?? ''
+    );
     const rawPrice = p.salePrice ?? (p as Record<string, unknown>).sale_price;
-    const rawStock = p.stockQuantity ?? (p as Record<string, unknown>).stock_quantity ?? (p as Record<string, unknown>).quantity;
+    const rawStock =
+      p.stockQuantity ??
+      (p as Record<string, unknown>).stock_quantity ??
+      (p as Record<string, unknown>).quantity;
     const price = typeof rawPrice === 'number' ? rawPrice : Number(rawPrice) || 0;
     const stock = typeof rawStock === 'number' ? rawStock : Number(rawStock) || 0;
     const status =
-      statusType === 'SALE' || statusType === 'ON' ? '판매중'
-        : statusType === 'OUTOFSTOCK' ? '품절'
-          : statusType === 'SUSPENSION' ? '판매중지'
-            : /승인|approved|sale/i.test(String(statusType)) ? '판매중'
-              : /품절|outofstock|out_of_stock/i.test(String(statusType)) ? '품절'
-                : /중지|suspension/i.test(String(statusType)) ? '판매중지'
+      statusType === 'SALE' || statusType === 'ON'
+        ? '판매중'
+        : statusType === 'OUTOFSTOCK'
+          ? '품절'
+          : statusType === 'SUSPENSION'
+            ? '판매중지'
+            : /승인|approved|sale/i.test(String(statusType))
+              ? '판매중'
+              : /품절|outofstock|out_of_stock/i.test(String(statusType))
+                ? '품절'
+                : /중지|suspension/i.test(String(statusType))
+                  ? '판매중지'
                   : statusType || '-';
     return {
       id: p.channelProductNo ?? (p as Record<string, unknown>).channel_product_no,
@@ -106,7 +119,9 @@ export default function ProductList() {
     setError(null);
     fetchStoreProducts(tab.storeUid, currentPage, pageSize)
       .then((res) => {
-        const items = (res.contents ?? []).map((p) => toTableProduct(p, tab.label, tab.filterValue));
+        const items = (res.contents ?? []).map((p) =>
+          toTableProduct(p, tab.label, tab.filterValue)
+        );
         setProducts(items);
         setTotalCount(res.totalCount ?? 0);
         setFetchedAt(res.lastSyncedAt ? new Date(res.lastSyncedAt) : null);
@@ -136,7 +151,15 @@ export default function ProductList() {
       case 'image':
         if (!v) return <span style={{ color: '#999' }}>-</span>;
         return (
-          <span style={{ display: 'inline-flex', width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              width: 48,
+              height: 48,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <img
               src={v}
               alt=""
