@@ -16,24 +16,37 @@ import com.sellerhelper.service.coupang.CoupangProductQueryService;
 import com.sellerhelper.service.coupang.CoupangProductSyncService;
 import com.sellerhelper.service.naver.NaverCommerceProductService;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /** 스토어별 상품목록 조회. 모든 플랫폼(네이버/쿠팡 등) 공통으로 DB 저장분 조회. */
 @Service
 @RequiredArgsConstructor
 public class StoreProductService {
+    private static final DateTimeFormatter EXPORT_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").withZone(ZoneId.of("Asia/Seoul"));
+    private static final Map<String, String> EXCEL_COLUMN_LABEL_MAP = buildExcelColumnLabelMap();
+
     private final UserRepository userRepository;
     private final StoreRepository storeRepository;
     private final StoreProductRepository storeProductRepository;
@@ -354,5 +367,194 @@ public class StoreProductService {
             }
         }
         return null;
+    }
+
+    @Transactional(readOnly = true)
+    public ExcelExportFile exportMyStoreProductsExcel(Long userUid, Long storeUid) {
+        User user = userRepository.findById(userUid)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userUid));
+        Store store = storeRepository.findById(storeUid)
+                .orElseThrow(() -> new ResourceNotFoundException("Store", storeUid));
+
+        Company userCompany = user.getCompany();
+        if (userCompany == null || store.getCompany() == null
+                || !store.getCompany().getUid().equals(userCompany.getUid())) {
+            throw new IllegalArgumentException("해당 스토어의 상품을 다운로드할 권한이 없습니다.");
+        }
+
+        List<StoreProduct> products = storeProductRepository.findAllByStore_UidOrderBySellerProductIdAscVendorItemIdAsc(storeUid);
+        List<Map<String, String>> rows = new ArrayList<>();
+        Set<String> keySet = new LinkedHashSet<>();
+        for (StoreProduct product : products) {
+            Map<String, String> row = buildExportRow(product);
+            rows.add(row);
+            keySet.addAll(row.keySet());
+        }
+        List<String> columns = new ArrayList<>(keySet);
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            XSSFSheet sheet = workbook.createSheet("상품목록");
+
+            Row header = sheet.createRow(0);
+            for (int c = 0; c < columns.size(); c++) {
+                Cell cell = header.createCell(c);
+                cell.setCellValue(toKoreanExcelColumn(columns.get(c)));
+            }
+
+            for (int r = 0; r < rows.size(); r++) {
+                Row row = sheet.createRow(r + 1);
+                Map<String, String> data = rows.get(r);
+                for (int c = 0; c < columns.size(); c++) {
+                    String col = columns.get(c);
+                    Cell cell = row.createCell(c);
+                    cell.setCellValue(data.getOrDefault(col, ""));
+                }
+            }
+
+            for (int c = 0; c < columns.size(); c++) {
+                sheet.setColumnWidth(c, 7000);
+            }
+            workbook.write(out);
+            Instant updatedAt = products.stream()
+                    .map(StoreProduct::getSyncedAt)
+                    .filter(Objects::nonNull)
+                    .max(Instant::compareTo)
+                    .orElse(Instant.now());
+            String filename = buildExportFilename(store.getName(), updatedAt);
+            return new ExcelExportFile(filename, out.toByteArray());
+        } catch (Exception e) {
+            throw new IllegalStateException("상품목록 엑셀 생성에 실패했습니다.");
+        }
+    }
+
+    private Map<String, String> buildExportRow(StoreProduct product) {
+        Map<String, String> row = new LinkedHashMap<>();
+        row.put("sellerProductId", nullToEmpty(product.getSellerProductId()));
+        row.put("vendorItemId", nullToEmpty(product.getVendorItemId()));
+        row.put("statusType", nullToEmpty(product.getStatusType()));
+        row.put("syncedAt", product.getSyncedAt() != null ? product.getSyncedAt().toString() : "");
+        JsonNode raw = readRawPayload(product.getRawPayload());
+        if (raw != null && raw.isObject()) {
+            flattenJson("", raw, row);
+        } else {
+            row.put("rawPayload", nullToEmpty(product.getRawPayload()));
+        }
+        return row;
+    }
+
+    private void flattenJson(String prefix, JsonNode node, Map<String, String> row) {
+        if (node == null || node.isNull()) {
+            row.put(prefix, "");
+            return;
+        }
+        if (node.isObject()) {
+            node.fieldNames().forEachRemaining(field -> {
+                String key = prefix.isBlank() ? field : prefix + "." + field;
+                flattenJson(key, node.get(field), row);
+            });
+            return;
+        }
+        if (node.isArray()) {
+            if (node.isEmpty()) {
+                row.put(prefix, "[]");
+                return;
+            }
+            for (int i = 0; i < node.size(); i++) {
+                String key = prefix + "[" + i + "]";
+                flattenJson(key, node.get(i), row);
+            }
+            return;
+        }
+        row.put(prefix, node.asText(""));
+    }
+
+    private static String buildExportFilename(String storeName, Instant updatedAt) {
+        String safeStoreName = sanitizeFilenamePart(storeName);
+        String time = EXPORT_TIME_FORMATTER.format(updatedAt);
+        return safeStoreName + "_" + time + ".xlsx";
+    }
+
+    private static String sanitizeFilenamePart(String value) {
+        String base = value == null || value.isBlank() ? "스토어" : value.trim();
+        return base.replaceAll("[\\\\/:*?\"<>|]", "_");
+    }
+
+    private static String toKoreanExcelColumn(String key) {
+        if (EXCEL_COLUMN_LABEL_MAP.containsKey(key)) {
+            return EXCEL_COLUMN_LABEL_MAP.get(key);
+        }
+        if (key.startsWith("detailPayload.channelProduct.")) {
+            String leaf = key.substring("detailPayload.channelProduct.".length());
+            return "상세 > 채널상품 > " + toKoreanExcelLeaf(leaf);
+        }
+        if (key.startsWith("detailPayload.")) {
+            String leaf = key.substring("detailPayload.".length());
+            return "상세 > " + toKoreanExcelLeaf(leaf);
+        }
+        if (key.startsWith("channelProduct.")) {
+            String leaf = key.substring("channelProduct.".length());
+            return "채널상품 > " + toKoreanExcelLeaf(leaf);
+        }
+        return toKoreanExcelLeaf(key);
+    }
+
+    private static String toKoreanExcelLeaf(String key) {
+        if (EXCEL_COLUMN_LABEL_MAP.containsKey(key)) {
+            return EXCEL_COLUMN_LABEL_MAP.get(key);
+        }
+        String readable = key.replaceAll("\\[\\d+\\]", "")
+                .replaceAll("\\.", " > ")
+                .replaceAll("([a-z0-9])([A-Z])", "$1 $2");
+        return readable;
+    }
+
+    private static Map<String, String> buildExcelColumnLabelMap() {
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put("sellerProductId", "판매자상품ID");
+        map.put("vendorItemId", "옵션ID");
+        map.put("statusType", "상태");
+        map.put("syncedAt", "동기화시각");
+        map.put("groupProductNo", "그룹상품번호");
+        map.put("originProductNo", "원상품번호");
+        map.put("channelProductNo", "채널상품번호");
+        map.put("name", "상품명");
+        map.put("salePrice", "판매가");
+        map.put("originalPrice", "정가");
+        map.put("stockQuantity", "재고수량");
+        map.put("categoryId", "카테고리ID");
+        map.put("statusType", "상태");
+        map.put("channelProductDisplayStatusType", "전시상태");
+        map.put("modifiedDate", "수정일시");
+        map.put("url", "이미지URL");
+        map.put("detailPayload.groupProductNo", "상세 > 그룹상품번호");
+        map.put("detailPayload.originProductNo", "상세 > 원상품번호");
+        map.put("detailPayload.channelProduct.channelProductNo", "상세 > 채널상품 > 채널상품번호");
+        map.put("detailPayload.channelProduct.name", "상세 > 채널상품 > 상품명");
+        map.put("detailPayload.channelProduct.salePrice", "상세 > 채널상품 > 판매가");
+        map.put("detailPayload.channelProduct.stockQuantity", "상세 > 채널상품 > 재고수량");
+        map.put("detailPayload.channelProduct.statusType", "상세 > 채널상품 > 상태");
+        map.put("detailPayload.channelProduct.channelProductDisplayStatusType", "상세 > 채널상품 > 전시상태");
+        map.put("detailPayload.channelProduct.categoryId", "상세 > 채널상품 > 카테고리ID");
+        map.put("detailPayload.channelProduct.modifiedDate", "상세 > 채널상품 > 수정일시");
+        map.put("detailPayload.channelProduct.representativeImage.url", "상세 > 채널상품 > 대표이미지URL");
+        return map;
+    }
+
+    public static class ExcelExportFile {
+        private final String filename;
+        private final byte[] bytes;
+
+        public ExcelExportFile(String filename, byte[] bytes) {
+            this.filename = filename;
+            this.bytes = bytes;
+        }
+
+        public String getFilename() {
+            return filename;
+        }
+
+        public byte[] getBytes() {
+            return bytes;
+        }
     }
 }

@@ -49,7 +49,7 @@ export default function SupplierList() {
   return (
     <div className="settings-page">
       <h1>발주업체 목록</h1>
-      <p className="page-desc">발주업체 등록·수정·삭제를 관리합니다.</p>
+      <p className="page-desc">발주업체 등록, 수정, 삭제를 관리합니다.</p>
 
       <section className="settings-section">
         <div className="settings-toolbar">
@@ -62,7 +62,11 @@ export default function SupplierList() {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           {vendors.map((vendor) => (
-            <VendorCard key={vendor.vendorId} vendor={vendor} onEdit={openEditModal} />
+            <VendorCard
+              key={vendor.vendorId}
+              vendor={vendor}
+              onEdit={openEditModal}
+            />
           ))}
         </div>
       </section>

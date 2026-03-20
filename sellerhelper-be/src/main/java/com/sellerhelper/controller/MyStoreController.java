@@ -20,12 +20,16 @@ import com.sellerhelper.service.StoreProductService;
 import com.sellerhelper.service.StoreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -241,6 +245,26 @@ public class MyStoreController {
         }
         storeProductService.syncStoreProducts(authUser.getUid(), uid);
         return ResponseEntity.noContent().build();
+    }
+
+    /** 스토어 상품 목록 엑셀 다운로드 (DB 저장분 기준) */
+    @GetMapping("/{uid}/products/export")
+    public ResponseEntity<byte[]> exportProductsExcel(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        StoreProductService.ExcelExportFile exportFile =
+                storeProductService.exportMyStoreProductsExcel(authUser.getUid(), uid);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename(exportFile.getFilename(), StandardCharsets.UTF_8)
+                                .build().toString())
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(exportFile.getBytes());
     }
 
     /** 내 스토어 상품 단건 조회 (쿠팡: sellerProductId) */
