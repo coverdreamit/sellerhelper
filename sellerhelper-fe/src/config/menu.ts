@@ -75,6 +75,7 @@ export const MENU: MenuItem[] = [
   {
     key: 'sales',
     label: '정산관리',
+    hidden: true, // 임시 숨김 — 복원 시 제거
     path: '/sales',
     children: [
       { key: 'sales-status', label: '매출 현황', path: '/sales/status' },

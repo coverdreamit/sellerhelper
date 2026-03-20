@@ -28,7 +28,11 @@ public class VendorResponse {
     private String shippingType;
     private Boolean isActive;
     private String memo;
-    private VendorPolicyResponse policy;
+    private String formTemplateFileName;
+    private String formTemplateContentType;
+    private Boolean hasFormTemplateFile;
+    private Instant formTemplateUploadedAt;
+    private java.util.List<VendorFormTemplateMappingItem> formTemplateMappings;
     private Instant createdAt;
     private Instant updatedAt;
 }

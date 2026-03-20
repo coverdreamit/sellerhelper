@@ -1,29 +1,7 @@
 /** 발주업체 (사용자 소유) */
-export interface VendorPolicy {
-  autoOrder: {
-    enabled: boolean;
-    stockThreshold: number;
-    defaultOrderQty: number;
-    orderUnit: string;
-  };
-  leadTime: {
-    days: number;
-    includeWeekend: boolean;
-  };
-  orderLimit: {
-    minOrderQty: number;
-    minOrderAmount: number;
-  };
-  delivery: {
-    shippingType: string;
-    bundleAllowed: boolean;
-  };
-  schedule: {
-    orderableDays: string[];
-    cutoffTime: string;
-  };
-  useYn: 'Y' | 'N';
-  memo?: string;
+export interface VendorFormTemplateMappingItem {
+  excelHeader: string;
+  systemKey: string;
 }
 
 export interface Vendor {
@@ -40,7 +18,11 @@ export interface Vendor {
   shippingType: 'DIRECT' | 'CONSIGNMENT' | 'MIXED';
   isActive: boolean;
   memo?: string;
-  policy?: VendorPolicy;
+  formTemplateFileName?: string;
+  formTemplateContentType?: string;
+  hasFormTemplateFile?: boolean;
+  formTemplateUploadedAt?: string;
+  formTemplateMappings?: VendorFormTemplateMappingItem[];
   createdAt?: string;
   updatedAt?: string;
 }

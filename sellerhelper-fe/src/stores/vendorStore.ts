@@ -1,13 +1,6 @@
 import { create } from 'zustand';
-import {
-  createVendor,
-  fetchVendors,
-  saveVendorPolicy,
-  updateVendor,
-  type VendorPolicySaveRequest,
-  type VendorSaveRequest,
-} from '@/services';
-import type { Vendor, VendorPolicy } from '@/types';
+import { createVendor, fetchVendors, updateVendor, type VendorSaveRequest } from '@/services';
+import type { Vendor } from '@/types';
 
 interface VendorState {
   vendors: Vendor[];
@@ -17,7 +10,6 @@ interface VendorState {
   setVendors: (vendors: Vendor[]) => void;
   loadVendors: () => Promise<void>;
   saveVendor: (payload: VendorSaveRequest) => Promise<Vendor>;
-  savePolicy: (vendorId: number, payload: VendorPolicySaveRequest) => Promise<VendorPolicy>;
   selectVendor: (vendor?: Vendor) => void;
   toggleVendorStatus: (vendorId: number) => void;
 }
@@ -55,16 +47,6 @@ export const useVendorStore = create<VendorState>((set) => ({
       };
     });
     return saved;
-  },
-
-  savePolicy: async (vendorId: number, payload: VendorPolicySaveRequest) => {
-    const savedPolicy = await saveVendorPolicy(vendorId, payload);
-    set((state) => ({
-      vendors: state.vendors.map((vendor) =>
-        vendor.vendorId === vendorId ? { ...vendor, policy: savedPolicy } : vendor
-      ),
-    }));
-    return savedPolicy;
   },
 
   selectVendor: (vendor?: Vendor) => set({ selectedVendor: vendor }),

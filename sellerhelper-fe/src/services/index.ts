@@ -49,9 +49,14 @@ export {
   fetchVendors,
   createVendor,
   updateVendor,
-  saveVendorPolicy,
+  uploadVendorFormTemplate,
+  downloadVendorFormTemplate,
+  fetchVendorFormTemplatePreview,
+  fetchVendorFormTemplateMappings,
+  saveVendorFormTemplateMappings,
   type VendorSaveRequest,
-  type VendorPolicySaveRequest,
+  type VendorFormTemplatePreview,
+  type VendorFormTemplateMappingItem,
 } from './vendor.service';
 export { fetchOrderTemplates, saveOrderTemplate } from './orderTemplate.service';
 export {

@@ -13,6 +13,8 @@ psql -h <host> -U <user> -d sellerhelper -f init-malls.sql
 psql -h <host> -U <user> -d sellerhelper -f init-companies.sql
 psql -h <host> -U <user> -d sellerhelper -f init-roles.sql
 psql -h <host> -U <user> -d sellerhelper -f migrate-role-menu-keys.sql  # 필요 시
+psql -h <host> -U <user> -d sellerhelper -f migrate-drop-vendor-policies.sql  # 발주정책 테이블 제거 시
+psql -h <host> -U <user> -d sellerhelper -f migrate-add-vendor-form-template-columns.sql  # 발주양식 파일 저장 컬럼 추가 시
 ```
 
 ## 스크립트 설명
@@ -23,6 +25,8 @@ psql -h <host> -U <user> -d sellerhelper -f migrate-role-menu-keys.sql  # 필요
 | init-companies.sql | 회사 초기 데이터 (스토어 소속 선택용) |
 | init-roles.sql | 권한(ADMIN, USER 등) 초기 데이터 |
 | migrate-role-menu-keys.sql | 기존 roles에 menu_keys 컬럼 값 설정 |
+| migrate-drop-vendor-policies.sql | `vendor_policies` 테이블 삭제 (발주정책 기능 제거 후) |
+| migrate-add-vendor-form-template-columns.sql | `vendors`에 발주양식 파일 저장 컬럼 추가 |
 
 ## 참고
 
