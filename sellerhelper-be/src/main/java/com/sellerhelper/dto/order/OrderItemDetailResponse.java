@@ -22,4 +22,9 @@ public class OrderItemDetailResponse {
     private BigDecimal unitPrice;
     private BigDecimal totalPrice;
     private String productOrderStatus;
+    /** NAVER, COUPANG 등 */
+    private String channelType;
+    private String externalProductId;
+    private String externalOptionId;
+    private String sellerSku;
 }

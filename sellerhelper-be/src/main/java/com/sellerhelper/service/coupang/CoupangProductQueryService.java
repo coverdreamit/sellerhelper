@@ -25,7 +25,8 @@ public class CoupangProductQueryService {
 
     @Transactional(readOnly = true)
     public NaverProductSearchResult getStoredProducts(Long storeUid, int page, int size) {
-        List<StoreProduct> all = storeProductRepository.findAllByStore_UidOrderBySellerProductIdAscVendorItemIdAsc(storeUid);
+        List<StoreProduct> all =
+                storeProductRepository.findAllByStore_UidOrderBySellerProductIdAscVendorItemIdAscWithVendor(storeUid);
         int totalCount = all.size();
         Instant lastSyncedAt = null;
         StoreProduct lastSync = storeProductRepository.findTop1ByStore_UidOrderBySyncedAtDesc(storeUid);
@@ -96,6 +97,9 @@ public class CoupangProductQueryService {
                         readString(raw, "categoryId", null),
                         readString(productNode, "categoryId", null)))
                 .rawPayload(row.getRawPayload())
+                .storeProductUid(row.getUid())
+                .assignedVendorUid(row.getAssignedVendor() != null ? row.getAssignedVendor().getUid() : null)
+                .assignedVendorName(row.getAssignedVendor() != null ? row.getAssignedVendor().getVendorName() : null)
                 .build();
     }
 

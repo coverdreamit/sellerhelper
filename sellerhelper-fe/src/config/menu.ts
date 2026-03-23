@@ -139,21 +139,27 @@ export const MENU: MenuItem[] = [
   },
 ];
 
-/** pathname 접근 가능 여부. 가장 긴 매칭 경로의 key가 userMenuKeys에 있으면 true */
+/**
+ * pathname 접근 가능 여부.
+ * 메뉴 트리에서 pathname과 매칭되는 항목 중 **가장 긴 path**를 기준으로 하고,
+ * 그 길이와 동일한 path를 가진 노드가 여러 개면(부모·자식이 같은 URL을 쓰는 경우 등)
+ * 그중 **하나의 key라도** userMenuKeys에 있으면 허용합니다.
+ */
 export function canAccessPath(pathname: string, userMenuKeys: string[]): boolean {
   if (!pathname || pathname === '/') return true;
-  let best: { path: string; key: string } | null = null;
+  const keys = userMenuKeys ?? [];
+  const candidates: { path: string; key: string }[] = [];
   function walk(m: MenuItem[]) {
     for (const node of m) {
       if (node.path && (pathname === node.path || pathname.startsWith(node.path + '/'))) {
-        if (!best || node.path.length > best.path.length) {
-          best = { path: node.path, key: node.key };
-        }
+        candidates.push({ path: node.path, key: node.key });
       }
       if (node.children) walk(node.children);
     }
   }
   walk(MENU);
-  if (!best) return true;
-  return userMenuKeys?.includes(best.key) ?? false;
+  if (candidates.length === 0) return true;
+  const maxLen = Math.max(...candidates.map((c) => c.path.length));
+  const keysAtLongestPath = candidates.filter((c) => c.path.length === maxLen).map((c) => c.key);
+  return keysAtLongestPath.some((k) => keys.includes(k));
 }

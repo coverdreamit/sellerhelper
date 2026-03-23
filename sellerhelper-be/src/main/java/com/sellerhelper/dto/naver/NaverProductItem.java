@@ -29,6 +29,12 @@ public class NaverProductItem {
     /** API 원문(가공 전) JSON 문자열. 동기화 저장용 내부 필드 */
     private String rawPayload;
 
+    /** DB store_products.uid (발주업체 지정·식별용) */
+    private Long storeProductUid;
+    /** 상품 목록에서 선택한 발주업체 */
+    private Long assignedVendorUid;
+    private String assignedVendorName;
+
     public static NaverProductItem empty() {
         return new NaverProductItem();
     }

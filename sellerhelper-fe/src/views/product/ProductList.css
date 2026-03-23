@@ -1,3 +1,14 @@
+/* 발주업체 선택 (스토어 동기화 상품 행) */
+.product-list-vendor-select {
+  max-width: 200px;
+  width: 100%;
+  font-size: 0.875rem;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+}
+
 /* 상품 목록 - 스토어 탭 */
 .product-list-tabs-wrap {
   display: flex;

@@ -1,5 +1,5 @@
 import { apiFetch } from '@/lib/api';
-import type { Vendor, VendorPolicy } from '@/types';
+import type { Vendor } from '@/types';
 
 export interface VendorSaveRequest {
   vendorId?: number;
@@ -13,8 +13,6 @@ export interface VendorSaveRequest {
   memo?: string;
   isActive: boolean;
 }
-
-export interface VendorPolicySaveRequest extends VendorPolicy {}
 
 export async function fetchVendors(): Promise<Vendor[]> {
   const res = await apiFetch('/api/vendors');
@@ -43,21 +41,6 @@ export async function updateVendor(vendorId: number, req: VendorSaveRequest): Pr
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err?.message ?? '발주업체 수정 실패');
-  }
-  return res.json();
-}
-
-export async function saveVendorPolicy(
-  vendorId: number,
-  req: VendorPolicySaveRequest
-): Promise<VendorPolicy> {
-  const res = await apiFetch(`/api/vendors/${vendorId}/policy`, {
-    method: 'PUT',
-    body: JSON.stringify(req),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.message ?? '발주정책 저장 실패');
   }
   return res.json();
 }

@@ -107,6 +107,10 @@ public class CoupangOrderSyncService {
 
                 item.setProductName(itemDto.getProductName() != null ? itemDto.getProductName() : "");
                 item.setOptionInfo(null);
+                item.setChannelType("COUPANG");
+                item.setExternalProductId(itemDto.getVendorItemId() != null ? String.valueOf(itemDto.getVendorItemId()) : null);
+                item.setExternalOptionId(null);
+                item.setSellerSku(null);
                 item.setQuantity(itemDto.getSalesQuantity() != null ? itemDto.getSalesQuantity() : 1);
                 if (itemDto.getUnitSalesPrice() != null) {
                     item.setUnitPrice(BigDecimal.valueOf(itemDto.getUnitSalesPrice()));

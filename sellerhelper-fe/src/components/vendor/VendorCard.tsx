@@ -1,9 +1,15 @@
 'use client';
 
 import Link from '@/components/Link';
+import type { Vendor } from '@/types';
 import '@/styles/Settings.css';
 
-export function VendorCard({ vendor, onEdit, onPolicy, onTemplate }) {
+type VendorCardProps = {
+  vendor: Vendor;
+  onEdit?: (v: Vendor) => void;
+};
+
+export function VendorCard({ vendor, onEdit }: VendorCardProps) {
   const orderMethodLabel = vendor.orderMethod === 'EMAIL' ? '이메일' : vendor.orderMethod === 'EXCEL' ? '엑셀' : vendor.orderMethod ?? '-';
   const shippingLabel = vendor.shippingType === 'DIRECT' ? '직배송' : vendor.shippingType === 'CONSIGNMENT' ? '위탁' : vendor.shippingType ?? '-';
 
@@ -42,9 +48,6 @@ export function VendorCard({ vendor, onEdit, onPolicy, onTemplate }) {
               기본정보 수정
             </Link>
           )}
-          <button type="button" className="btn" onClick={() => onPolicy?.(vendor)}>
-            ⚙ 발주정책
-          </button>
         </div>
       </div>
     </div>

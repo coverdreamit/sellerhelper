@@ -51,4 +51,18 @@ public class OrderItem {
     /** 네이버 상품주문 상태 (PAYED, DELIVERING 등) */
     @Column(name = "product_order_status", length = 50)
     private String productOrderStatus;
+
+    /** NAVER, COUPANG 등 — 주문 동기화 시 스토어 몰 기준 설정 */
+    @Column(name = "channel_type", length = 20)
+    private String channelType;
+
+    @Column(name = "external_product_id", length = 100)
+    private String externalProductId;
+
+    @Column(name = "external_option_id", length = 100)
+    private String externalOptionId;
+
+    /** 판매자/자체 SKU (채널 제공 시) */
+    @Column(name = "seller_sku", length = 100)
+    private String sellerSku;
 }

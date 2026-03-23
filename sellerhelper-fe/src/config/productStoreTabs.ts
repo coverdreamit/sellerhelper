@@ -29,6 +29,7 @@ export const STORE_KEY_MAP = {
   '스마트스토어': {
     imageUrl: 'imageUrl',
     name: 'name',
+    assignedVendorUid: 'assignedVendorUid',
     price: 'price',
     stock: 'stock',
     status: 'status',
@@ -38,6 +39,7 @@ export const STORE_KEY_MAP = {
   '쿠팡': {
     imageUrl: 'imageUrl',
     name: 'vendorItemName',
+    assignedVendorUid: 'assignedVendorUid',
     price: 'salePrice',
     stock: 'quantity',
     status: 'saleStatus',
@@ -85,6 +87,7 @@ export const STORE_TAB_MAP = {
     columns: [
       { key: 'imageUrl', label: '이미지', type: 'image' },
       { key: 'name', label: '상품명', type: 'text' },
+      { key: 'assignedVendorUid', label: '발주업체', type: 'vendorSelect' },
       { key: 'price', label: '판매가', type: 'price' },
       { key: 'stock', label: '재고', type: 'stock' },
       { key: 'status', label: '상태', type: 'badge' },
@@ -95,7 +98,15 @@ export const STORE_TAB_MAP = {
   COUPANG: {
     tabLabel: '쿠팡',
     filterValue: '쿠팡',
-    columns: defaultColumns,
+    columns: [
+      { key: 'imageUrl', label: '이미지', type: 'image' },
+      { key: 'name', label: '상품명', type: 'text' },
+      { key: 'assignedVendorUid', label: '발주업체', type: 'vendorSelect' },
+      { key: 'price', label: '판매가', type: 'price' },
+      { key: 'stock', label: '재고', type: 'stock' },
+      { key: 'status', label: '상태', type: 'badge' },
+      { key: 'updated', label: '수정일', type: 'text' },
+    ],
   },
   KAKAO: {
     tabLabel: '카카오쇼핑',

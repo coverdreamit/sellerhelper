@@ -11,7 +11,9 @@ import com.sellerhelper.dto.order.OrderActionResponse;
 import com.sellerhelper.dto.order.OrderDetailResponse;
 import com.sellerhelper.dto.order.OrderDispatchRequest;
 import com.sellerhelper.dto.order.OrderListResponse;
+import com.sellerhelper.dto.order.VendorOrderLineDto;
 import com.sellerhelper.dto.store.StoreConnectRequest;
+import com.sellerhelper.dto.store.StoreProductVendorAssignRequest;
 import com.sellerhelper.dto.store.StoreMyUpdateRequest;
 import com.sellerhelper.dto.store.StoreReorderRequest;
 import com.sellerhelper.dto.store.StoreResponse;
@@ -151,6 +153,23 @@ public class MyStoreController {
         return ResponseEntity.ok(storeOrderService.getMyStoreOrderDetail(authUser.getUid(), uid, orderUid));
     }
 
+    /**
+     * 발주업체 기준 주문 라인 (상품 목록에서 해당 업체로 지정된 스토어 상품과 매칭되는 라인만).
+     */
+    @GetMapping("/{uid}/orders/vendor-lines")
+    public ResponseEntity<PageResponse<VendorOrderLineDto>> getVendorOrderLines(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @RequestParam Long vendorUid,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(
+                storeOrderService.getMyStoreVendorOrderLines(authUser.getUid(), uid, vendorUid, page, size));
+    }
+
     /** 내 스토어 주문 동기화 (네이버: 최근 24시간 변경분, 쿠팡: 최근 30일 결제분 → DB) */
     @PostMapping("/{uid}/orders/sync")
     public ResponseEntity<Integer> syncOrders(
@@ -240,6 +259,19 @@ public class MyStoreController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         storeProductService.syncStoreProducts(authUser.getUid(), uid);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** 스토어 상품 행(옵션 단위)에 발주업체 연결·해제 */
+    @PatchMapping("/{uid}/products/vendor-assignment")
+    public ResponseEntity<Void> assignStoreProductVendor(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @Valid @RequestBody StoreProductVendorAssignRequest body) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        storeProductService.assignStoreProductVendor(authUser.getUid(), uid, body);
         return ResponseEntity.noContent().build();
     }
 

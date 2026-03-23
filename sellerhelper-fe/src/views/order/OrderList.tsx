@@ -1,10 +1,17 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from '@/components/Link';
 import { useMyStoreStore } from '@/stores';
 import { buildStoreTabs } from '@/config/productStoreTabs';
-import { fetchOrderList, syncOrdersFromNaver, type OrderListItem } from '@/services/order.service';
+import {
+  fetchOrderList,
+  syncOrdersFromNaver,
+  fetchAllVendorOrderForms,
+  type OrderListItem,
+  type VendorOrderFormDto,
+} from '@/services';
+import { buildOrderExportCsv, downloadCsvFile } from '@/utils/orderExportCsv';
 import '../../styles/Settings.css';
 import '../product/ProductList.css';
 
@@ -40,6 +47,38 @@ export default function OrderList() {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [selectedUids, setSelectedUids] = useState<Set<number>>(() => new Set());
+  const [orderForms, setOrderForms] = useState<VendorOrderFormDto[]>([]);
+  const [selectedFormUid, setSelectedFormUid] = useState('');
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await fetchAllVendorOrderForms();
+        if (!cancelled) setOrderForms(list);
+      } catch {
+        if (!cancelled) setOrderForms([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    setSelectedUids(new Set());
+  }, [storeTab, currentPage]);
+
+  useEffect(() => {
+    const el = headerCheckboxRef.current;
+    if (!el) return;
+    const allPageSelected =
+      orders.length > 0 && orders.every((o) => selectedUids.has(o.uid));
+    const somePageSelected = orders.some((o) => selectedUids.has(o.uid));
+    el.indeterminate = somePageSelected && !allPageSelected;
+  }, [orders, selectedUids]);
 
   useEffect(() => {
     if (storeTabs.length > 0 && !storeTabs.some((t) => t.key === storeTab)) {
@@ -95,6 +134,46 @@ export default function OrderList() {
 
   function handleRefresh() {
     loadOrders();
+  }
+
+  const allPageSelected =
+    orders.length > 0 && orders.every((o) => selectedUids.has(o.uid));
+
+  function toggleAllPage() {
+    setSelectedUids((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) {
+        orders.forEach((o) => next.delete(o.uid));
+      } else {
+        orders.forEach((o) => next.add(o.uid));
+      }
+      return next;
+    });
+  }
+
+  function toggleOne(uid: number) {
+    setSelectedUids((prev) => {
+      const next = new Set(prev);
+      if (next.has(uid)) next.delete(uid);
+      else next.add(uid);
+      return next;
+    });
+  }
+
+  function handleExportCsv() {
+    const form = orderForms.find((f) => f.formUid === Number(selectedFormUid));
+    if (!form?.columnKeys?.length) {
+      alert('발주양식 관리에서 저장한 양식을 선택하세요.');
+      return;
+    }
+    const picked = orders.filter((o) => selectedUids.has(o.uid));
+    if (picked.length === 0) {
+      alert('현재 페이지에서 내보낼 주문을 선택하세요.');
+      return;
+    }
+    const csv = buildOrderExportCsv(picked, form.columnKeys);
+    const safe = form.formName.replace(/[\\/:*?"<>|]/g, '_');
+    downloadCsvFile(csv, `orders_${safe}_${new Date().toISOString().slice(0, 10)}.csv`);
   }
 
   const totalCount = totalElements;
@@ -162,7 +241,8 @@ export default function OrderList() {
     <div className="list-page">
       <h1>주문 목록</h1>
       <p className="page-desc">
-        스토어별 주문을 조회합니다. 주문 조회·동기화는 네이버 스마트스토어만 지원됩니다.
+        스토어별 주문을 조회합니다. 주문 조회·동기화는 네이버 스마트스토어만 지원됩니다. 체크한 행만 발주
+        양식(CSV)으로 내보낼 수 있습니다.
       </p>
       <section className="settings-section">
         <div className="product-list-tabs-wrap">
@@ -233,10 +313,59 @@ export default function OrderList() {
             {error && (
               <p style={{ color: '#c00', padding: '8px 0', margin: 0 }}>{error}</p>
             )}
+            <div
+              className="settings-toolbar"
+              style={{
+                marginTop: 8,
+                flexWrap: 'wrap',
+                gap: 12,
+                alignItems: 'center',
+              }}
+            >
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span>발주 양식</span>
+                <select
+                  value={selectedFormUid}
+                  onChange={(e) => setSelectedFormUid(e.target.value)}
+                  style={{ minWidth: 240, padding: '6px 10px' }}
+                  aria-label="저장된 발주 양식 선택"
+                >
+                  <option value="">선택</option>
+                  {orderForms
+                    .filter((f) => f.active)
+                    .map((f) => (
+                      <option key={f.formUid} value={String(f.formUid)}>
+                        {f.vendorName} — {f.formName}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <button type="button" className="btn btn-outline" onClick={handleExportCsv}>
+                선택 주문 CSV 내보내기
+              </button>
+              <Link to="/settings/supplier/forms?tab=orders" className="btn-link" style={{ fontSize: '0.875rem' }}>
+                발주업체별 주문
+              </Link>
+              <Link to="/settings/supplier/forms" className="btn-link" style={{ fontSize: '0.875rem' }}>
+                양식 관리
+              </Link>
+              <span style={{ color: '#666', fontSize: '0.875rem' }}>
+                현재 페이지에서 선택한 주문만 CSV에 포함됩니다.
+              </span>
+            </div>
             <div className="settings-table-wrap">
               <table className="settings-table">
                 <thead>
                   <tr>
+                    <th style={{ width: 44 }}>
+                      <input
+                        ref={headerCheckboxRef}
+                        type="checkbox"
+                        checked={allPageSelected}
+                        onChange={toggleAllPage}
+                        aria-label="현재 페이지 전체 선택"
+                      />
+                    </th>
                     <th>주문번호</th>
                     <th>스토어</th>
                     <th>주문자</th>
@@ -252,13 +381,13 @@ export default function OrderList() {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={10} style={{ padding: 24, textAlign: 'center' }}>
+                      <td colSpan={11} style={{ padding: 24, textAlign: 'center' }}>
                         조회 중…
                       </td>
                     </tr>
                   ) : orders.length === 0 ? (
                     <tr>
-                      <td colSpan={10} style={{ padding: 24, textAlign: 'center' }}>
+                      <td colSpan={11} style={{ padding: 24, textAlign: 'center' }}>
                         조회된 주문이 없습니다. &quot;데이터 동기화&quot;로 최근 24시간
                         변경분을 불러오세요.
                       </td>
@@ -266,6 +395,14 @@ export default function OrderList() {
                   ) : (
                     orders.map((o) => (
                       <tr key={o.uid}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={selectedUids.has(o.uid)}
+                            onChange={() => toggleOne(o.uid)}
+                            aria-label={`주문 ${o.mallOrderNo} 선택`}
+                          />
+                        </td>
                         <td>
                           <Link to={`/order/${o.uid}?storeUid=${o.storeUid}`}>{o.mallOrderNo}</Link>
                         </td>

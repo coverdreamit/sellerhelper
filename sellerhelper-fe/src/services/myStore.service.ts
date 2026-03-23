@@ -90,10 +90,17 @@ export interface NaverProductItem {
   channelProductNo?: string;
   productName?: string;
   salePrice?: number;
+  originalPrice?: number;
   stockQuantity?: number;
   statusType?: string;
   representativeImageUrl?: string;
   leafCategoryId?: string;
+  vendorItemId?: string | null;
+  optionName?: string | null;
+  rawPayload?: string | null;
+  storeProductUid?: number;
+  assignedVendorUid?: number | null;
+  assignedVendorName?: string | null;
 }
 
 export interface StoreProductsResult {
@@ -125,6 +132,25 @@ export async function syncStoreProducts(storeUid: number): Promise<void> {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err?.message ?? '상품 목록 동기화 실패');
+  }
+}
+
+/** 스토어 상품(옵션) 행에 발주업체 연결·해제 */
+export async function patchStoreProductVendorAssignment(
+  storeUid: number,
+  body: { sellerProductId: string; vendorItemId?: string; vendorUid: number | null }
+): Promise<void> {
+  const res = await apiFetch(`/api/my-stores/${storeUid}/products/vendor-assignment`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      sellerProductId: body.sellerProductId,
+      vendorItemId: body.vendorItemId ?? '',
+      vendorUid: body.vendorUid,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message ?? '발주업체 연결 저장 실패');
   }
 }
 

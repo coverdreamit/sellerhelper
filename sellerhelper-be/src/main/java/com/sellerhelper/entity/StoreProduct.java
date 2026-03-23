@@ -36,6 +36,13 @@ public class StoreProduct {
     @JoinColumn(name = "store_uid", nullable = false)
     private Store store;
 
+    /**
+     * 이 스토어 상품(옵션) 행에 연결한 발주업체. 채널 동기화 시 변경하지 않음.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_vendor_uid")
+    private Vendor assignedVendor;
+
     /** 쿠팡 상품 ID (sellerProductId) */
     @Column(name = "seller_product_id", nullable = false, length = 50)
     private String sellerProductId;

@@ -184,6 +184,10 @@ public class NaverOrderSyncService {
                 });
         item.setProductName(productOrder.getProductName() != null ? productOrder.getProductName() : "");
         item.setOptionInfo(productOrder.getProductOption());
+        item.setChannelType("NAVER");
+        item.setExternalProductId(productOrder.getProductId());
+        item.setExternalOptionId(null);
+        item.setSellerSku(null);
         item.setQuantity(productOrder.getQuantity() != null ? productOrder.getQuantity() : 1);
         if (productOrder.getUnitPrice() != null) {
             item.setUnitPrice(BigDecimal.valueOf(productOrder.getUnitPrice()));

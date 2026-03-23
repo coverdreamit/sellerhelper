@@ -1,4 +1,38 @@
 /* 발주양식관리 전용 */
+.supplier-form-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 20px 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.supplier-form-tab {
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fafafa;
+  color: #444;
+  cursor: pointer;
+}
+
+.supplier-form-tab:hover {
+  background: #f0f0f0;
+}
+
+.supplier-form-tab--active {
+  background: #fff;
+  border-color: #1967d2;
+  color: #1967d2;
+  font-weight: 600;
+}
+
+.supplier-procurement-panel {
+  margin-bottom: 24px;
+}
+
 .supplier-form-page .settings-section h2 {
   margin: 0 0 12px 0;
   font-size: 1.1rem;
@@ -299,4 +333,39 @@
 .form-card-actions .btn-sm {
   padding: 6px 12px;
   font-size: 0.85rem;
+}
+
+.vendor-orders-grid-wrap {
+  overflow-x: auto;
+}
+
+.vendor-orders-col-head {
+  vertical-align: bottom;
+  min-width: 7.5rem;
+  max-width: 10rem;
+}
+
+.vendor-orders-col-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  margin: 0;
+}
+
+.vendor-orders-col-label input[type='checkbox'] {
+  flex-shrink: 0;
+}
+
+.vendor-orders-col-text {
+  font-size: 0.78rem;
+  line-height: 1.25;
+  color: #333;
+  word-break: keep-all;
+}
+
+.vendor-orders-col-off {
+  display: none;
 }

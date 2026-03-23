@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from '@/components/Link';
-import { fetchStoreProducts, syncStoreProducts } from '@/services/myStore.service';
+import {
+  fetchStoreProducts,
+  patchStoreProductVendorAssignment,
+  syncStoreProducts,
+} from '@/services/myStore.service';
+import { fetchVendors } from '@/services/vendor.service';
+import type { Vendor } from '@/types';
 import { useMyStoreStore } from '@/stores';
 import { buildStoreTabs, getStoreColumns, getProductValue } from '@/config/productStoreTabs';
 import '../../styles/Settings.css';
@@ -36,6 +42,22 @@ export default function ProductList() {
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   const [syncing, setSyncing] = useState(false);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendorAssignRowKey, setVendorAssignRowKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchVendors()
+      .then((list) => {
+        if (!cancelled) setVendors(list.filter((v) => v.isActive));
+      })
+      .catch(() => {
+        if (!cancelled) setVendors([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /* 스토어 탭이 바뀌면(연동 스토어 로드 등) 첫 번째 탭 선택 */
   useEffect(() => {
@@ -95,11 +117,28 @@ export default function ProductList() {
                 : /중지|suspension/i.test(String(statusType))
                   ? '판매중지'
                   : statusType || '-';
+    const raw = p as Record<string, unknown>;
+    const sellerProductId = String(
+      p.channelProductNo ?? raw.channel_product_no ?? raw.sellerProductId ?? ''
+    ).trim();
+    const vendorItemRaw = raw.vendorItemId ?? raw.vendor_item_id;
+    const vendorItemId =
+      vendorItemRaw != null && String(vendorItemRaw).trim() !== '' ? String(vendorItemRaw).trim() : '';
+    const storeProductUid = typeof raw.storeProductUid === 'number' ? raw.storeProductUid : undefined;
+    const assignedVendorUid =
+      typeof raw.assignedVendorUid === 'number' ? raw.assignedVendorUid : null;
+    const assignedVendorName =
+      typeof raw.assignedVendorName === 'string' ? raw.assignedVendorName : null;
     return {
-      id: p.channelProductNo ?? (p as Record<string, unknown>).channel_product_no,
-      productNo: p.channelProductNo ?? (p as Record<string, unknown>).channel_product_no,
+      id: p.channelProductNo ?? raw.channel_product_no,
+      productNo: p.channelProductNo ?? raw.channel_product_no,
+      sellerProductId,
+      vendorItemId,
+      storeProductUid,
+      assignedVendorUid,
+      assignedVendorName,
       name,
-      imageUrl: p.representativeImageUrl ?? (p as Record<string, unknown>).representative_image_url,
+      imageUrl: p.representativeImageUrl ?? raw.representative_image_url,
       price,
       stock,
       status,
@@ -145,7 +184,55 @@ export default function ProductList() {
 
   const columns = getStoreColumns(filterValue);
 
-  function renderCell(p, col) {
+  function tableRowKey(p: Record<string, unknown>, idx: number): string {
+    if (typeof p.storeProductUid === 'number') return `sp-${p.storeProductUid}`;
+    return `${String(p.sellerProductId ?? '')}|${String(p.vendorItemId ?? '')}|${idx}`;
+  }
+
+  async function handleVendorAssign(
+    p: Record<string, unknown>,
+    value: string,
+    storeUid: number,
+    rowKey: string
+  ): Promise<void> {
+    const sellerProductId = String(p.sellerProductId ?? '').trim();
+    if (!sellerProductId) {
+      alert('상품 식별 정보가 없어 발주업체를 저장할 수 없습니다. 목록을 동기화한 뒤 다시 시도하세요.');
+      return;
+    }
+    const vendorItemId = p.vendorItemId != null ? String(p.vendorItemId).trim() : '';
+    const vendorUid = value === '' ? null : Number(value);
+    setVendorAssignRowKey(rowKey);
+    try {
+      await patchStoreProductVendorAssignment(storeUid, {
+        sellerProductId,
+        vendorItemId,
+        vendorUid,
+      });
+      const name =
+        vendorUid == null ? null : (vendors.find((x) => x.vendorId === vendorUid)?.vendorName ?? null);
+      setProducts((prev) =>
+        prev.map((r) => {
+          if (typeof p.storeProductUid === 'number' && r.storeProductUid === p.storeProductUid) {
+            return { ...r, assignedVendorUid: vendorUid, assignedVendorName: name };
+          }
+          if (
+            String(r.sellerProductId ?? '') === sellerProductId &&
+            String(r.vendorItemId ?? '') === vendorItemId
+          ) {
+            return { ...r, assignedVendorUid: vendorUid, assignedVendorName: name };
+          }
+          return r;
+        })
+      );
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '저장 실패');
+    } finally {
+      setVendorAssignRowKey(null);
+    }
+  }
+
+  function renderCell(p: Record<string, unknown>, col: { key: string; type?: string }) {
     const v = getProductValue(p, col.key, filterValue);
     switch (col.type) {
       case 'image':
@@ -184,6 +271,50 @@ export default function ProductList() {
             {v ?? '-'}
           </span>
         );
+      case 'vendorSelect': {
+        const mall = selectedTab?.mallCode ?? '';
+        if (!selectedTab?.storeUid || (mall !== 'NAVER' && mall !== 'COUPANG')) {
+          return <span style={{ color: '#999' }}>—</span>;
+        }
+        const uid = typeof p.assignedVendorUid === 'number' ? p.assignedVendorUid : '';
+        const sellerId = String(p.sellerProductId ?? '');
+        const vItem = String(p.vendorItemId ?? '');
+        const rowKey = `${String(p.storeProductUid ?? '')}|${sellerId}|${vItem}`;
+        const busy = vendorAssignRowKey === rowKey;
+        const options = [...vendors];
+        if (
+          typeof uid === 'number' &&
+          uid > 0 &&
+          !options.some((x) => x.vendorId === uid) &&
+          typeof p.assignedVendorName === 'string'
+        ) {
+          options.push({
+            vendorId: uid,
+            vendorName: p.assignedVendorName,
+            orderMethod: 'ETC',
+            shippingType: 'DIRECT',
+            isActive: true,
+          } as Vendor);
+        }
+        return (
+          <select
+            className="product-list-vendor-select"
+            value={uid === '' ? '' : String(uid)}
+            disabled={busy}
+            aria-label="발주업체"
+            onChange={(e) =>
+              void handleVendorAssign(p, e.target.value, selectedTab.storeUid, rowKey)
+            }
+          >
+            <option value="">선택 안 함</option>
+            {options.map((x) => (
+              <option key={x.vendorId} value={x.vendorId}>
+                {x.vendorName}
+              </option>
+            ))}
+          </select>
+        );
+      }
       default:
         return v ?? '-';
     }
@@ -192,7 +323,10 @@ export default function ProductList() {
   return (
     <div className="list-page">
       <h1>상품 목록</h1>
-      <p className="page-desc">등록된 상품을 조회·관리합니다.</p>
+      <p className="page-desc">
+        스토어별 동기화된 상품을 조회합니다. 네이버·쿠팡 탭에서는 행마다 발주업체를 지정할 수 있으며, 채널
+        상품 동기화 후에도 지정이 유지됩니다.
+      </p>
       <section className="settings-section">
         <div className="product-list-tabs-wrap">
           <div className="product-list-tabs">
@@ -319,7 +453,7 @@ export default function ProductList() {
                   </tr>
                 ) : (
                   pagedProducts.map((p, idx) => (
-                    <tr key={String(p.id ?? p.productNo ?? idx)}>
+                    <tr key={tableRowKey(p, idx)}>
                       {columns.map((col) => (
                         <td key={col.key}>{renderCell(p, col)}</td>
                       ))}

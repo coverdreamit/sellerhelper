@@ -5,13 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sellerhelper.dto.naver.NaverProductItem;
 import com.sellerhelper.dto.naver.NaverProductSearchResult;
 import com.sellerhelper.entity.Company;
+import com.sellerhelper.dto.store.StoreProductVendorAssignRequest;
 import com.sellerhelper.entity.Store;
 import com.sellerhelper.entity.StoreProduct;
 import com.sellerhelper.entity.User;
+import com.sellerhelper.entity.Vendor;
 import com.sellerhelper.exception.ResourceNotFoundException;
 import com.sellerhelper.repository.StoreProductRepository;
 import com.sellerhelper.repository.StoreRepository;
 import com.sellerhelper.repository.UserRepository;
+import com.sellerhelper.repository.VendorRepository;
 import com.sellerhelper.service.coupang.CoupangProductQueryService;
 import com.sellerhelper.service.coupang.CoupangProductSyncService;
 import com.sellerhelper.service.naver.NaverCommerceProductService;
@@ -37,6 +40,7 @@ public class StoreProductService {
     private final UserRepository userRepository;
     private final StoreRepository storeRepository;
     private final StoreProductRepository storeProductRepository;
+    private final VendorRepository vendorRepository;
     private final NaverCommerceProductService naverProductService;
     private final CoupangProductSyncService coupangProductSyncService;
     private final CoupangProductQueryService coupangProductQueryService;
@@ -124,7 +128,42 @@ public class StoreProductService {
                         readString(raw, "categoryId", null),
                         readString(productNode, "categoryId", null)))
                 .rawPayload(p.getRawPayload())
+                .storeProductUid(p.getUid())
+                .assignedVendorUid(p.getAssignedVendor() != null ? p.getAssignedVendor().getUid() : null)
+                .assignedVendorName(p.getAssignedVendor() != null ? p.getAssignedVendor().getVendorName() : null)
                 .build();
+    }
+
+    /**
+     * 상품 목록 행(스토어+판매상품ID+옵션ID)에 발주업체를 연결하거나 해제합니다.
+     */
+    @Transactional
+    public void assignStoreProductVendor(Long userUid, Long storeUid, StoreProductVendorAssignRequest request) {
+        User user = userRepository.findById(userUid)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userUid));
+        Store store = storeRepository.findById(storeUid)
+                .orElseThrow(() -> new ResourceNotFoundException("Store", storeUid));
+        Company userCompany = user.getCompany();
+        if (userCompany == null || store.getCompany() == null
+                || !store.getCompany().getUid().equals(userCompany.getUid())) {
+            throw new IllegalArgumentException("해당 스토어의 상품을 수정할 권한이 없습니다.");
+        }
+        String sid = request.getSellerProductId() != null ? request.getSellerProductId().trim() : "";
+        String vid = request.getVendorItemId() == null || request.getVendorItemId().isBlank()
+                ? ""
+                : request.getVendorItemId().trim();
+        StoreProduct row = storeProductRepository
+                .findByStore_UidAndSellerProductIdAndVendorItemId(storeUid, sid, vid)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "StoreProduct", "storeUid/sellerProductId/vendorItemId", storeUid + "/" + sid + "/" + vid));
+        if (request.getVendorUid() == null) {
+            row.setAssignedVendor(null);
+        } else {
+            Vendor vendor = vendorRepository.findByUidAndUser_Uid(request.getVendorUid(), userUid)
+                    .orElseThrow(() -> new IllegalArgumentException("발주업체를 찾을 수 없습니다."));
+            row.setAssignedVendor(vendor);
+        }
+        storeProductRepository.save(row);
     }
 
     /**
