@@ -17,41 +17,12 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { getMergedSystemColumns } from '@/utils/autoMapping';
+import {
+  ORDER_TEMPLATE_FIELDS,
+  DEFAULT_ORDER_TEMPLATE_COLUMN_KEYS,
+  getOrderTemplateFieldMap,
+} from '@/constants/orderTemplateFields';
 import '@/styles/Settings.css';
-
-const DEFAULT_COLUMNS_WITH_WIDTH = [
-  { key: 'orderNo', label: '발주번호', width: 120 },
-  { key: 'orderDate', label: '발주일', width: 100 },
-  { key: 'productCode', label: '상품코드', width: 100 },
-  { key: 'productName', label: '상품명', width: 200 },
-  { key: 'option', label: '옵션', width: 120 },
-  { key: 'qty', label: '수량', width: 80 },
-  { key: 'unitPrice', label: '단가', width: 100 },
-  { key: 'supplyPrice', label: '공급가', width: 100 },
-  { key: 'amount', label: '금액', width: 100 },
-  { key: 'deliveryRequest', label: '납기요청일', width: 100 },
-  { key: 'remark', label: '비고', width: 150 },
-];
-
-const DEFAULT_COLUMN_KEYS = [
-  'orderNo',
-  'orderDate',
-  'productCode',
-  'productName',
-  'qty',
-  'unitPrice',
-  'amount',
-  'remark',
-];
-
-function buildAvailableColumns() {
-  const merged = getMergedSystemColumns();
-  return merged.map((c) => {
-    const found = DEFAULT_COLUMNS_WITH_WIDTH.find((d) => d.key === c.key);
-    return found ? { ...c, width: found.width } : { ...c, width: 120 };
-  });
-}
 
 function SortableColumnItem({ id, label, onRemove }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -98,14 +69,13 @@ export default function OrderTemplateEditModal({
   onSave,
 }) {
   const [selectedColumns, setSelectedColumns] = useState(
-    initialColumnKeys?.length ? initialColumnKeys : DEFAULT_COLUMN_KEYS
+    initialColumnKeys?.length ? initialColumnKeys : DEFAULT_ORDER_TEMPLATE_COLUMN_KEYS
   );
 
-  const availableColumns = useMemo(() => buildAvailableColumns(), []);
-  const columnMap = useMemo(() => Object.fromEntries(availableColumns.map((c) => [c.key, c])), [availableColumns]);
+  const columnMap = useMemo(() => getOrderTemplateFieldMap(), []);
 
   useEffect(() => {
-    setSelectedColumns(initialColumnKeys?.length ? initialColumnKeys : DEFAULT_COLUMN_KEYS);
+    setSelectedColumns(initialColumnKeys?.length ? initialColumnKeys : DEFAULT_ORDER_TEMPLATE_COLUMN_KEYS);
   }, [supplierId, initialColumnKeys]);
 
   const sensors = useSensors(
@@ -143,9 +113,10 @@ export default function OrderTemplateEditModal({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal modal-lg modal-xl" onClick={(e) => e.stopPropagation()}>
-        <h2>엑셀 발주 양식 설정 - {supplierName ?? '발주업체'}</h2>
+        <h2>발주 양식 컬럼 설정 - {supplierName ?? '발주업체'}</h2>
         <p className="modal-desc">
-          왼쪽에서 항목을 추가하고, 오른쪽 목록을 드래그해 순서를 바꾸거나 ×로 삭제할 수 있습니다.
+          스마트스토어 주문·배송 DB와 동일한 항목입니다. 왼쪽에서 추가하고 오른쪽에서 드래그해 순서를
+          맞춘 뒤 저장하면 배송 목록 발주서에 반영됩니다.
         </p>
 
         <div className="form-column-layout form-column-layout--modal">
@@ -153,7 +124,7 @@ export default function OrderTemplateEditModal({
             <h3>추가할 항목</h3>
             <p className="form-hint">클릭하면 오른쪽 목록에 추가됩니다.</p>
             <ul className="form-column-add-list">
-              {availableColumns.map((col) => (
+              {ORDER_TEMPLATE_FIELDS.map((col) => (
                 <li key={col.key}>
                   <button
                     type="button"
