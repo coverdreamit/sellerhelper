@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from '@/components/Link';
-import { useMyStoreStore } from '@/stores';
+import { useMyStoreStore, useVendorStore } from '@/stores';
 import { buildStoreTabs } from '@/config/productStoreTabs';
 import { fetchShippingList, SHIPPING_STATUS, type ShippingListItem } from '@/services/shipping.service';
 import { syncOrdersFromNaver } from '@/services/order.service';
+import {
+  exportPurchaseOrderExcel,
+  downloadBlob,
+} from '@/services/purchaseOrder.service';
+import { loadSupplierPoColumnKeys } from '@/utils/supplierPoFormStorage';
 import '../../styles/Settings.css';
 import '../product/ProductList.css';
 
@@ -41,8 +46,14 @@ function orderStatusLabel(status: string): string {
   return status || '-';
 }
 
+function formatStampForFilename(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
+}
+
 export default function ShippingList() {
   const { myStores } = useMyStoreStore();
+  const { vendors, loadVendors } = useVendorStore();
   const storeTabs = buildStoreTabs(myStores);
 
   const [storeTab, setStoreTab] = useState(storeTabs[0]?.key ?? '');
@@ -55,15 +66,37 @@ export default function ShippingList() {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedUids, setSelectedUids] = useState<Set<number>>(new Set());
+  const [poVendorId, setPoVendorId] = useState<number | ''>('');
+  const [exporting, setExporting] = useState(false);
 
   const selectedTab = storeTabs.find((t) => t.key === storeTab);
   const isNaverStore = selectedTab?.mallCode === 'NAVER';
+
+  useEffect(() => {
+    loadVendors();
+  }, [loadVendors]);
+
+  useEffect(() => {
+    if (vendors.length === 0) {
+      setPoVendorId('');
+      return;
+    }
+    const exists = vendors.some((v) => v.vendorId === poVendorId);
+    if (poVendorId === '' || !exists) {
+      setPoVendorId(vendors[0].vendorId);
+    }
+  }, [vendors, poVendorId]);
 
   useEffect(() => {
     if (storeTabs.length > 0 && !storeTabs.some((t) => t.key === storeTab)) {
       setStoreTab(storeTabs[0].key);
     }
   }, [storeTabs, storeTab]);
+
+  useEffect(() => {
+    setSelectedUids(new Set());
+  }, [storeTab, currentPage, pageSize, orderStatusFilter]);
 
   const loadShipping = useCallback(async () => {
     if (!storeTab || storeTabs.length === 0) {
@@ -121,6 +154,65 @@ export default function ShippingList() {
 
   const totalCount = totalElements;
   const startIdx = totalCount > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+
+  const selectedVendorName = useMemo(() => {
+    if (poVendorId === '') return '';
+    return vendors.find((v) => v.vendorId === poVendorId)?.vendorName ?? '';
+  }, [vendors, poVendorId]);
+
+  const toggleSelect = useCallback((uid: number, checked: boolean) => {
+    setSelectedUids((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(uid);
+      else next.delete(uid);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAllOnPage = useCallback(
+    (checked: boolean) => {
+      setSelectedUids((prev) => {
+        const next = new Set(prev);
+        list.forEach((row) => {
+          if (checked) next.add(row.uid);
+          else next.delete(row.uid);
+        });
+        return next;
+      });
+    },
+    [list]
+  );
+
+  const allOnPageSelected =
+    list.length > 0 && list.every((row) => selectedUids.has(row.uid));
+
+  async function handleExportPurchaseOrder() {
+    if (!storeTab || poVendorId === '') {
+      setError('발주업체를 선택하세요.');
+      return;
+    }
+    const uids = [...selectedUids];
+    if (uids.length === 0) {
+      setError('발주서로 내보낼 주문을 선택하세요.');
+      return;
+    }
+    const columnKeys = loadSupplierPoColumnKeys(String(poVendorId));
+    setExporting(true);
+    setError(null);
+    try {
+      const blob = await exportPurchaseOrderExcel(Number(storeTab), {
+        vendorId: Number(poVendorId),
+        orderUids: uids,
+        columnKeys,
+      });
+      const safeName = (selectedVendorName || '발주').replace(/[\\/:*?"<>|]/g, '_');
+      downloadBlob(blob, `발주서_${safeName}_${formatStampForFilename(new Date())}.xlsx`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '발주서 생성에 실패했습니다.');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   function renderPagination() {
     const maxVisible = 5;
@@ -183,7 +275,9 @@ export default function ShippingList() {
     <div className="list-page">
       <h1>배송 목록</h1>
       <p className="page-desc">
-        전체 배송 건을 조회·관리합니다. 네이버 스토어 탭에서 &quot;데이터 동기화&quot;로 최신 주문을 가져오세요.
+        전체 배송 건을 조회·관리합니다. 네이버 스토어 탭에서 &quot;데이터 동기화&quot;로 최신 주문을 DB에 반영한 뒤, 주문을 선택하고
+        발주업체를 고르면 발주양식관리에 저장된 컬럼 순서로 발주서 엑셀을 받을 수 있습니다. (스마트스토어 엑셀과 동일한 필드
+        의미, 데이터는 동기화된 주문·상품행 기준입니다.)
       </p>
       <section className="settings-section">
         <div className="product-list-tabs-wrap">
@@ -244,6 +338,37 @@ export default function ShippingList() {
                 </label>
               </div>
               <div className="product-list-actions">
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 8 }}>
+                  <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>발주업체</span>
+                  <select
+                    style={{ padding: '6px 10px', minWidth: 140 }}
+                    value={poVendorId === '' ? '' : String(poVendorId)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setPoVendorId(v === '' ? '' : Number(v));
+                    }}
+                    aria-label="발주업체"
+                  >
+                    {vendors.length === 0 ? (
+                      <option value="">등록된 발주업체 없음</option>
+                    ) : (
+                      vendors.map((v) => (
+                        <option key={v.vendorId} value={String(v.vendorId)}>
+                          {v.vendorName}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleExportPurchaseOrder}
+                  disabled={exporting || loading || vendors.length === 0 || poVendorId === ''}
+                  title="발주양식관리에 저장된 컬럼 순서로 엑셀을 만듭니다."
+                >
+                  {exporting ? '발주서 생성 중…' : '발주서 엑셀 다운로드'}
+                </button>
                 {isNaverStore && (
                   <>
                     <button
@@ -277,6 +402,15 @@ export default function ShippingList() {
               <table className="settings-table">
                 <thead>
                   <tr>
+                    <th style={{ width: 40 }}>
+                      <input
+                        type="checkbox"
+                        checked={allOnPageSelected}
+                        onChange={(e) => toggleSelectAllOnPage(e.target.checked)}
+                        aria-label="현재 페이지 전체 선택"
+                        disabled={list.length === 0 || loading}
+                      />
+                    </th>
                     <th>주문번호</th>
                     <th>스토어</th>
                     <th>수령인</th>
@@ -289,19 +423,27 @@ export default function ShippingList() {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
+                      <td colSpan={8} style={{ padding: 24, textAlign: 'center' }}>
                         조회 중…
                       </td>
                     </tr>
                   ) : list.length === 0 ? (
                     <tr>
-                      <td colSpan={7} style={{ padding: 24, textAlign: 'center' }}>
+                      <td colSpan={8} style={{ padding: 24, textAlign: 'center' }}>
                         조회된 배송 건이 없습니다. 주문 목록에서 네이버 주문 동기화 후 배송 목록을 조회할 수 있습니다.
                       </td>
                     </tr>
                   ) : (
                     list.map((row) => (
                       <tr key={row.uid}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={selectedUids.has(row.uid)}
+                            onChange={(e) => toggleSelect(row.uid, e.target.checked)}
+                            aria-label={`주문 ${row.mallOrderNo} 선택`}
+                          />
+                        </td>
                         <td>
                           <Link to={`/order/${row.uid}`}>{row.mallOrderNo}</Link>
                         </td>

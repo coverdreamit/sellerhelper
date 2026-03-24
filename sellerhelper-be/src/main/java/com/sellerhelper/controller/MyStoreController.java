@@ -11,23 +11,29 @@ import com.sellerhelper.dto.order.OrderActionResponse;
 import com.sellerhelper.dto.order.OrderDetailResponse;
 import com.sellerhelper.dto.order.OrderDispatchRequest;
 import com.sellerhelper.dto.order.OrderListResponse;
-import com.sellerhelper.dto.order.VendorOrderLineDto;
+import com.sellerhelper.dto.order.PurchaseOrderExportRequest;
 import com.sellerhelper.dto.store.StoreConnectRequest;
-import com.sellerhelper.dto.store.StoreProductVendorAssignRequest;
 import com.sellerhelper.dto.store.StoreMyUpdateRequest;
 import com.sellerhelper.dto.store.StoreReorderRequest;
 import com.sellerhelper.dto.store.StoreResponse;
+import com.sellerhelper.service.PurchaseOrderExportService;
 import com.sellerhelper.service.StoreOrderService;
 import com.sellerhelper.service.StoreProductService;
 import com.sellerhelper.service.StoreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -41,6 +47,7 @@ public class MyStoreController {
     private final StoreService storeService;
     private final StoreProductService storeProductService;
     private final StoreOrderService storeOrderService;
+    private final PurchaseOrderExportService purchaseOrderExportService;
 
     /** 내 회사 스토어 목록 (연동된 스토어) */
     @GetMapping
@@ -153,23 +160,6 @@ public class MyStoreController {
         return ResponseEntity.ok(storeOrderService.getMyStoreOrderDetail(authUser.getUid(), uid, orderUid));
     }
 
-    /**
-     * 발주업체 기준 주문 라인 (상품 목록에서 해당 업체로 지정된 스토어 상품과 매칭되는 라인만).
-     */
-    @GetMapping("/{uid}/orders/vendor-lines")
-    public ResponseEntity<PageResponse<VendorOrderLineDto>> getVendorOrderLines(
-            @AuthenticationPrincipal AuthUser authUser,
-            @PathVariable Long uid,
-            @RequestParam Long vendorUid,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
-        if (authUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        return ResponseEntity.ok(
-                storeOrderService.getMyStoreVendorOrderLines(authUser.getUid(), uid, vendorUid, page, size));
-    }
-
     /** 내 스토어 주문 동기화 (네이버: 최근 24시간 변경분, 쿠팡: 최근 30일 결제분 → DB) */
     @PostMapping("/{uid}/orders/sync")
     public ResponseEntity<Integer> syncOrders(
@@ -223,6 +213,30 @@ public class MyStoreController {
                 authUser.getUid(), uid, page, size, claimType, keyword));
     }
 
+    /**
+     * 선택한 주문으로 발주업체 양식 컬럼에 맞춰 발주서(xlsx) 다운로드.
+     * 프론트 발주양식관리에 저장된 columnKeys와 동일한 키를 사용합니다.
+     */
+    @PostMapping("/{uid}/purchase-orders/export")
+    public ResponseEntity<byte[]> exportPurchaseOrder(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long uid,
+            @Valid @RequestBody PurchaseOrderExportRequest request) {
+        if (authUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        byte[] bytes = purchaseOrderExportService.exportExcel(authUser.getUid(), uid, request);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        String stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"));
+        String filename = "발주서_" + stamp + ".xlsx";
+        headers.setContentDisposition(ContentDisposition.builder("attachment")
+                .filename(filename, StandardCharsets.UTF_8)
+                .build());
+        return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
+    }
+
     /** 내 스토어 배송 목록 조회 (DB 저장분, orderStatus: PAYED=출고대기, DELIVERING=배송중, DELIVERED=배송완료) */
     @GetMapping("/{uid}/shipping")
     public ResponseEntity<PageResponse<OrderListResponse>> getShippingList(
@@ -259,19 +273,6 @@ public class MyStoreController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         storeProductService.syncStoreProducts(authUser.getUid(), uid);
-        return ResponseEntity.noContent().build();
-    }
-
-    /** 스토어 상품 행(옵션 단위)에 발주업체 연결·해제 */
-    @PatchMapping("/{uid}/products/vendor-assignment")
-    public ResponseEntity<Void> assignStoreProductVendor(
-            @AuthenticationPrincipal AuthUser authUser,
-            @PathVariable Long uid,
-            @Valid @RequestBody StoreProductVendorAssignRequest body) {
-        if (authUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        storeProductService.assignStoreProductVendor(authUser.getUid(), uid, body);
         return ResponseEntity.noContent().build();
     }
 

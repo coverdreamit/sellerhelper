@@ -1,133 +1,134 @@
 'use client';
-
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import Link from '@/components/Link';
-import VendorOrderFormModal from '@/components/vendor/VendorOrderFormModal';
+import OrderTemplateEditModal from '@/components/order-template/OrderTemplateEditModal';
+import OrderTemplatePreviewModal from '@/components/order-template/OrderTemplatePreviewModal';
 import { useVendorStore } from '@/stores';
 import {
-  fetchAllVendorOrderForms,
-  deleteVendorOrderForm,
-  type VendorOrderFormDto,
-} from '@/services/vendorOrderForm.service';
+  loadSupplierPoColumnKeys,
+  saveSupplierPoColumnKeys,
+} from '@/utils/supplierPoFormStorage';
 import '../../../styles/Settings.css';
 import './SupplierFormManage.css';
 
-function formatUpdatedAt(iso: string | undefined): string {
-  if (!iso) return '-';
-  try {
-    const d = new Date(iso);
-    return d.toLocaleDateString('ko-KR');
-  } catch {
-    return iso.slice(0, 10);
-  }
-}
-
-function buildContentHref(f: VendorOrderFormDto): string {
-  const q = new URLSearchParams();
-  q.set('formUid', String(f.formUid));
-  q.set('vendorUid', String(f.vendorUid));
-  q.set('formName', f.formName);
-  return `/settings/supplier/forms/content?${q.toString()}`;
-}
-
-function buildPreviewHref(f: VendorOrderFormDto): string {
-  const q = new URLSearchParams();
-  q.set('formUid', String(f.formUid));
-  q.set('vendorUid', String(f.vendorUid));
-  q.set('formName', f.formName);
-  q.set('preview', '1');
-  return `/settings/supplier/forms/content?${q.toString()}`;
-}
-
-export default function SupplierFormManage() {
-  const { vendors, loadVendors } = useVendorStore();
-  const [forms, setForms] = useState<VendorOrderFormDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const [formModal, setFormModal] = useState<{
-    open: boolean;
-    mode: 'create' | 'edit';
-    editTarget: VendorOrderFormDto | null;
-  }>({ open: false, mode: 'create', editTarget: null });
-
-  const refreshForms = useCallback(async () => {
-    const list = await fetchAllVendorOrderForms();
-    setForms(list);
-  }, []);
+export default function SupplierFormManage({ vendorId: initialVendorId }) {
+  const { vendors, loading, error, loadVendors } = useVendorStore();
+  const [selectedSupplier, setSelectedSupplier] = useState<string>('');
+  const [editModalForm, setEditModalForm] = useState<{
+    supplierId: string;
+    supplierName: string;
+    initialColumnKeys: string[];
+  } | null>(null);
+  const [previewModalForm, setPreviewModalForm] = useState<{
+    formName: string;
+    supplierName: string;
+    columnKeys: string[];
+  } | null>(null);
+  const [searchName, setSearchName] = useState('');
 
   useEffect(() => {
     loadVendors();
   }, [loadVendors]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        await refreshForms();
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : '발주 양식을 불러오지 못했습니다.');
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshForms]);
+    if (vendors.length === 0) return;
+    const first =
+      initialVendorId != null && initialVendorId !== ''
+        ? String(initialVendorId)
+        : String(vendors[0].vendorId);
+    setSelectedSupplier((prev) => (prev ? prev : first));
+  }, [vendors, initialVendorId]);
 
-  const handleDelete = useCallback(
-    async (f: VendorOrderFormDto) => {
-      if (!window.confirm(`「${f.formName}」 발주서를 삭제할까요?`)) return;
-      try {
-        await deleteVendorOrderForm(f.vendorUid, f.formUid);
-        await refreshForms();
-      } catch (e) {
-        alert(e instanceof Error ? e.message : '삭제 실패');
-      }
-    },
-    [refreshForms]
-  );
+  useEffect(() => {
+    if (initialVendorId != null && initialVendorId !== '') {
+      setSelectedSupplier(String(initialVendorId));
+    }
+  }, [initialVendorId]);
+
+  const filteredVendors = useMemo(() => {
+    const q = searchName.trim().toLowerCase();
+    if (!q) return vendors;
+    return vendors.filter((v) => v.vendorName.toLowerCase().includes(q));
+  }, [vendors, searchName]);
+
+  const handleEditSave = useCallback((supplierId: string, columnKeys: string[]) => {
+    saveSupplierPoColumnKeys(supplierId, columnKeys);
+    setEditModalForm(null);
+    alert('해당 업체 발주 양식이 저장되었습니다.');
+  }, []);
 
   return (
     <div className="settings-page supplier-form-page">
       <h1>발주양식 관리</h1>
       <p className="page-desc">
-        발주서 목록에서 먼저 발주서를 등록하고, 각 발주서의 <strong>내용 만들기</strong>에서 API 그리드를
-        불러와 칼럼 체크 후 CSV를 만듭니다.
+        발주업체별로 엑셀 발주서에 포함할 스토어·주문·상품·배송 컬럼을 선택합니다. 네이버 스마트스토어에서
+        내려받은 주문/발송 엑셀과 동일한 의미의 필드입니다. 배송 목록에서 주문을 선택·발주서 생성 시 이
+        순서대로 출력됩니다.
       </p>
 
       <section className="settings-section">
-        <h2>발주서 목록</h2>
+        <h2>발주업체별 컬럼 설정</h2>
         <div className="settings-toolbar">
-          <div />
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() =>
-                setFormModal({ open: true, mode: 'create', editTarget: null })
-              }
+          <div>
+            <select
+              style={{ padding: '6px 12px', marginRight: 8 }}
+              value={selectedSupplier}
+              onChange={(e) => setSelectedSupplier(e.target.value)}
+              aria-label="발주업체 필터"
             >
-              발주서 등록
+              {vendors.length === 0 ? (
+                <option value="">등록된 발주업체 없음</option>
+              ) : (
+                vendors.map((v) => (
+                  <option key={v.vendorId} value={String(v.vendorId)}>
+                    {v.vendorName}
+                  </option>
+                ))
+              )}
+            </select>
+            <input
+              type="text"
+              placeholder="업체명 검색"
+              style={{ padding: '6px 12px', marginRight: 8 }}
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+            />
+            <button type="button" className="btn">
+              검색
             </button>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Link to="/settings/supplier/list" className="btn">
               발주업체 목록
             </Link>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={!selectedSupplier}
+              onClick={() => {
+                const v = vendors.find((x) => String(x.vendorId) === selectedSupplier);
+                if (!v) return;
+                setEditModalForm({
+                  supplierId: String(v.vendorId),
+                  supplierName: v.vendorName,
+                  initialColumnKeys: loadSupplierPoColumnKeys(String(v.vendorId)),
+                });
+              }}
+            >
+              선택 업체 컬럼 편집
+            </button>
           </div>
         </div>
 
-        {error && <p style={{ color: '#c00', marginTop: 8 }}>{error}</p>}
+        {error && (
+          <p style={{ color: '#c00', padding: '8px 0', margin: 0 }}>{error}</p>
+        )}
+        {loading && <p className="page-desc">목록 불러오는 중…</p>}
 
         <div className="settings-table-wrap">
           <table className="settings-table">
             <thead>
               <tr>
-                <th>발주서 이름</th>
                 <th>발주업체</th>
                 <th>사용여부</th>
                 <th>수정일</th>
@@ -135,65 +136,81 @@ export default function SupplierFormManage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {filteredVendors.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: 24, textAlign: 'center' }}>
-                    불러오는 중…
-                  </td>
-                </tr>
-              ) : forms.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ padding: 24, textAlign: 'center' }}>
-                    등록된 발주서가 없습니다. &quot;발주서 등록&quot;을 먼저 해주세요.
+                  <td colSpan={4} style={{ padding: 24, textAlign: 'center' }}>
+                    발주업체가 없습니다. 발주업체 목록에서 등록하세요.
                   </td>
                 </tr>
               ) : (
-                forms.map((f) => (
-                  <tr key={f.formUid}>
-                    <td>{f.formName}</td>
-                    <td>{f.vendorName}</td>
-                    <td>
-                      <span className={`badge badge-${f.active ? 'active' : 'inactive'}`}>
-                        {f.active ? '사용' : '미사용'}
-                      </span>
-                    </td>
-                    <td>{formatUpdatedAt(f.updatedAt)}</td>
-                    <td className="cell-actions">
-                      <Link to={buildContentHref(f)} className="btn-link">
-                        내용 만들기
-                      </Link>
-                      <Link to={buildPreviewHref(f)} className="btn-link">
-                        미리보기
-                      </Link>
-                      <button
-                        type="button"
-                        className="btn-link"
-                        onClick={() =>
-                          setFormModal({ open: true, mode: 'edit', editTarget: f })
-                        }
-                      >
-                        수정
-                      </button>
-                      <button type="button" className="btn-link" onClick={() => handleDelete(f)}>
-                        삭제
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                filteredVendors.map((v) => {
+                  const cols = loadSupplierPoColumnKeys(String(v.vendorId));
+                  return (
+                    <tr key={v.vendorId}>
+                      <td>{v.vendorName}</td>
+                      <td>
+                        <span
+                          className={`badge badge-${v.isActive ? 'active' : 'inactive'}`}
+                        >
+                          {v.isActive ? '사용' : '미사용'}
+                        </span>
+                      </td>
+                      <td>{v.updatedAt ? v.updatedAt.slice(0, 10) : '-'}</td>
+                      <td className="cell-actions">
+                        <button
+                          type="button"
+                          className="btn-link"
+                          onClick={() =>
+                            setPreviewModalForm({
+                              formName: `${v.vendorName} 발주서`,
+                              supplierName: v.vendorName,
+                              columnKeys: cols,
+                            })
+                          }
+                        >
+                          미리보기
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-link"
+                          onClick={() =>
+                            setEditModalForm({
+                              supplierId: String(v.vendorId),
+                              supplierName: v.vendorName,
+                              initialColumnKeys: cols,
+                            })
+                          }
+                        >
+                          컬럼 편집
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
       </section>
 
-      <VendorOrderFormModal
-        open={formModal.open}
-        mode={formModal.mode}
-        vendors={vendors}
-        editTarget={formModal.editTarget}
-        onClose={() => setFormModal((s) => ({ ...s, open: false }))}
-        onSaved={refreshForms}
-      />
+      {editModalForm && (
+        <OrderTemplateEditModal
+          supplierId={editModalForm.supplierId}
+          supplierName={editModalForm.supplierName}
+          initialColumnKeys={editModalForm.initialColumnKeys}
+          onClose={() => setEditModalForm(null)}
+          onSave={handleEditSave}
+        />
+      )}
+
+      {previewModalForm && (
+        <OrderTemplatePreviewModal
+          formName={previewModalForm.formName}
+          supplierName={previewModalForm.supplierName}
+          columnKeys={previewModalForm.columnKeys}
+          onClose={() => setPreviewModalForm(null)}
+        />
+      )}
     </div>
   );
 }

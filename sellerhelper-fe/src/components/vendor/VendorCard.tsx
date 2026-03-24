@@ -1,15 +1,9 @@
 'use client';
 
 import Link from '@/components/Link';
-import type { Vendor } from '@/types';
 import '@/styles/Settings.css';
 
-type VendorCardProps = {
-  vendor: Vendor;
-  onEdit?: (v: Vendor) => void;
-};
-
-export function VendorCard({ vendor, onEdit }: VendorCardProps) {
+export function VendorCard({ vendor, onEdit }) {
   const orderMethodLabel = vendor.orderMethod === 'EMAIL' ? '이메일' : vendor.orderMethod === 'EXCEL' ? '엑셀' : vendor.orderMethod ?? '-';
   const shippingLabel = vendor.shippingType === 'DIRECT' ? '직배송' : vendor.shippingType === 'CONSIGNMENT' ? '위탁' : vendor.shippingType ?? '-';
 
