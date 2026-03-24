@@ -39,13 +39,12 @@ SPRING_PROFILES_ACTIVE=prod java -jar target/sellerhelper-be-0.1.0-SNAPSHOT.jar
 
 ## 프로필
 
-| 프로필 | 용도 |
-|--------|------|
-| `local` | 로컬 개발 (PostgreSQL) |
+| 프로필     | 용도                         |
+| ---------- | ---------------------------- |
+| `local`    | 로컬 개발 (PostgreSQL)       |
 | `local-h2` | H2 인메모리 (DB 설치 불필요) |
-| `prod` | 운영 배포 |
+| `prod`     | 운영 배포                    |
 
 ## 포트
 
-기본 포트: **5080** (환경변수 `SERVER_PORT`로 변경 가능)
-
+기본 포트: **5001** (환경변수 `SERVER_PORT`로 변경 가능)
