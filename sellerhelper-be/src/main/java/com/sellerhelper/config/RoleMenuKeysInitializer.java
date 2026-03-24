@@ -22,7 +22,7 @@ import java.util.List;
 public class RoleMenuKeysInitializer implements ApplicationRunner {
 
     private static final String ALL_MENU_KEYS = "dashboard,product,product-list,order,order-list,order-processing,order-claim," +
-            "shipping,shipping-list,shipping-pending,shipping-transit,shipping-complete," +
+            "shipping,shipping-list,shipping-purchase-orders,shipping-pending,shipping-transit,shipping-complete," +
             "sales,sales-status,sales-confirmation,sales-settlement," +
             "customer,customer-list,customer-inquiry,customer-claim," +
             "settings,settings-basic,settings-company,settings-notification,settings-store,settings-store-list," +
@@ -30,7 +30,7 @@ public class RoleMenuKeysInitializer implements ApplicationRunner {
             "system,system-user,system-role,system-platform,system-code,system-log,system-setting";
 
     private static final String USER_MENU_KEYS = "dashboard,product,product-list,order,order-list,order-processing,order-claim," +
-            "shipping,shipping-list,shipping-pending,shipping-transit,shipping-complete," +
+            "shipping,shipping-list,shipping-purchase-orders,shipping-pending,shipping-transit,shipping-complete," +
             "sales,sales-status,sales-confirmation,sales-settlement," +
             "customer,customer-list,customer-inquiry,customer-claim," +
             "settings,settings-basic,settings-company,settings-notification,settings-store,settings-store-list," +
@@ -46,6 +46,9 @@ public class RoleMenuKeysInitializer implements ApplicationRunner {
             String current = role.getMenuKeys();
             boolean needsUpdate = current == null || current.isBlank();
             if ("ADMIN".equals(role.getCode()) && !needsUpdate && !current.contains("system-platform")) {
+                needsUpdate = true;
+            }
+            if (!needsUpdate && !current.contains("shipping-purchase-orders")) {
                 needsUpdate = true;
             }
             if (needsUpdate) {

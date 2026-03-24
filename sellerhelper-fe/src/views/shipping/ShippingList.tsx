@@ -10,6 +10,7 @@ import {
   exportPurchaseOrderExcel,
   downloadBlob,
 } from '@/services/purchaseOrder.service';
+import { createPurchaseOrderHistory } from '@/services/purchaseOrderHistory.service';
 import { loadSupplierPoColumnKeys } from '@/utils/supplierPoFormStorage';
 import '../../styles/Settings.css';
 import '../product/ProductList.css';
@@ -206,7 +207,16 @@ export default function ShippingList() {
         columnKeys,
       });
       const safeName = (selectedVendorName || '발주').replace(/[\\/:*?"<>|]/g, '_');
-      downloadBlob(blob, `발주서_${safeName}_${formatStampForFilename(new Date())}.xlsx`);
+      const filename = `발주서_${safeName}_${formatStampForFilename(new Date())}.xlsx`;
+      downloadBlob(blob, filename);
+      await createPurchaseOrderHistory({
+        name: filename.replace(/\.xlsx$/i, ''),
+        memo: '',
+        storeUid: Number(storeTab),
+        vendorId: Number(poVendorId),
+        orderUids: uids,
+        columnKeys,
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : '발주서 생성에 실패했습니다.');
     } finally {
@@ -338,6 +348,9 @@ export default function ShippingList() {
                 </label>
               </div>
               <div className="product-list-actions">
+                <Link to="/shipping/purchase-orders" className="btn btn-outline">
+                  발주서 목록
+                </Link>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 8 }}>
                   <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>발주업체</span>
                   <select

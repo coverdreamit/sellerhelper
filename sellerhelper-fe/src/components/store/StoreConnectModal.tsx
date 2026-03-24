@@ -23,6 +23,8 @@ export default function StoreConnectModal({ onClose, onConnected }: StoreConnect
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [guideType, setGuideType] = useState<'COUPANG' | 'NAVER'>('COUPANG');
 
   useEffect(() => {
     let cancelled = false;
@@ -83,6 +85,17 @@ export default function StoreConnectModal({ onClose, onConnected }: StoreConnect
     }
   };
 
+  const selectedMallCode = malls.find((m) => m.uid === mallUid)?.code;
+
+  const openGuide = () => {
+    if (selectedMallCode === 'NAVER') {
+      setGuideType('NAVER');
+    } else {
+      setGuideType('COUPANG');
+    }
+    setIsGuideOpen(true);
+  };
+
   return (
     <div className="modal-backdrop" onClick={onClose} role="presentation">
       <div className="modal modal-lg" onClick={(e) => e.stopPropagation()} role="dialog">
@@ -90,6 +103,11 @@ export default function StoreConnectModal({ onClose, onConnected }: StoreConnect
         <p className="modal-desc">
           연동할 플랫폼을 선택하고 스토어 정보 및 API 키를 입력하세요.
         </p>
+        <div className="store-guide-trigger">
+          <button type="button" className="btn" onClick={openGuide}>
+            API 키 등록 가이드 보기
+          </button>
+        </div>
 
         {error && (
           <div className="form-error" role="alert">
@@ -188,6 +206,77 @@ export default function StoreConnectModal({ onClose, onConnected }: StoreConnect
           </form>
         )}
       </div>
+      {isGuideOpen && (
+        <div className="modal-backdrop modal-backdrop--inner" onClick={() => setIsGuideOpen(false)} role="presentation">
+          <div className="modal modal-guide" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="스토어 API 키 등록 가이드">
+            <h3>스토어 API 키 등록 가이드</h3>
+            <div className="guide-tabs" role="tablist" aria-label="플랫폼 선택">
+              <button
+                type="button"
+                className={`btn ${guideType === 'COUPANG' ? 'btn-primary' : ''}`}
+                onClick={() => setGuideType('COUPANG')}
+              >
+                쿠팡
+              </button>
+              <button
+                type="button"
+                className={`btn ${guideType === 'NAVER' ? 'btn-primary' : ''}`}
+                onClick={() => setGuideType('NAVER')}
+              >
+                네이버
+              </button>
+            </div>
+
+            {guideType === 'COUPANG' ? (
+              <div className="guide-body">
+                <p className="guide-desc">쿠팡 WING에서 오픈 API Key와 Secret, Vendor ID를 확인해 입력하세요.</p>
+                <p className="guide-link-row">
+                  <a
+                    href="https://wing.coupang.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link-inline"
+                  >
+                    쿠팡 WING 바로가기
+                  </a>
+                </p>
+                <ol>
+                  <li>쿠팡 WING 로그인 후 상단 메뉴에서 <strong>판매자정보</strong>로 이동합니다.</li>
+                  <li><strong>추가판매정보</strong>에서 업체코드(Vendor ID)를 확인합니다.</li>
+                  <li><strong>Open API 관리</strong>에서 API Key와 Secret을 발급/조회합니다.</li>
+                  <li>본 모달의 API Key, API Secret, 업체코드 입력 후 연동 버튼을 클릭합니다.</li>
+                </ol>
+              </div>
+            ) : (
+              <div className="guide-body">
+                <p className="guide-desc">네이버 스마트스토어 API 애플리케이션에서 Client ID/Secret을 발급받아 입력하세요.</p>
+                <p className="guide-link-row">
+                  <a
+                    href="https://sell.smartstore.naver.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link-inline"
+                  >
+                    네이버 스마트스토어 센터 바로가기
+                  </a>
+                </p>
+                <ol>
+                  <li>네이버 스마트스토어 센터 로그인 후 API 연동 메뉴로 이동합니다.</li>
+                  <li>애플리케이션 생성 또는 기존 앱 선택 후 권한을 설정합니다.</li>
+                  <li>발급된 <strong>Client ID</strong>, <strong>Client Secret</strong> 값을 확인합니다.</li>
+                  <li>본 모달의 API Key/Client ID, API Secret/Client Secret 입력 후 연동 버튼을 클릭합니다.</li>
+                </ol>
+              </div>
+            )}
+
+            <div className="modal-actions">
+              <button type="button" className="btn" onClick={() => setIsGuideOpen(false)}>
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

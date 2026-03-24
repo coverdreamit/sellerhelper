@@ -12,6 +12,26 @@ import './Sidebar.css';
 
 const SITE_NAME = '셀러헬퍼';
 
+function ensureShippingPurchaseOrders(items: MenuItem[]): MenuItem[] {
+  return items.map((item) => {
+    if (item.key !== 'shipping' || !item.children?.length) return item;
+    const exists = item.children.some((child) => child.key === 'shipping-purchase-orders');
+    if (exists) return item;
+    const nextChildren: MenuItem[] = [];
+    item.children.forEach((child) => {
+      nextChildren.push(child);
+      if (child.key === 'shipping-list') {
+        nextChildren.push({
+          key: 'shipping-purchase-orders',
+          label: '발주서 목록',
+          path: '/shipping/purchase-orders',
+        });
+      }
+    });
+    return { ...item, children: nextChildren };
+  });
+}
+
 /** 자식이 있는 메뉴 키만 재귀 수집 (1·2·3단 그룹) */
 function collectGroupKeys(items: MenuItem[]): string[] {
   const keys: string[] = [];
@@ -49,10 +69,29 @@ interface NavItemProps {
   toggleOpen: (key: string) => void;
 }
 
+function withShippingPurchaseOrders(children: MenuItem[] | undefined): MenuItem[] {
+  if (!children || children.length === 0) return [];
+  const exists = children.some((child) => child.key === 'shipping-purchase-orders');
+  if (exists) return children;
+  const next: MenuItem[] = [];
+  children.forEach((child) => {
+    next.push(child);
+    if (child.key === 'shipping-list') {
+      next.push({
+        key: 'shipping-purchase-orders',
+        label: '발주서 목록',
+        path: '/shipping/purchase-orders',
+      });
+    }
+  });
+  return next;
+}
+
 function NavItem({ item, depth, collapsed, openKeys, toggleOpen }: NavItemProps) {
   const pathname = usePathname();
-  const hasNested = item.children?.length > 0;
-  const hasGrandChildren = item.children?.some((c) => c.children?.length > 0);
+  const renderChildren = item.key === 'shipping' ? withShippingPurchaseOrders(item.children) : (item.children ?? []);
+  const hasNested = renderChildren.length > 0;
+  const hasGrandChildren = renderChildren.some((c) => c.children?.length > 0);
   const firstPath = getFirstChildPath(item);
   const isActive = isMenuActive(item, pathname);
   const firstChar = item.label.charAt(0);
@@ -88,7 +127,7 @@ function NavItem({ item, depth, collapsed, openKeys, toggleOpen }: NavItemProps)
         </button>
         {isOpen && (
           <ul className="sidebar-nav-children">
-            {item.children.map((sub) => (
+            {renderChildren.map((sub) => (
               <NavItem
                 key={sub.key}
                 item={sub}
@@ -122,7 +161,7 @@ function NavItem({ item, depth, collapsed, openKeys, toggleOpen }: NavItemProps)
         </button>
         {isOpen && (
           <ul className="sidebar-nav-children">
-            {item.children.map((child) => (
+            {renderChildren.map((child) => (
               <NavItem
                 key={child.key}
                 item={child}
@@ -159,7 +198,7 @@ export default function Sidebar() {
   const [collapsed, setCollapsedState] = useState(false);
 
   const visibleMenu = useMemo(
-    () => filterMenuByRoles(MENU, user?.menuKeys ?? []),
+    () => ensureShippingPurchaseOrders(filterMenuByRoles(MENU, user?.menuKeys ?? [])),
     [user?.menuKeys]
   );
 

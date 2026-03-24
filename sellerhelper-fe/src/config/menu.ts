@@ -7,10 +7,17 @@ export interface MenuItem {
   children?: MenuItem[];
 }
 
+const MENU_KEY_ALIASES: Record<string, string[]> = {
+  // 기존 권한 호환: shipping-list 권한 사용자는 발주서 목록도 접근 허용
+  'shipping-purchase-orders': ['shipping-list'],
+};
+
 /** 메뉴 접근 가능 여부: userMenuKeys에 item.key가 있으면 true */
 export function canAccessMenuItem(item: MenuItem, userMenuKeys: string[]): boolean {
   if (!userMenuKeys || userMenuKeys.length === 0) return false;
-  return userMenuKeys.includes(item.key);
+  if (userMenuKeys.includes(item.key)) return true;
+  const aliases = MENU_KEY_ALIASES[item.key] ?? [];
+  return aliases.some((alias) => userMenuKeys.includes(alias));
 }
 
 /** 메뉴를 권한(menuKeys)에 따라 필터링 (자식 재귀). 빈 그룹 제거 */
@@ -67,6 +74,7 @@ export const MENU: MenuItem[] = [
     path: '/shipping',
     children: [
       { key: 'shipping-list', label: '배송 목록', path: '/shipping/list' },
+      { key: 'shipping-purchase-orders', label: '발주서 목록', path: '/shipping/purchase-orders' },
       { key: 'shipping-pending', label: '출고 대기', path: '/shipping/pending' },
       { key: 'shipping-transit', label: '배송중', path: '/shipping/transit' },
       { key: 'shipping-complete', label: '배송 완료', path: '/shipping/complete' },
@@ -161,5 +169,9 @@ export function canAccessPath(pathname: string, userMenuKeys: string[]): boolean
   if (candidates.length === 0) return true;
   const maxLen = Math.max(...candidates.map((c) => c.path.length));
   const keysAtLongestPath = candidates.filter((c) => c.path.length === maxLen).map((c) => c.key);
-  return keysAtLongestPath.some((k) => keys.includes(k));
+  return keysAtLongestPath.some((k) => {
+    if (keys.includes(k)) return true;
+    const aliases = MENU_KEY_ALIASES[k] ?? [];
+    return aliases.some((alias) => keys.includes(alias));
+  });
 }

@@ -14,6 +14,46 @@ import { collectAllMenuKeys } from '@/config/menu';
 import '@/styles/Settings.css';
 import './RoleManage.css';
 
+function ensureShippingPurchaseOrders(items: MenuItem[]): MenuItem[] {
+  return items.map((item) => {
+    if (item.key !== 'shipping' || !item.children?.length) return item;
+    const exists = item.children.some((child) => child.key === 'shipping-purchase-orders');
+    if (exists) return item;
+    const nextChildren: MenuItem[] = [];
+    item.children.forEach((child) => {
+      nextChildren.push(child);
+      if (child.key === 'shipping-list') {
+        nextChildren.push({
+          key: 'shipping-purchase-orders',
+          label: '발주서 목록',
+          path: '/shipping/purchase-orders',
+        });
+      }
+    });
+    return { ...item, children: nextChildren };
+  });
+}
+
+function withShippingPurchaseOrders(items: MenuItem[]): MenuItem[] {
+  return items.map((item) => {
+    if (item.key !== 'shipping' || !item.children?.length) return item;
+    const exists = item.children.some((child) => child.key === 'shipping-purchase-orders');
+    if (exists) return item;
+    const nextChildren: MenuItem[] = [];
+    item.children.forEach((child) => {
+      nextChildren.push(child);
+      if (child.key === 'shipping-list') {
+        nextChildren.push({
+          key: 'shipping-purchase-orders',
+          label: '발주서 목록',
+          path: '/shipping/purchase-orders',
+        });
+      }
+    });
+    return { ...item, children: nextChildren };
+  });
+}
+
 /** 메뉴 아이템과 그 자손들의 key 수집 */
 function collectKeys(item: MenuItem): string[] {
   const keys = [item.key];
@@ -23,7 +63,8 @@ function collectKeys(item: MenuItem): string[] {
   return keys;
 }
 
-const ALL_MENU_KEYS = collectAllMenuKeys(MENU).map((m) => m.key);
+const MENU_FOR_ROLE = ensureShippingPurchaseOrders(MENU);
+const ALL_MENU_KEYS = collectAllMenuKeys(MENU_FOR_ROLE).map((m) => m.key);
 
 /** 상위 메뉴 체크 시 하위 전체 적용 트리 노드 */
 function MenuTreeNode({
@@ -321,7 +362,7 @@ export default function RoleManage() {
                 </span>
               </div>
               <div className="menu-keys-tree">
-                {renderMenuTree(MENU)}
+                {renderMenuTree(withShippingPurchaseOrders(MENU_FOR_ROLE))}
               </div>
             </div>
 
