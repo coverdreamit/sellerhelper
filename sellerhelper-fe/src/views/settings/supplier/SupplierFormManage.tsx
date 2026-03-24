@@ -11,7 +11,11 @@ import {
 import '../../../styles/Settings.css';
 import './SupplierFormManage.css';
 
-export default function SupplierFormManage({ vendorId: initialVendorId }) {
+type SupplierFormManageProps = {
+  vendorId?: string | number | null;
+};
+
+export default function SupplierFormManage({ vendorId: initialVendorId }: SupplierFormManageProps) {
   const { vendors, loading, error, loadVendors } = useVendorStore();
   const [selectedSupplier, setSelectedSupplier] = useState<string>('');
   const [editModalForm, setEditModalForm] = useState<{
