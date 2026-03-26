@@ -114,19 +114,24 @@ export async function register(req: RegisterRequest): Promise<RegisterResponse> 
   return data;
 }
 
-/** 현재 로그인 사용자 조회 (JWT 필요) */
-export async function getMe(): Promise<LoginResponse | null> {
-  const res = await fetch(`${getApiBase()}/api/auth/me`, {
-    ...baseFetchOptions,
-    method: 'GET',
-    headers: authHeaders(),
-  });
-  if (res.status === 401) return null;
-  if (!res.ok) return null;
+/**
+ * 현재 로그인 사용자 조회 (JWT 필요)
+ * - 성공: 사용자 정보
+ * - 401 등 미인증: null → 로그아웃 처리
+ * - 네트워크/파싱 실패: undefined → 로컬 세션 유지 (내장 브라우저·백엔드 일시 중단 시 로그인 유지)
+ */
+export async function getMe(): Promise<LoginResponse | null | undefined> {
   try {
+    const res = await fetch(`${getApiBase()}/api/auth/me`, {
+      ...baseFetchOptions,
+      method: 'GET',
+      headers: authHeaders(),
+    });
+    if (res.status === 401) return null;
+    if (!res.ok) return null;
     return await parseJsonOrThrow<LoginResponse>(res);
   } catch {
-    return null;
+    return undefined;
   }
 }
 

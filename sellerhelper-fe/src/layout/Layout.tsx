@@ -60,20 +60,16 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   /** 사용자 정보(권한 포함) 갱신 - 새로고침·탭 복귀 시 최신 반영 */
   const refreshSession = useCallback(() => {
-    getMe()
-      .then((me) => {
-        setSessionChecked(true);
-        if (me) {
-          const currentToken = useAuthStore.getState().user?.token;
-          setUser({ ...me, token: me.token ?? currentToken });
-        } else {
-          logoutStore();
-        }
-      })
-      .catch(() => {
-        setSessionChecked(true);
+    getMe().then((me) => {
+      setSessionChecked(true);
+      if (me === undefined) return;
+      if (me) {
+        const currentToken = useAuthStore.getState().user?.token;
+        setUser({ ...me, token: me.token ?? currentToken });
+      } else {
         logoutStore();
-      });
+      }
+    });
   }, [setUser, logoutStore]);
 
   /** skipHydration 사용 → 수동 rehydrate 후 항상 refreshSession으로 백엔드 검증 (로컬 저장만 믿지 않음) */
@@ -81,7 +77,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     if (!mounted || typeof window === 'undefined') return;
     void Promise.resolve(useAuthStore.persist.rehydrate()).then(() => {
       setTimeout(() => {
-        // 토큰 유무와 관계없이 항상 getMe()로 검증. 백엔드 꺼져 있으면 로그아웃 처리됨
+        // 토큰 유무와 관계없이 항상 getMe()로 검증. 연결 실패 시에는 로컬 세션 유지
         refreshSession();
       }, 0);
     });
