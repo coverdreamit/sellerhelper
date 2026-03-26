@@ -218,7 +218,7 @@ export default function UserList() {
             <table className="settings-table">
               <thead>
                 <tr>
-                  <th>이름</th>
+                  <th className="cell-name">이름</th>
                   <th>로그인 ID</th>
                   <th>이메일</th>
                   <th>권한</th>
@@ -229,7 +229,7 @@ export default function UserList() {
               <tbody>
                 {pendingList.map((u) => (
                   <tr key={u.uid}>
-                    <td>{u.name}</td>
+                    <td className="cell-name">{u.name}</td>
                     <td>{u.loginId}</td>
                     <td>{u.email ?? '-'}</td>
                     <td>{u.roleNames ?? '-'}</td>
@@ -388,11 +388,11 @@ export default function UserList() {
             <table className="settings-table">
               <thead>
                 <tr>
-                  <th>이름</th>
+                  <th className="cell-name">이름</th>
                   <th>로그인 ID</th>
                   <th>이메일</th>
                   <th>권한</th>
-                  <th>상태</th>
+                  <th className="cell-status">상태</th>
                   <th>최근 로그인</th>
                   <th>관리</th>
                 </tr>
@@ -407,11 +407,11 @@ export default function UserList() {
                 ) : (
                   users.map((u) => (
                     <tr key={u.uid}>
-                      <td>{u.name}</td>
+                      <td className="cell-name">{u.name}</td>
                       <td>{u.loginId}</td>
                       <td>{u.email ?? '-'}</td>
                       <td>{u.roleNames ?? '-'}</td>
-                      <td>
+                      <td className="cell-status">
                         <span className={`badge badge-${u.enabled ? 'active' : 'inactive'}`}>
                           {u.enabled ? '활성' : '비활성'}
                         </span>

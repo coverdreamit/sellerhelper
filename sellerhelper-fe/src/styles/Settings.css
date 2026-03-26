@@ -288,6 +288,17 @@
   background: #f8f9fa;
 }
 
+.settings-table .cell-name {
+  white-space: nowrap;
+  min-width: 5.5rem;
+}
+
+.settings-table .cell-status {
+  white-space: nowrap;
+  min-width: 4.5rem;
+  vertical-align: middle;
+}
+
 .settings-table .cell-actions {
   white-space: nowrap;
 }
