@@ -29,10 +29,30 @@
   min-height: 56px;
 }
 
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.sidebar-brand:hover .sidebar-title {
+  color: #2563eb;
+}
+
 .sidebar.collapsed .sidebar-header {
   flex-direction: column;
   gap: 6px;
   padding: 12px 8px;
+}
+
+.sidebar.collapsed .sidebar-brand {
+  flex: none;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .sidebar-logo {

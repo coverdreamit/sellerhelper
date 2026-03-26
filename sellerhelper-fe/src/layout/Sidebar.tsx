@@ -194,6 +194,7 @@ function NavItem({ item, depth, collapsed, openKeys, toggleOpen }: NavItemProps)
 
 export default function Sidebar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const [collapsed, setCollapsedState] = useState(false);
 
@@ -258,8 +259,15 @@ export default function Sidebar() {
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
-        <div className="sidebar-logo" aria-hidden>S</div>
-        <span className="sidebar-title">{SITE_NAME}</span>
+        <Link
+          href="/"
+          className="sidebar-brand"
+          aria-label={`${SITE_NAME} 대시보드로 이동`}
+          {...(pathname === '/' ? { 'aria-current': 'page' as const } : {})}
+        >
+          <div className="sidebar-logo" aria-hidden>S</div>
+          <span className="sidebar-title">{SITE_NAME}</span>
+        </Link>
         <button
           type="button"
           className="sidebar-toggle"
