@@ -19,6 +19,20 @@ const baseFetchOptions: RequestInit = {
   credentials: 'include',
 };
 
+/** fetch 네트워크 실패 시 브라우저가 주는 영문 메시지 → 한글 안내 */
+export function messageFromAuthError(err: unknown, fallback: string): string {
+  if (!(err instanceof Error)) return fallback;
+  const m = err.message;
+  if (
+    m === 'Failed to fetch' ||
+    m === 'NetworkError when attempting to fetch resource.' ||
+    m === 'Load failed'
+  ) {
+    return '서버에 연결할 수 없습니다. 네트워크와 API 주소를 확인해 주세요.';
+  }
+  return m;
+}
+
 /** 서버가 HTML 에러 페이지를 반환할 경우 res.json() 대신 사용 */
 async function parseJsonOrThrow<T>(res: Response): Promise<T> {
   const text = await res.text();

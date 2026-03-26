@@ -8,6 +8,7 @@ import {
   getSavedLoginId,
   saveLoginIdCookie,
   clearLoginIdCookie,
+  messageFromAuthError,
 } from '@/services/auth.service';
 import { useAuthStore } from '@/stores';
 import './Login.css';
@@ -43,7 +44,7 @@ export default function Login() {
       setUser(res);
       router.replace('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
+      setError(messageFromAuthError(err, '로그인에 실패했습니다.'));
     } finally {
       setLoading(false);
     }

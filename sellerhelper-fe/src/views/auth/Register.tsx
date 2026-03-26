@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { register as registerApi } from '@/services/auth.service';
+import { register as registerApi, messageFromAuthError } from '@/services/auth.service';
 import { formatPhoneNumber } from '@/utils/inputFormat';
 import './Login.css';
 
@@ -82,7 +82,7 @@ export default function Register() {
       alert('회원가입이 완료되었습니다. 관리자 승인 후 이용 가능합니다. 승인 여부 검토 중입니다.');
       router.replace('/login');
     } catch (err) {
-      setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.');
+      setError(messageFromAuthError(err, '회원가입에 실패했습니다.'));
     } finally {
       setLoading(false);
     }
